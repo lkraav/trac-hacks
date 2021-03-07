@@ -218,9 +218,9 @@ class PeerReviewCommentHandler(Component):
             data['invalid'] = 1
             return
 
-        db = self.env.get_read_db()
-        dbBack = dbBackend(db)
-        comments = dbBack.getCommentsByFileIDAndLine(fileid, linenum)
+        with self.env.db_query as db:
+            dbBack = dbBackend(db)
+            comments = dbBack.getCommentsByFileIDAndLine(fileid, linenum)
 
         my_comment_data = ReviewDataModel.comments_for_file_and_owner(self.env, fileid, req.authname)
         data['read_comments'] = [c_id for c_id, t, dat in my_comment_data if t == 'read']

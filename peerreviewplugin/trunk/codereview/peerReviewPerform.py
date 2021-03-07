@@ -336,22 +336,22 @@ class CommentAnnotator(object):
 
     def prep_browser(self, context):
         def comments_for_file(env, path, rev):
-            db = env.get_read_db()
-            cursor = db.cursor()
-            cursor.execute("""SELECT c.line_num, c.comment_id, f.file_id,
-            f.review_id
-            FROM peerreviewfile AS f
-            JOIN peerreviewcomment as c ON c.file_id = f.file_id
-            WHERE f.path = %s
-            AND f.changerevision = %s
-            """, (path, rev))
+            with env.db_query as db:
+                cursor = db.cursor()
+                cursor.execute("""SELECT c.line_num, c.comment_id, f.file_id,
+                f.review_id
+                FROM peerreviewfile AS f
+                JOIN peerreviewcomment as c ON c.file_id = f.file_id
+                WHERE f.path = %s
+                AND f.changerevision = %s
+                """, (path, rev))
 
-            d = {}
-            file_id = 0
-            for row in cursor:
-                d[row[0]] = row[2]
-                file_id = row[2]
-            return d, file_id
+                d = {}
+                file_id = 0
+                for row in cursor:
+                    d[row[0]] = row[2]
+                    file_id = row[2]
+                return d, file_id
 
         self.path = '/' + context.resource.id
         self.rev = context.resource.version

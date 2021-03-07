@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2015 Roberto Longobardi
-# Copyright (C) 2016-2019 Cinc
+# Copyright (C) 2016-2021 Cinc
 #
 # This file is part of the Test Manager plugin for Trac.
 #
@@ -20,7 +20,7 @@ from codereview.tracgenericclass.util import from_any_timestamp, get_string_from
     db_get_config_property
 from datetime import date, datetime
 from trac.core import Interface, TracError, Component, ExtensionPoint
-from trac.db import Table, Column, Index, DatabaseManager, with_transaction
+from trac.db import Table, Column, Index, DatabaseManager
 from trac.resource import Resource
 from trac.util.datefmt import utc
 from trac.util.translation import _
@@ -1295,8 +1295,7 @@ def create_db_for_realm(env, realm, realm_schema, db=None):
                    the get_data_models() function in the IConcreteClassProvider
                    interface.
     """
-    @env.with_transaction(db)
-    def do_create_db_for_realm(db):
+    with env.db_transaction as db:
         cursor = db.cursor()
 
         db_backend, _ = DatabaseManager(env).get_connector()
@@ -1376,8 +1375,7 @@ def upgrade_db_for_realm(env, package_name, realm, realm_schema, db=None):
     Each db version should have its own upgrade module, named
     upgrades/db_<schema>_<N>.py, where 'N' is the version number (int).
     """
-    @env.with_transaction(db)
-    def do_upgrade_db_for_realm(db):
+    with env.db_transaction as db:
         cursor = db.cursor()
 
         db_backend = DatabaseManager(env).get_connector()[0]

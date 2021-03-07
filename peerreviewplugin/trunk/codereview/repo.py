@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -227,8 +227,7 @@ def insert_project_files(self, src_path, project, ignore_ext, incl_ext, excl_pat
         errors = []
 
     ReviewFileModel.delete_files_by_project_name(self.env, project)
-    @self.env.with_transaction()
-    def insert_data(db):
+    with self.env.db_transaction as db:
         cursor = db.cursor()
         for item in fnodes:
             cursor.execute("INSERT INTO peerreviewfile"

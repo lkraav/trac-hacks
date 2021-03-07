@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2015 Roberto Longobardi
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 #
 # This file is part of the Test Manager plugin for Trac.
 #
@@ -14,15 +14,11 @@
 #
 
 import os
-import re
 import shutil
 import sys
 import traceback
 
-from datetime import datetime
-
 from trac.core import *
-from trac.db import with_transaction
 
 
 def formatExceptionInfo(maxTBlevel=5):
@@ -110,34 +106,9 @@ def get_timestamp_db_type():
     return 'int64'
 
 
-def upload_file_to_subdir(env, req, subdir, param_name, target_filename):
-    upload = param_name
-
-    if isinstance(upload, unicode) or not upload.filename:
-        raise TracError('You must provide a file.')
-
-    txt_filename = upload.filename.replace('\\', '/').replace(':', '/')
-    txt_filename = os.path.basename(txt_filename)
-    if not txt_filename:
-        raise TracError('You must provide a file.')
-
-    target_dir = os.path.join(env.path, 'upload', subdir)
-
-    if not os.access(target_dir, os.F_OK):
-        os.makedirs(target_dir)
-
-    target_path = os.path.join(target_dir, target_filename)
-
-    try:
-        target_file = open(target_path, 'w')
-        shutil.copyfileobj(upload.file, target_file)
-    finally:
-        target_file.close()
-
-
 def db_insert_or_ignore(env, tablename, propname, value, db=None):
-    if db_get_config_property(env, tablename, propname, db) is None:
-        db_set_config_property(env, tablename, propname, value, db)
+    if db_get_config_property(env, tablename, propname) is None:
+        db_set_config_property(env, tablename, propname, value)
 
 
 def db_get_config_property(env, tablename, propname, db=None):
@@ -157,9 +128,8 @@ def db_get_config_property(env, tablename, propname, db=None):
     return row[0]
 
 
-def db_set_config_property(env, tablename, propname, value, db=None):
-    @env.with_transaction(db)
-    def do_db_set_config_property(db):
+def db_set_config_property(env, tablename, propname, value):
+    with env.db_transaction as db:
         cursor = db.cursor()
 
         sql = "SELECT COUNT(*) FROM %s WHERE propname = %%s" % tablename

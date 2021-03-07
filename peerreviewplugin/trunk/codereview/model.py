@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016-2019 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -348,22 +348,22 @@ class ReviewDataModel(AbstractVariableFieldsObject):
     def comments_for_file_and_owner(cls, env, file_id, owner):
         """Return a list of data."""
 
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT comment_id, type, data FROM peerreviewdata "
-                       "WHERE file_id = %s AND owner = %s",
-                       (file_id, owner))
-        return cursor.fetchall()
+        with env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT comment_id, type, data FROM peerreviewdata "
+                           "WHERE file_id = %s AND owner = %s",
+                           (file_id, owner))
+            return cursor.fetchall()
 
     @classmethod
     def comments_for_owner(cls, env, owner):
         """Return a list of comment data for owner.
         """
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT comment_id, review_id, type, data FROM peerreviewdata "
-                       "WHERE owner = %s", (owner,))
-        return cursor.fetchall()
+        with env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT comment_id, review_id, type, data FROM peerreviewdata "
+                           "WHERE owner = %s", (owner,))
+            return cursor.fetchall()
 
     @classmethod
     def all_file_project_data(cls, env):
@@ -372,13 +372,13 @@ class ReviewDataModel(AbstractVariableFieldsObject):
         sql = """SELECT n.data AS name , r.type, r.data FROM peerreviewdata AS n
                  JOIN peerreviewdata AS r ON r.data_key = n.data
                  WHERE n.type = 'fileproject'"""
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute(sql)
-        files_dict = defaultdict(dict)
-        for row in cursor:
-            files_dict[row[fileprojectname]][row[datatype]] = row[data]
-        return files_dict
+        with env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute(sql)
+            files_dict = defaultdict(dict)
+            for row in cursor:
+                files_dict[row[fileprojectname]][row[datatype]] = row[data]
+            return files_dict
 
 
 class ReviewCommentModel(AbstractVariableFieldsObject):
@@ -684,22 +684,20 @@ class PeerReviewModelProvider(Component):
         self.current_db_version = 0
         self.upgrade_environment()
 
-    def environment_needs_upgrade(self, db=None):
+    def environment_needs_upgrade(self, db_=None):
+        with self.env.db_query as db:
+            self.current_db_version = self._get_version(db.cursor())
 
-        if not db:
-            db = self.env.get_read_db()
-        self.current_db_version = self._get_version(db.cursor())
-
-        if self.current_db_version < db_version:
-            self.log.info("PeerReview plugin database schema version is %d, should be %d",
-                          self.current_db_version, db_version)
-            return True
-
-        for realm in self.SCHEMA:
-            realm_metadata = self.SCHEMA[realm]
-            if need_db_create_for_realm(self.env, realm, realm_metadata, db) or \
-                need_db_upgrade_for_realm(self.env, realm, realm_metadata, db):
+            if self.current_db_version < db_version:
+                self.log.info("PeerReview plugin database schema version is %d, should be %d",
+                              self.current_db_version, db_version)
                 return True
+
+            for realm in self.SCHEMA:
+                realm_metadata = self.SCHEMA[realm]
+                if need_db_create_for_realm(self.env, realm, realm_metadata, db) or \
+                    need_db_upgrade_for_realm(self.env, realm, realm_metadata, db):
+                    return True
 
         return False
 
@@ -715,8 +713,7 @@ class PeerReviewModelProvider(Component):
 
     def upgrade_tracgeneric(self):
         """Upgrade for versions > 2 using the TracGenericClass mechanism."""
-        @self.env.with_transaction()
-        def do_upgrade_environment(db):
+        with self.env.db_transaction as db:
             for realm in self.SCHEMA:
                 realm_metadata = self.SCHEMA[realm]
 
@@ -826,13 +823,13 @@ class Comment(object):
 
     @classmethod
     def select_by_file_id(cls, env, file_id):
-        db = env.get_read_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created FROM "
-                       "peerreviewcomment WHERE file_id=%s ORDER BY line_num", (file_id,))
-        comments = []
-        for row in cursor:
-            c = cls(env)
-            c._init_from_row(row)
-            comments.append(c)
+        with env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT comment_id, file_id, parent_id, line_num, author, comment, attachment_path, created FROM "
+                           "peerreviewcomment WHERE file_id=%s ORDER BY line_num", (file_id,))
+            comments = []
+            for row in cursor:
+                c = cls(env)
+                c._init_from_row(row)
+                comments.append(c)
         return comments
