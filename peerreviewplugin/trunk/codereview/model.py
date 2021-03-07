@@ -368,7 +368,7 @@ class ReviewDataModel(AbstractVariableFieldsObject):
     @classmethod
     def all_file_project_data(cls, env):
         """Return a dict with project name as key and a dict with project information as value."""
-
+        fileprojectname, datatype, data = range(3)
         sql = """SELECT n.data AS name , r.type, r.data FROM peerreviewdata AS n
                  JOIN peerreviewdata AS r ON r.data_key = n.data
                  WHERE n.type = 'fileproject'"""
@@ -377,7 +377,7 @@ class ReviewDataModel(AbstractVariableFieldsObject):
         cursor.execute(sql)
         files_dict = defaultdict(dict)
         for row in cursor:
-            files_dict[row[0]][row[1]] = row[2]
+            files_dict[row[fileprojectname]][row[datatype]] = row[data]
         return files_dict
 
 
