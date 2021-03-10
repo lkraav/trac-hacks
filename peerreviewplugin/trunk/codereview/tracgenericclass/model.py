@@ -1414,15 +1414,16 @@ def _get_installed_version(env, realm, db=None):
     :return: -1, if the DB for realm does not exist,
              a number greater or equals to 1 as the installed DB version for realm.
     """
-    version = _get_system_value(env, realm + '_version', None, db)
+    version = _get_system_value(env, realm + '_version', None)
     if version is None:
         # check for old naming schema
         dburi = env.config.get('trac', 'database')
         env.log.debug('Database backend is \'%s\'', dburi)
 
-        tables = list_available_tables(dburi, db.cursor())
+        with env.db_query as db:
+            tables = list_available_tables(dburi, db.cursor())
         if 'tracgenericclassconfig' in tables:
-            version = db_get_config_property(env, 'tracgenericclassconfig', realm + "_dbversion", db)
+            version = db_get_config_property(env, 'tracgenericclassconfig', realm + "_dbversion")
         else:
             if realm in tables:
                 version = 1
@@ -1438,7 +1439,7 @@ def _set_installed_version(env, realm, version, db=None):
 
 # Trac db 'system' table management methods
 
-def _get_system_value(env, key, default=None, db=None):
+def _get_system_value(env, key, default=None):
     result = default
 
     with env.db_query as db:
