@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 #
 # All rights reserved.
 #
@@ -23,8 +23,8 @@ from codereview.util import get_review_for_file, not_allowed_to_comment, review_
 from genshi.template.markup import MarkupTemplate
 from trac import util
 from trac.core import *
-from trac.mimeview import Context
 from trac.util import Markup
+from trac.web.chrome import web_context
 from trac.web.main import IRequestHandler
 from trac.wiki import format_to_html
 
@@ -228,7 +228,6 @@ class PeerReviewCommentHandler(Component):
         rfile = ReviewFileModel(self.env, fileid)
         review = PeerReviewModel(self.env, rfile['review_id'])
         data['review'] = review
-        data['context'] = Context.from_request(req)
         # A finished review can't be changed anymore except by a manager
         data['is_finished'] = review_is_finished(self.env.config, review)
         # A user can't change his voting for a reviewed review
@@ -319,8 +318,9 @@ class PeerReviewCommentHandler(Component):
         factor = 15
         width = 5 + nodesIn * factor
 
+        context = web_context(req)
         tdata = {'width': width,
-                 'text': format_to_html(self.env, data['context'], comment.Text,
+                 'text': format_to_html(self.env, context, comment.Text,
                                         escape_newlines=True),
                  'comment': comment,
                  'first': first,

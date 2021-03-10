@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
+# Copyright (C) Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -19,11 +20,11 @@ from trac.resource import ResourceNotFound
 from trac.util import embedded_numbers
 from trac.util.html import html as tag
 from trac.util.translation import _
-from trac.versioncontrol.api import NoSuchChangeset, NoSuchNode, RepositoryManager
+from trac.versioncontrol.api import NoSuchChangeset, RepositoryManager
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
-from trac.web.chrome import add_link, add_warning
-from trac.wiki import wiki_to_html
+from trac.web.chrome import add_link, web_context
+from trac.wiki import format_to_html
 
 IMG_RE = re.compile(r"\.(gif|jpg|jpeg|png)(\?.*)?$", re.IGNORECASE)
 CHUNK_SIZE = 4096
@@ -92,7 +93,7 @@ class PeerRepoBrowser(Component):
         rev = req.args.get('rev')
         cur_repo = req.args.get('repo', '')
         is_admin_browser = req.args.get('is_admin_browser', False)  # Set when we come from the file admin page
-        context = Context.from_request(req)
+        context = web_context(req)
         # Depending on from where we are coming we have to preprocess in match_request() thus use different paths
         browse_url_base = 'adminrepobrowser' if is_admin_browser else 'peerReviewBrowser'
         template_file = 'admin_repobrowser.html' if is_admin_browser else 'repobrowser.html'
@@ -262,8 +263,6 @@ class PeerRepoBrowser(Component):
     def _render_file(self, req, context, repos, node, rev=None, repo=''):
         req.perm(context.resource).require('FILE_VIEW')
 
-        changeset = repos.get_changeset(node.rev)
-
         mime_type = node.content_type
         if not mime_type or mime_type == 'application/octet-stream':
             mime_type = get_mimetype(node.name) or mime_type or 'text/plain'
@@ -317,6 +316,9 @@ class PeerRepoBrowser(Component):
 
             add_link(req, 'alternate', raw_href, 'Original Format', mime_type)
 
+            # TODO: we have a context as a method parameter. Check if this is duplicate code.
+            context = web_context(req)
+            msg = format_to_html(self.env, context=context, wikidom=changeset.message or '', escape_newlines=True)
             return {
                 'changeset': changeset,
                 'size': node.content_length,
@@ -329,14 +331,13 @@ class PeerRepoBrowser(Component):
                 'date': util.format_datetime(changeset.date),
                 'age': util.pretty_timedelta(changeset.date),
                 'author': changeset.author or 'anonymous',
-                'message': wiki_to_html(changeset.message or '--', self.env, req,
-                                        escape_newlines=True)
+                'message': msg
             }
 
 
 def get_node_from_repo(req, repos, path, rev):
 
-    context = Context.from_request(req)
+    context = web_context(req)
 
     if rev:
         rev = repos.normalize_rev(rev)

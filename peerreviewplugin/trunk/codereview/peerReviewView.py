@@ -24,13 +24,12 @@ from codereview.util import review_is_finished, review_is_locked
 from string import Template
 from trac.config import BoolOption, ListOption
 from trac.core import Component, implements, TracError
-from trac.mimeview import Context
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
 from trac.util import format_date
 from trac.util.html import html as tag
 from trac.util.text import CRLF, obfuscate_email_address
-from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor
+from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
 
@@ -324,7 +323,7 @@ class PeerReviewView(Component):
     def get_review_by_id(self, req, review_id):
         """Get a PeerReviewModel for the given review id and prepare some additional data used by the template"""
         review = PeerReviewModel(self.env, review_id)
-        review.html_notes = format_to_html(self.env, Context.from_request(req), review['notes'])
+        review.html_notes = format_to_html(self.env, web_context(req), review['notes'])
         review.date = format_date(review['created'])
         if review['closed']:
             review.finish_date = format_date(review['closed'])
