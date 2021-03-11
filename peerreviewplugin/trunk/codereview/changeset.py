@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2019-2021 Cinc
+#
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING.txt, which
+# you should have received as part of this distribution.
 import itertools
 
 from codereview.model import get_users, PeerReviewModel, PeerReviewerModel, \
@@ -99,7 +106,7 @@ class PeerChangeset(Component):
             'cycle': itertools.cycle
         }
         chrome = Chrome(self.env)
-        template = chrome.load_template('user_list.html')
+        template = chrome.load_template('user_list.html', None)
 
         peerreview_div = '<div class="collapsed"><h3 class="foldable">%s</h3>' \
                          '<div id="peer-codereview">' \

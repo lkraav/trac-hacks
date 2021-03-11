@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
-# Copyright (C) 2016-2019 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -17,7 +17,7 @@ import re
 from codereview.changeset import get_changeset_data
 from codereview.model import Comment, get_users, \
     PeerReviewerModel, PeerReviewModel, ReviewCommentModel, ReviewDataModel, ReviewFileModel
-from codereview.peerReviewMain import add_ctxt_nav_items, web_context_compat
+from codereview.peerReviewMain import add_ctxt_nav_items
 from codereview.tracgenericworkflow.api import IWorkflowOperationProvider, IWorkflowTransitionListener, \
     ResourceWorkflowSystem
 from codereview.util import review_is_finished, review_is_locked
@@ -32,12 +32,6 @@ from trac.util.text import CRLF, obfuscate_email_address
 from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
-
-
-try:
-    from trac.web.chrome import web_context
-except ImportError:
-    web_context = web_context_compat
 
 
 class PeerReviewView(Component):
