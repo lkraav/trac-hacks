@@ -13,86 +13,8 @@ from xml.sax import parseString
 from xml.sax.handler import ContentHandler
 
 
-xml = """<?xml version="1.0" encoding="UTF-8"?>
-<log>
-<logentry
-   revision="11177">
-<author>osimons</author>
-<date>2012-01-22T23:42:37.751201Z</date>
-<paths>
-<path
-   action="A"
-   prop-mods="false"
-   text-mods="true"
-   kind="file"
-   copyfrom-path="/customfieldadminplugin/0.11/customfieldadmin/customfieldadmin.py"
-   copyfrom-rev="11170">/customfieldadminplugin/0.11/customfieldadmin/admin.py</path>
-<path
-   action="M"
-   prop-mods="false"
-   text-mods="true"
-   kind="file">/customfieldadminplugin/0.11/customfieldadmin/api.py</path>
-<path
-   action="D"
-   prop-mods="false"
-   text-mods="false"
-   kind="file">/customfieldadminplugin/0.11/customfieldadmin/customfieldadmin.py</path>
-<path
-   kind="file"
-   action="M"
-   prop-mods="false"
-   text-mods="true">/customfieldadminplugin/0.11/customfieldadmin/locale/customfieldadmin.pot</path>
-<path
-   text-mods="true"
-   kind="file"
-   action="M"
-   prop-mods="false">/customfieldadminplugin/0.11/customfieldadmin/locale/ja/LC_MESSAGES/customfieldadmin.po</path>
-<path
-   text-mods="true"
-   kind="file"
-   action="M"
-   prop-mods="false">/customfieldadminplugin/0.11/customfieldadmin/locale/nb/LC_MESSAGES/customfieldadmin.po</path>
-<path
-   action="M"
-   prop-mods="false"
-   text-mods="true"
-   kind="file">/customfieldadminplugin/0.11/customfieldadmin/locale/ru/LC_MESSAGES/customfieldadmin.po</path>
-<path
-   action="M"
-   prop-mods="false"
-   text-mods="true"
-   kind="file">/customfieldadminplugin/0.11/customfieldadmin/templates/customfieldadmin.html</path>
-<path
-   action="M"
-   prop-mods="false"
-   text-mods="true"
-   kind="file">/customfieldadminplugin/0.11/customfieldadmin/tests/__init__.py</path>
-<path
-   copyfrom-path="/customfieldadminplugin/0.11/customfieldadmin/tests/web_ui.py"
-   copyfrom-rev="11170"
-   action="A"
-   prop-mods="false"
-   text-mods="true"
-   kind="file">/customfieldadminplugin/0.11/customfieldadmin/tests/admin.py</path>
-<path
-   action="M"
-   prop-mods="false"
-   text-mods="true"
-   kind="file">/customfieldadminplugin/0.11/customfieldadmin/tests/api.py</path>
-<path
-   kind="file"
-   action="D"
-   prop-mods="false"
-   text-mods="false">/customfieldadminplugin/0.11/customfieldadmin/tests/web_ui.py</path>
-<path
-   prop-mods="false"
-   text-mods="true"
-   kind="file"
-   action="M">/customfieldadminplugin/0.11/setup.py</path>
-</paths>
-</logentry>
-</log>
-"""
+def _add_rev(path, rev):
+    return '%s@%s' % (path, rev)
 
 
 def call_svn_to_unicode(cmd, repos=None):
@@ -104,7 +26,7 @@ def call_svn_to_unicode(cmd, repos=None):
 
     Note: an error may occur when svn can't find a path or revision.
     """
-    # print('  ## running %s' % (cmd,))
+    # print('  ## svn_client.py running %s' % (cmd,))
     try:
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
@@ -170,7 +92,11 @@ def get_changeset_info(repos, rev):
     cmd = ['svn', '--non-interactive', 'log',
            '-r', '%s' % (rev,),
            '-v', '-q', '--xml',
-           repos.repo_url]
+           # We need to add the revision to the path. Otherwise any path copied, moved ore removed
+           # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
+           _add_rev(repos.repo_url, rev)]
+           # repos.repo_url]
+
     ret = call_svn_to_unicode(cmd, repos)
     if ret:
         handler = ChangesHandler()

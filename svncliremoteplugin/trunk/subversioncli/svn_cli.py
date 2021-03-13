@@ -375,6 +375,10 @@ class SubversionRepositoryCli(Repository):
         self.log = log
         self.base = path  # This is a path specified on the admin page
 
+        # Disable repositories for testing
+        # if params['name'] != 'trac-hacks':
+        #     raise InvalidRepository("Ignoring %s" % params['name'])
+
         if params['type'] == 'svn-cli-direct':
             prefix = 'file:///' if os.name == 'nt' else 'file://'
             url = '%s%s' % (prefix, path)  # we may use http with svn later
@@ -689,21 +693,24 @@ class SubversionCliNode(Node):
                 self.size = None
                 self.kind = Node.DIRECTORY
         else:
-            # TODO: check if svn list ... is suitable here for replacing two calls with one
-            # self.log.info('####### Calling self._list_path() for rev %s, %s' % (rev, path))
-            # f_info[0]: size for file, None for directories
-            # f_info[1]: change revision
-            path_, f_info = self._list_path()[0]
-            self.created_rev = f_info[1]
-            if f_info[0]:
-                self.size = f_info[0]
-                self.kind = Node.FILE
-            else:
-                # For directories the size entry is 'None'
-                self.size = None
+            if path == '/':
                 self.kind = Node.DIRECTORY
-            self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s' %
-                          (self.size, self.created_rev, self.kind))
+                self.created_rev = 1
+            else:
+                self.log.info('####### Calling self._list_path() for rev %s, %s' % (rev, path))
+                # f_info[0]: size for file, None for directories
+                # f_info[1]: change revision
+                path_, f_info = self._list_path()[0]
+                self.created_rev = f_info[1]
+                if f_info[0]:
+                    self.size = f_info[0]
+                    self.kind = Node.FILE
+                else:
+                    # For directories the size entry is 'None'
+                    self.size = None
+                    self.kind = Node.DIRECTORY
+                self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s' %
+                              (self.size, self.created_rev, self.kind))
         # self.log.info('### Node init: %s %s' % (self.size, file_info))
 
         Node.__init__(self, repos, path, rev, self.kind)
@@ -751,7 +758,11 @@ class SubversionCliNode(Node):
         cmd = ['svn', '--non-interactive',
                'list', '-v',
                '-r', str(self.rev),
-               _create_path(self.repos.repo_url, self.path)]
+               # _create_path(self.repos.repo_url, self.path)]
+               # We need to add the revision to the path. Otherwise any path copied, moved ore removed
+               # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
+               _add_rev(_create_path(self.repos.repo_url, self.path), self.rev)]
+
         ret = _call_svn_to_unicode(cmd)
         if not ret:
             return []
