@@ -69,7 +69,7 @@ def _call_svn_to_unicode(cmd, repos=None):
 
     Note: an error may occur when svn can't find a path or revision.
     """
-    # print('  ## running %s' % (cmd,))
+    print('  ## running %s' % (cmd,))
     try:
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
@@ -246,8 +246,9 @@ def _svn_cat(repos, rev, path):
     full_path = _create_path(repos.repo_url, path)
     try:
         ret = subprocess.check_output(['svn', 'cat',
-                                       # '-r', str(rev),
-                                       _add_rev(full_path, rev)])
+                                       '-r', str(rev),
+                                       full_path])
+                                       # _add_rev(full_path, rev)])
     except subprocess.CalledProcessError as e:
         repos.log.info('## svn cat failed for %s' % _add_rev(full_path, rev))
         ret = u''
@@ -640,8 +641,6 @@ class SubversionRepositoryCli(Repository):
         """
         # self.log.info('## Repository ## In get_changes old: %s %s, new: %s %s' %
         #               (old_path,old_rev, new_path, new_rev))
-
-        old_node = new_node = None
         old_rev = self.normalize_rev(old_rev)
         new_rev = self.normalize_rev(new_rev)
 
@@ -660,7 +659,6 @@ class SubversionRepositoryCli(Repository):
                       (old_node, old_node.kind, new_node, new_node.kind))
         #if new_node.isdir:
 
-
         yield (old_node, new_node, Node.FILE, Changeset.EDIT)
 
 
@@ -675,6 +673,7 @@ class SubversionCliNode(Node):
         self.created_path = path
         self.rev = rev
         self.repos = repos
+        self.path = path
         if file_info:
             # We are coming from self.get_entries() with the following information:
             #
@@ -691,29 +690,20 @@ class SubversionCliNode(Node):
                 self.kind = Node.DIRECTORY
         else:
             # TODO: check if svn list ... is suitable here for replacing two calls with one
-            # self.log.info('####### Calling _get_svn_info() for rev %s, %s' % (rev, path))
-            self.info = _get_svn_info(repos, str(rev), path)
-            self.created_rev = self.info['Last Changed Rev']
-            # In case of error this returns 'None'. Error is e.g calling it for a dir
-            self.size = _svn_filesize(repos, rev, path)
-            if self.size == None:
-                self.kind = Node.DIRECTORY
-            else:
-                self.kind = Node.FILE
-
-            # ################################
+            # self.log.info('####### Calling self._list_path() for rev %s, %s' % (rev, path))
             # f_info[0]: size for file, None for directories
             # f_info[1]: change revision
-            #path_, f_info = self._list_path(repos, rev, path)[0]
-            #self.created_rev = f_info[1]
-            #if f_info[0]:
-            #    self.size = f_info[0]
-            #    self.kind = Node.FILE
-            #else:
-            #    # For directories the size entry is 'None'
-            #    self.size = None
-            #    self.kind = Node.DIRECTORY
-
+            path_, f_info = self._list_path()[0]
+            self.created_rev = f_info[1]
+            if f_info[0]:
+                self.size = f_info[0]
+                self.kind = Node.FILE
+            else:
+                # For directories the size entry is 'None'
+                self.size = None
+                self.kind = Node.DIRECTORY
+            self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s' %
+                          (self.size, self.created_rev, self.kind))
         # self.log.info('### Node init: %s %s' % (self.size, file_info))
 
         Node.__init__(self, repos, path, rev, self.kind)
@@ -960,6 +950,7 @@ class FileContentStream(object):
     newline = '\n'
 
     def __init__(self, node, keyword_substitution=None, eol=None):
+        # node.repos.log.info('## Init FileStream for rev: %s, path: %s' % (node.rev, node.path))
         error_msg = """Revision %s: ERROR in SubversionCliRemote while loading content!"""
         self.translated = ''
         self.buffer = ''
