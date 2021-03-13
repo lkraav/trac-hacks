@@ -17,7 +17,7 @@ from datetime import datetime
 from io import BytesIO, StringIO
 from pkg_resources import parse_version
 
-from svn_client import get_changeset_info
+from svn_client import get_changeset_info, get_file_content
 from datetime_z import parse_datetime
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
@@ -26,7 +26,7 @@ from trac.util.text import exception_to_unicode, to_unicode, to_utf8
 from trac.util.translation import _
 from trac.versioncontrol import Changeset, Node, Repository, \
                                 IRepositoryConnector, InvalidRepository, \
-                                NoSuchChangeset, NoSuchNode #, EmptyChangeset
+                                NoSuchChangeset
 from threading import RLock
 
 
@@ -69,7 +69,7 @@ def _call_svn_to_unicode(cmd, repos=None):
 
     Note: an error may occur when svn can't find a path or revision.
     """
-    print('  ## running %s' % (cmd,))
+    # print('  ## running %s' % (cmd,))
     try:
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
@@ -671,7 +671,7 @@ class SubversionCliNode(Node):
     def __init__(self, repos, path, rev, log, file_info=None):
 
         self.log = log
-        log.info('## Node ## Init node for %s %s (%s)' % ( path, rev, file_info))
+        # log.info('## Node ## Init node for %s %s (%s)' % ( path, rev, file_info))
 
         # This is used for creating the correct links on the changeset page
         self.created_path = path
@@ -697,7 +697,7 @@ class SubversionCliNode(Node):
                 self.kind = Node.DIRECTORY
                 self.created_rev = 1
             else:
-                self.log.info('####### Calling self._list_path() for rev %s, %s' % (rev, path))
+                # self.log.info('####### Calling self._list_path() for rev %s, %s' % (rev, path))
                 # f_info[0]: size for file, None for directories
                 # f_info[1]: change revision
                 path_, f_info = self._list_path()[0]
@@ -709,8 +709,8 @@ class SubversionCliNode(Node):
                     # For directories the size entry is 'None'
                     self.size = None
                     self.kind = Node.DIRECTORY
-                self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s' %
-                              (self.size, self.created_rev, self.kind))
+                # self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s' %
+                #                (self.size, self.created_rev, self.kind))
         # self.log.info('### Node init: %s %s' % (self.size, file_info))
 
         Node.__init__(self, repos, path, rev, self.kind)
@@ -759,7 +759,7 @@ class SubversionCliNode(Node):
                'list', '-v',
                '-r', str(self.rev),
                # _create_path(self.repos.repo_url, self.path)]
-               # We need to add the revision to the path. Otherwise any path copied, moved ore removed
+               # We need to add the revision to the path. Otherwise any path copied, moved or removed
                # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
                _add_rev(_create_path(self.repos.repo_url, self.path), self.rev)]
 
@@ -967,7 +967,7 @@ class FileContentStream(object):
         self.buffer = ''
         self.repos = node.repos
         self.node = node
-        f_contents = _svn_cat(node.repos, node.rev, node.path)
+        f_contents = get_file_content(node.repos, node.rev, node.path)
         try:
             self.stream = BytesIO(initial_bytes=bytes(f_contents))
         except UnicodeEncodeError as e:

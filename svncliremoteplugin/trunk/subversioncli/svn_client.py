@@ -17,6 +17,41 @@ def _add_rev(path, rev):
     return '%s@%s' % (path, rev)
 
 
+def _create_path(base, path):
+    return '/'.join([base.rstrip('/'), path.lstrip('/')])
+
+
+def get_file_content(repos, rev, path):
+    """Get the contents of the given file as a unicode string.
+
+    :param repos: Repository object. This holds e.g. the repo root information
+    :param rev: revision
+    :param path: the file path relative to the repository root
+    :return: In case of error an empty string is returned.
+
+    Note: an error may occur when svn can't find a path or revision.
+    """
+    full_path = _create_path(repos.repo_url, path)
+    try:
+        # repos.log.info('## ## cat: %s %s' % (rev, path))
+        process = subprocess.Popen(['svn', 'cat',
+                                       '-r', str(rev),
+                                       full_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ret, err = process.communicate()
+        if err and u'E200009' in err:
+            # We need to add the revision to the path. Otherwise any path copied, moved or removed
+            # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
+            #
+            # We can't always add the revision otherwise we can't view 'normal' files in the browser. See r18058
+            ret = subprocess.check_output(['svn', 'cat',
+                                           '-r', str(rev),
+                                           _add_rev(full_path, rev)])
+    except subprocess.CalledProcessError as e:
+        repos.log.info('#### svn cat failed for %s' % _add_rev(full_path, rev))
+        ret = u''
+    return to_unicode(ret, 'utf-8')
+
+
 def call_svn_to_unicode(cmd, repos=None):
     """Start app with the given list of parameters. Returns
     command output as unicode or an empty string in case of error.
@@ -35,6 +70,7 @@ def call_svn_to_unicode(cmd, repos=None):
         ret = u''
     return to_unicode(ret, 'utf-8')
 
+
 class ChangesHandler(ContentHandler):
     """Parse changes for a given revision.
 
@@ -46,6 +82,7 @@ class ChangesHandler(ContentHandler):
         self.current_tag = ''
         self.path_entries = []
         self.copied = []
+        self.rev = 0
         ContentHandler.__init__(self)
 
     def clear(self):
@@ -92,7 +129,7 @@ def get_changeset_info(repos, rev):
     cmd = ['svn', '--non-interactive', 'log',
            '-r', '%s' % (rev,),
            '-v', '-q', '--xml',
-           # We need to add the revision to the path. Otherwise any path copied, moved ore removed
+           # We need to add the revision to the path. Otherwise any path copied, moved or removed
            # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
            _add_rev(repos.repo_url, rev)]
            # repos.repo_url]
