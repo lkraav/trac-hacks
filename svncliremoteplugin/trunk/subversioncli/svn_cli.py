@@ -669,10 +669,12 @@ class SubversionCliNode(Node):
     def __init__(self, repos, path, rev, log, file_info=None):
 
         self.log = log
-        # log.info('## Node ## Init node for %s %s (%s)' % ( path, rev, file_info))
+        log.info('## Node ## Init node for %s %s (%s)' % ( path, rev, file_info))
 
         # This is used for creating the correct links on the changeset page
         self.created_path = path
+        self.rev = rev
+        self.repos = repos
         if file_info:
             # We are coming from self.get_entries() with the following information:
             #
@@ -738,8 +740,7 @@ class SubversionCliNode(Node):
         """
         pass
 
-    @staticmethod
-    def _list_path(repos, rev, path):
+    def _list_path(self):
         """Get information from 'svn list' for the givn path.
 
         :param path: a directory or file path
@@ -759,8 +760,8 @@ class SubversionCliNode(Node):
         """
         cmd = ['svn', '--non-interactive',
                'list', '-v',
-               '-r', str(rev),
-               _create_path(repos.repo_url, path)]
+               '-r', str(self.rev),
+               _create_path(self.repos.repo_url, self.path)]
         ret = _call_svn_to_unicode(cmd)
         if not ret:
             return []
@@ -770,7 +771,7 @@ class SubversionCliNode(Node):
         for line in ret.split('\n'):
             parts = line.split()
             if parts and parts[name] != './':
-                path = _create_path(path, parts[name])
+                path = _create_path(self.path, parts[name])
                 if path and path != '/':
                     path = path.rstrip('/')
                 if parts[name].strip().endswith('/'):
@@ -790,7 +791,7 @@ class SubversionCliNode(Node):
         if self.isfile:
             return
 
-        for entry in self._list_path(self.repos, self.rev, self.path):
+        for entry in self._list_path():
             path, info = entry
             yield SubversionCliNode(self.repos, path, self.rev, self.log, info)
         return
