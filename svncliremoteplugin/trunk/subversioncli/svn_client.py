@@ -8,7 +8,9 @@
 #
 import subprocess
 
+from trac.core import TracError
 from trac.util.text import to_unicode
+from trac.versioncontrol import Changeset
 from xml.sax import parseString
 from xml.sax.handler import ContentHandler
 
@@ -71,27 +73,96 @@ def call_svn_to_unicode(cmd, repos=None):
     return to_unicode(ret, 'utf-8')
 
 
+def list_path(repos, rev, path):
+    """Get a list of files/directories with file sizes for the given path
+    using 'svn list' .
+
+    :param path: a directory or file path
+    :return list of tuples, (path, (filesize, changerev))
+
+    'filesize' is 'None' for directories. If path is a file the list only
+    contains a single item.
+
+    'snv list ...' gives all the directory entries when called for a
+    directory path. Information includes change revision and filesizes
+    (among others we ignore here):
+       11177 author               Jan 23  2012 ./
+       11168 author           497 Jan 23  2012 __init__.py
+       10057 author          4416 Jan 23  2012 admin.py
+
+    For a file path the same information is given for the single file:
+       11168 author           497 Jan 23  2012 __init__.py
+    """
+    cmd = ['svn', '--non-interactive',
+           'list', '-v',
+           '-r', str(rev),
+           # _create_path(self.repos.repo_url, self.path)]
+           # We need to add the revision to the path. Otherwise any path copied, moved or removed
+           # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
+           _add_rev(_create_path(repos.repo_url, path), rev)]
+
+    ret = call_svn_to_unicode(cmd)
+    if not ret:
+        return []
+
+    res = []
+    changerev, name, size = 0, -1, -5
+    for line in ret.split('\n'):
+        parts = line.split()
+        if parts and parts[name] != './':
+            path = _create_path(path, parts[name])
+            if path and path != '/':
+                path = path.rstrip('/')
+            if parts[name].strip().endswith('/'):
+                # directory
+                res.append((path, (None, parts[changerev])))
+            else:
+                res.append((path,
+                            (int(parts[size]), int(parts[changerev]))
+                            ))
+    return res
+
+
+def get_change_rev(repos, rev, path):
+    """
+
+    :param repos: Repository object, needed for base url
+    :param rev: revision we query the change for. This is usually a subversion tree revision
+    :param path: path of the file/directory
+    :return: change revision for the given path (int)
+    """
+    file_info = list_path(repos, rev, path)[0]
+    try:
+        return file_info[1][1]
+    except IndexError:
+        msg = "Can't get change revision for '%s' with rev '%s'" % (path, rev)
+        repos.log.error(msg)
+        raise TracError("Can't get change revision for '%s' with rev '%s'" % (path, rev))
+
+
 class ChangesHandler(ContentHandler):
-    """Parse changes for a given revision.
+    """Parse changes for a given revision or range of revisions.
+    The xml data is externally provided.
 
     The input data is from 'svn log -r XXX -v -q --xml ...'
+    or 'svn log -r XXX:YYY -v -q --xml ...'
     """
     attrs = ('action', 'kind', 'text-mods', 'copyfrom-rev', 'copyfrom-path')
-    def __init__(self, tzinfo=None):
+    def __init__(self):
         self.clear()
         self.current_tag = ''
         self.path_entries = []
+        self.list_of_path_entries = []
         self.copied = []
         self.rev = 0
         ContentHandler.__init__(self)
 
     def clear(self):
-        self.rev = None
         self.path = ''
         self.path_attrs = {}
 
     def get_path_entries(self):
-        return self.path_entries, self.copied
+        return self.list_of_path_entries
 
     # Called when an element starts
     def startElement(self, tag, attributes):
@@ -100,11 +171,14 @@ class ChangesHandler(ContentHandler):
             self.rev = int(attributes["revision"])
         elif tag == 'path':
             self.path_attrs = {item: attributes.get(item, '') for item in self.attrs}
+            self.path_attrs['rev'] = self.rev
 
     # Called when an elements ends
     def endElement(self, tag):
         if tag == "logentry":
-            pass
+            self.list_of_path_entries.append((self.path_entries, self.copied))
+            self.copied = []
+            self.path_entries = []
         elif tag == 'path':
             if self.path_attrs.get('copyfrom-path'):
                 self.copied.append(self.path_attrs.get('copyfrom-path', ''))
@@ -119,11 +193,12 @@ class ChangesHandler(ContentHandler):
 
 
 def get_changeset_info(repos, rev):
-    """
+    """Get data for a the given changeset rev to be displayed on the
+    changeset page.
 
     :param repos: Repository object
     :param rev: changeset revision
-    :return:
+    :return: a tuple ([({attrs}, path), (...)], [copy1, copy2])
     """
     # svn log -r 11177 -v -q --xml
     cmd = ['svn', '--non-interactive', 'log',
@@ -136,11 +211,59 @@ def get_changeset_info(repos, rev):
 
     ret = call_svn_to_unicode(cmd, repos)
     if ret:
-        handler = ChangesHandler()
+        handler = ChangesHandler()  # This parses a log with one or more logentries
         parseString(ret.encode('utf-8'), handler)
-        return handler.get_path_entries()
+        return handler.get_path_entries()[0]  # This is a list of tuples but we only requested one log here
     else:
         return [], None
+
+
+def get_history(repos, rev, path, limit=None):
+    """Get the history for the given path at revision rev.
+
+    :param repos: Repository object. This holds e.g. the repo root information
+    :param rev: revision
+    :param path: the file/directory path relative to the repository root
+    :param limit: number of history items to return
+    :return: a list of tuples: (path, revisions, change)
+
+    This is called from Node.get_history() when showing the revision log.
+    """
+    cmd = ['svn', '--non-interactive',
+           'log',
+           '-q', '-v', '--xml',
+           '-r', '%s:1' % rev]
+    if limit:
+        cmd += ['-l', str(limit)]
+    cmd.append(_create_path(repos.repo_url, path))
+
+    ret = call_svn_to_unicode(cmd)
+    history = []
+    if ret:
+        handler = ChangesHandler()
+        parseString(ret.encode('utf-8'), handler)
+
+        # List of tuples:
+        # ([({attrs}, path1), (...)], [copyfrom-path 1, copyfrom-path 2])
+        logentries = handler.get_path_entries()
+        for entry in logentries:  # This contains all the information for one revision
+            path_entries, copied = entry
+            for attrs, path_ in path_entries:
+                path_ = path_[1:]  # returned path has a leading '/'
+                if path_ == path:
+                    if attrs['action'] == 'M':
+                        return path_, attrs['rev'], Changeset.EDIT
+                    elif attrs['action'] == 'A':
+                        if attrs['copyfrom-path']:
+                            copied_path = attrs['copyfrom-path'][1:]
+                            history.append((path_, attrs['rev'], Changeset.EDIT))
+                            # Note that copyfrom-rev is the revision of the subversion tree when the copy took
+                            # place. It isn't the change revision of the file being copied.
+                            change_rev = get_change_rev(repos, attrs['copyfrom-rev'], copied_path)
+                            history.append((copied_path, change_rev, Changeset.COPY))
+                        else:
+                            history.append((path_, attrs['rev'], Changeset.ADD))
+    return history
 
 
 if __name__ == '__main__':
