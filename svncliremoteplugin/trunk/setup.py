@@ -24,5 +24,5 @@ setup(
     entry_points={'trac.plugins': [
         'subversioncli.svn_cli = subversioncli.svn_cli',
     ]},
-    test_suite=''
+    test_suite='tests'
 )
