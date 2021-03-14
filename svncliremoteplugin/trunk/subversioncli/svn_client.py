@@ -229,17 +229,21 @@ def get_history(repos, rev, path, limit=None):
 
     This is called from Node.get_history() when showing the revision log.
     """
+    def is_copied_dir(attrs):
+        return attrs.get('action') == 'A' and attrs.get('kind') == 'dir' and attrs.get('copyfrom-path')
     cmd = ['svn', '--non-interactive',
            'log',
            '-q', '-v', '--xml',
            '-r', '%s:1' % rev]
     if limit:
         cmd += ['-l', str(limit)]
-    cmd.append(_create_path(repos.repo_url, path))
+    cmd.append(_add_rev(_create_path(repos.repo_url, path), rev))
 
     ret = call_svn_to_unicode(cmd)
     history = []
     if ret:
+        # Used to track path over copy and move
+        cur_path = path
         handler = ChangesHandler()
         parseString(ret.encode('utf-8'), handler)
 
@@ -250,19 +254,29 @@ def get_history(repos, rev, path, limit=None):
             path_entries, copied = entry
             for attrs, path_ in path_entries:
                 path_ = path_[1:]  # returned path has a leading '/'
-                if path_ == path:
+                # If the path was copied we already inserted a Changeset.COPY entry into the history list
+                # with the revision and path of this log entry.
+                if path_ == cur_path or is_copied_dir(attrs):
                     if attrs['action'] == 'M':
-                        return path_, attrs['rev'], Changeset.EDIT
+                        history.append((path_, attrs['rev'], Changeset.EDIT))
                     elif attrs['action'] == 'A':
                         if attrs['copyfrom-path']:
                             copied_path = attrs['copyfrom-path'][1:]
-                            history.append((path_, attrs['rev'], Changeset.EDIT))
-                            # Note that copyfrom-rev is the revision of the subversion tree when the copy took
-                            # place. It isn't the change revision of the file being copied.
-                            change_rev = get_change_rev(repos, attrs['copyfrom-rev'], copied_path)
-                            history.append((copied_path, change_rev, Changeset.COPY))
+                            if is_copied_dir(attrs):
+                                # A copied directory needs special dealing with paths
+                                # history.append((cur_path, attrs['rev'], Changeset.EDIT))
+                                history.append((cur_path, attrs['rev'], Changeset.COPY))
+                                # Because we copied the whole directory we have to adjust the leading
+                                # directory sub path to the old location.
+                                cur_path = cur_path.replace(path_, copied_path)
+                                #change_rev = get_change_rev(repos, attrs['copyfrom-rev'], cur_path)
+                            else:
+                                history.append((path_, attrs['rev'], Changeset.COPY))
+                                # Note that copyfrom-rev is the revision of the subversion tree when the copy took
+                                # place. It isn't the change revision of the file being copied.
+                                cur_path = cur_path.replace(path_, copied_path)
                         else:
-                            history.append((path_, attrs['rev'], Changeset.ADD))
+                            history.append((cur_path, attrs['rev'], Changeset.ADD))
     return history
 
 

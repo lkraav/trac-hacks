@@ -627,6 +627,7 @@ class SubversionCliNode(Node):
         self.repos = repos
         self.path = path
 
+        # self.log.info('## Node __init__() with %s %s' % (path, rev))
         if file_info:
             # We are coming from self.get_entries() with the following information:
             #
