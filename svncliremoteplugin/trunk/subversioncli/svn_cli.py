@@ -732,7 +732,7 @@ class SubversionCliNode(Node):
                     if from_node_init:
                         # If we are from init we want to know the revision for the path, not the contents
                         # If this is a directory path we end here.
-                        return [(None, (None, parts[changerev]))]
+                        return [(None, (None, int(parts[changerev])))]
                     else:
                         # When querying the contents we don't want to return this entry but only real
                         # entries
@@ -742,9 +742,9 @@ class SubversionCliNode(Node):
                     path = path.rstrip('/')
                 if parts[name].strip().endswith('/'):
                     # directory
-                    res.append((path, (None, parts[changerev])))
+                    res.append((path, (None, int(parts[changerev]))))
                 else:
-                    res.append((path, (int(parts[size]), parts[changerev])))
+                    res.append((path, (int(parts[size]), int(parts[changerev]))))
         return res
 
     def get_entries(self):
@@ -886,7 +886,7 @@ class SubversionCliChangeset(Changeset):
                 if attrs['copyfrom-path']:
                     change = Changeset.MOVE
                     base_path = attrs['copyfrom-path']
-                    base_rev =  attrs['copyfrom-rev']
+                    base_rev = int(attrs['copyfrom-rev'])
             elif change_type == Changeset.DELETE:
                 if path in copied:
                     continue
