@@ -49,9 +49,10 @@ def get_file_content(repos, rev, path):
                                            '-r', str(rev),
                                            _add_rev(full_path, rev)])
     except subprocess.CalledProcessError as e:
-        repos.log.info('#### svn cat failed for %s' % _add_rev(full_path, rev))
+        repos.log.error('#### svn cat failed for %s' % _add_rev(full_path, rev))
         ret = u''
-    return to_unicode(ret, 'utf-8')
+    # The file contents is utf-8 encoded
+    return ret
 
 
 def call_svn_to_unicode(cmd, repos=None):
@@ -68,7 +69,7 @@ def call_svn_to_unicode(cmd, repos=None):
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
         if repos:
-            repos.log.info('#### In sVn_client.py: error with cmd "%s": %s' % (' '.join(cmd), e))
+            repos.log.debug('#### In sVn_client.py: error with cmd "%s": %s' % (' '.join(cmd), e))
         ret = u''
     return to_unicode(ret, 'utf-8')
 

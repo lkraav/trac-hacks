@@ -74,7 +74,7 @@ def _call_svn_to_unicode(cmd, repos=None):
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
         if repos:
-            repos.log.info('#### In svn_cli.py: error with cmd "%s":\n    %s' % (' '.join(cmd), e))
+            repos.log.debug('#### In svn_cli.py: error with cmd "%s":\n    %s' % (' '.join(cmd), e))
         ret = u''
     return to_unicode(ret, 'utf-8')
 
