@@ -40,8 +40,8 @@ class TestGetChangesetInfo(unittest.TestCase):
 
         rev = 11177
         change_tuple = get_changeset_info(self.repos, rev)
-        self.assertEqual(2, len(change_tuple))  # [path_entry 1, path_Entry 2, ...], [copy 1, copy 2, ...]
-        changes, copied = change_tuple
+        self.assertEqual(3, len(change_tuple))  # [path_entry 1, path_Entry 2, ...], [copy 1, copy 2, ...]
+        changes, copied, deleted = change_tuple
         self.assertEqual(13, len(changes))
         for change in changes:
             attrs, path = change
@@ -62,8 +62,8 @@ class TestGetChangesetInfo(unittest.TestCase):
 
         rev = 18045
         change_tuple = get_changeset_info(self.repos, rev)
-        self.assertEqual(2, len(change_tuple))  # [path_entry 1, path_Entry 2, ...], [copy 1, copy 2, ...]
-        changes, copied = change_tuple
+        self.assertEqual(3, len(change_tuple))  # [path_entry 1, path_Entry 2, ...], [copy 1, copy 2, ...]
+        changes, copied, deleted = change_tuple
         self.assertEqual(6,len(changes))
         for change in changes:
             attrs, path = change

@@ -69,24 +69,35 @@ class TestSvnCliChangeset(unittest.TestCase):
         # and svn shows one ADD for the destination and one DELETE for the source of every move.
         self.assertEqual(11, len(changes))
         for idx, change in enumerate(changes):
-            print('## %s' % repr(change))
             self.assertSequenceEqual(expected[idx], change)
 
     def test_changeset_get_changes_18045(self):
 
-        # This changeset is interesting because it contains some svn-copy action and
-        # '/simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/smp_model.py' has
-        # action='R' (replace).
+        # This changeset is interesting because it contains some svn-copy action and some
+        # files (e.g. '/simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/smp_model.py')
+        # have action='R' (replace).
 
+        # '/simplemultiprojectplugin/tags/smp-0.7.3/setup.cfg' is esp. interesting because this file
+        # was edited in the working copy of 'trunk'. After that the working copy was tagged as
+        # smp-0.7.3 (which is svn-copy in reality).
+        # In the 'svn log' the file shows up as just edited but not as copied. An older
+        # version does not exist in the new path. So the Trac diff must use the old path in trunk
+        # which means we need some special handling..
+        expected = [(u'/simplemultiprojectplugin/tags/smp-0.7.3', 'dir', 'copy', u'/simplemultiprojectplugin/trunk', 18042),
+                    (u'/simplemultiprojectplugin/tags/smp-0.7.3/setup.cfg', 'file', 'edit', u'/simplemultiprojectplugin/trunk/setup.cfg', 17989),
+                    (u'/simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/query.py', 'file', 'add', None, -1),
+                    (u'/simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/smp_model.py', 'file', 'copy', u'/simplemultiprojectplugin/trunk/simplemultiproject/smp_model.py', 18044),
+                    (u'/simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/tests/test_environment_setup.py', 'file', 'copy', u'/simplemultiprojectplugin/trunk/simplemultiproject/tests/test_environment_setup.py', 18043),
+                    (u'/simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/tests/test_smpproject.py', 'file', 'copy', u'/simplemultiprojectplugin/trunk/simplemultiproject/tests/test_smpproject.py', 18044)
+                    ]
         rev = 18045
         changeset = SubversionCliChangeset(self.repos, rev)
         self.assertIsInstance(changeset, SubversionCliChangeset)
         changes = list(changeset.get_changes())
         self.assertEqual(6, len(changes))
-        self.assertTrue(False)
-        # Need to fix this changeset handling for setup.cfg. The file was svn-copied and then edited
-        # at the new location. Then checked in.
-        # once
+        for idx, change in enumerate(changes):
+            self.assertSequenceEqual(expected[idx], change)
+
 
 if __name__ == '__main__':
     unittest.main()

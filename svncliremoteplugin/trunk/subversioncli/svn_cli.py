@@ -871,6 +871,7 @@ class SubversionCliChangeset(Changeset):
         # ({'action': u'A', 'text-mods': u'true', 'kind': u'file', 'copyfrom-rev': u'11170',
         #   'copyfrom-path': u'/.../.../.../tests/web_ui.py'},
         #   u'/customfieldadminplugin/0.11/customfieldadmin/tests/admin.py')
+        copied_dirs = {}
         for item in changes:
             attrs, path = item
             kind = Node.FILE if attrs['kind'] == u'file' else Node.DIRECTORY
@@ -881,7 +882,6 @@ class SubversionCliChangeset(Changeset):
 
             base_path = path
             base_rev = prev_repo_rev
-            self.log.info(' +++ Loop %s' % repr((path, kind, attrs)))
             if change_type in (Changeset.ADD):
                 base_path = None
                 base_rev = -1
@@ -893,6 +893,9 @@ class SubversionCliChangeset(Changeset):
                         change = Changeset.COPY
                     base_path = attrs['copyfrom-path']
                     base_rev = int(attrs['copyfrom-rev'])
+                    # We need the following info for copied files from a modified working copy
+                    if attrs['kind'] == 'dir':
+                        copied_dirs[path] = attrs['copyfrom-path']  # key: destination, value: source
             elif change_type == 'replace':
                 if attrs['copyfrom-path'] in deleted:
                     change = Changeset.MOVE
@@ -908,24 +911,27 @@ class SubversionCliChangeset(Changeset):
             elif change_type == Changeset.EDIT:
                 base_rev = _svn_changerev(self.repos, prev_repo_rev, path)
                 if base_rev == None:
-                    base_rev = get_change_rev(self.repos, self.rev, path)
-                # if path == u'/simplemultiprojectplugin/tags/smp-0.7.3/setup.cfg':
-                #     base_rev = 17989
-                #     base_path = '/simplemultiprojectplugin/trunk/setup.cfg'
-                # if attrs['action'] == 'M':
-                    # This uses 'svn info ...'
-                    # base_rev = _svn_changerev(self.repos, prev_repo_rev, path)
-                    # We need the last changed revision for the edited files
-                # else:
-                    # If the file is from an ADD or REPLACE we need to use another
-                    # method (svn log) otherwise the revision isn't found
-                    #base_rev = get_change_rev(self.repos, self.rev, path)
+                    # We have some special file here. There is no older version in
+                    # that path but the log doesn't show it a s copied/moved.
+                    # It may have been edited in the working copy and afterwards the
+                    # working copy was svn-copied (e.g. tagged.). This way we have
+                    # a copied destination directory with an edited file,
+                    #
+                    # See changeset 18045 for an example
+                    #
+                    for key, val in copied_dirs.iteritems():
+                        # key: destination dir path, val: source dir path
+                        if path.startswith(key):
+                            base_path = base_path.replace(key, val)
+                            base_rev = _svn_changerev(self.repos, prev_repo_rev, base_path)
+                            break
+                    else:
+                        base_rev = get_change_rev(self.repos, self.rev, path)
             else:
                 self.log.info('## Changeset get_changes() self.rev: %s, prev: %s, %s ' %
                               (self.rev, prev_repo_rev, changes))
                 self.log.info('  ## Unknown change for %s in rev %s' % (path, base_rev))
                 path += u'UNKNOWN_CHANGE_FIX_NEEDED'
-            self.log.info(' ---> Returnsing %s' % repr((path, kind, change, base_path, base_rev)))
             yield path, kind, change, base_path, base_rev
 
 
