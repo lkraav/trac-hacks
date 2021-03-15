@@ -140,6 +140,30 @@ def get_change_rev(repos, rev, path):
         raise TracError("Can't get change revision for '%s' with rev '%s'" % (path, rev))
 
 
+def get_blame_annotations(repos, rev, path):
+    """Get data for a the given changeset rev to be displayed on the
+    changeset page.
+
+    :param repos: Repository object
+    :param rev: changeset revision
+    :return: list
+    """
+    full_path = _create_path(repos.repo_url, path)
+    cmd = ['svn', '--non-interactive', 'blame',
+           '-r', '%s' % (rev,),
+           _add_rev(full_path, rev)]
+           # repos.repo_url]
+    ret = call_svn_to_unicode(cmd, repos)
+
+    res =[]
+    if ret:
+        for line in ret.split('\n'):
+            parts = [x.strip() for x in line.split()]
+            if parts:
+                res.append(int(parts[0]))
+    return res
+
+
 class ChangesHandler(ContentHandler):
     """Parse changes for a given revision or range of revisions.
     The xml data is externally provided.
@@ -254,8 +278,6 @@ def get_history(repos, rev, path, limit=None):
             path_entries, copied = entry
             for attrs, path_ in path_entries:
                 path_ = path_[1:]  # returned path has a leading '/'
-                # If the path was copied we already inserted a Changeset.COPY entry into the history list
-                # with the revision and path of this log entry.
                 if path_ == cur_path or is_copied_dir(attrs):
                     if attrs['action'] == 'M':
                         history.append((path_, attrs['rev'], Changeset.EDIT))

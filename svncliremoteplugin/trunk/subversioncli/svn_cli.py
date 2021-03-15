@@ -17,7 +17,7 @@ from datetime import datetime
 from io import BytesIO, StringIO
 from pkg_resources import parse_version
 
-from svn_client import get_changeset_info, get_file_content, get_history
+from svn_client import get_blame_annotations, get_changeset_info, get_file_content, get_history
 from datetime_z import parse_datetime
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
@@ -787,7 +787,9 @@ class SubversionCliNode(Node):
         for that node.
         Only expected to work on (text) FILE nodes, of course.
         """
-        self.log.info('###### Node ## In get_annotation NOT IMPLEMENTED ######')
+        if self.isdir:
+            return []
+        return get_blame_annotations(self.repos, self.rev, self.path)
 
     def get_properties(self):
         """Returns the properties (meta-data) of the node, as a dictionary.
