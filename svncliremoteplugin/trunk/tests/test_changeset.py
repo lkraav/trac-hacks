@@ -65,15 +65,28 @@ class TestSvnCliChangeset(unittest.TestCase):
         changeset = SubversionCliChangeset(self.repos, rev)
         self.assertIsInstance(changeset, SubversionCliChangeset)
         changes = list(changeset.get_changes())
+        # get_changeset_info() for this changeset returns 13. But we have 2 * svn-move in the changeset
+        # and svn shows one ADD for the destination and one DELETE for the source of every move.
+        self.assertEqual(11, len(changes))
         for idx, change in enumerate(changes):
+            print('## %s' % repr(change))
             self.assertSequenceEqual(expected[idx], change)
 
     def test_changeset_get_changes_18045(self):
+
+        # This changeset is interesting because it contains some svn-copy action and
+        # '/simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/smp_model.py' has
+        # action='R' (replace).
+
         rev = 18045
         changeset = SubversionCliChangeset(self.repos, rev)
         self.assertIsInstance(changeset, SubversionCliChangeset)
         changes = list(changeset.get_changes())
-        self.assertTrue(False)  # Need to fix this
+        self.assertEqual(6, len(changes))
+        self.assertTrue(False)
+        # Need to fix this changeset handling for setup.cfg. The file was svn-copied and then edited
+        # at the new location. Then checked in.
+        # once
 
 if __name__ == '__main__':
     unittest.main()

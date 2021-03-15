@@ -68,7 +68,7 @@ def call_svn_to_unicode(cmd, repos=None):
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
         if repos:
-            repos.log.info('#### svn error with cmd "%s": %s' % (cmd[1], e))
+            repos.log.info('#### In sVn_client.py: error with cmd "%s": %s' % (' '.join(cmd), e))
         ret = u''
     return to_unicode(ret, 'utf-8')
 
@@ -178,6 +178,7 @@ class ChangesHandler(ContentHandler):
         self.path_entries = []
         self.list_of_path_entries = []
         self.copied = []
+        self.deleted = []
         self.rev = 0
         ContentHandler.__init__(self)
 
@@ -200,12 +201,14 @@ class ChangesHandler(ContentHandler):
     # Called when an elements ends
     def endElement(self, tag):
         if tag == "logentry":
-            self.list_of_path_entries.append((self.path_entries, self.copied))
+            self.list_of_path_entries.append((self.path_entries, self.copied, self.deleted))
             self.copied = []
             self.path_entries = []
         elif tag == 'path':
             if self.path_attrs.get('copyfrom-path'):
                 self.copied.append(self.path_attrs.get('copyfrom-path', ''))
+            if self.path_attrs.get('action') == 'D':
+                self.deleted.append(self.path)
             self.path_entries.append((self.path_attrs, self.path))
             self.clear()
         self.current_tag = ''
@@ -275,7 +278,7 @@ def get_history(repos, rev, path, limit=None):
         # ([({attrs}, path1), (...)], [copyfrom-path 1, copyfrom-path 2])
         logentries = handler.get_path_entries()
         for entry in logentries:  # This contains all the information for one revision
-            path_entries, copied = entry
+            path_entries, copied, deleted = entry
             for attrs, path_ in path_entries:
                 path_ = path_[1:]  # returned path has a leading '/'
                 if path_ == cur_path or is_copied_dir(attrs):

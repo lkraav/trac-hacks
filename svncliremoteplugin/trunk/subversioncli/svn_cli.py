@@ -17,7 +17,7 @@ from datetime import datetime
 from io import BytesIO, StringIO
 from pkg_resources import parse_version
 
-from svn_client import get_blame_annotations, get_changeset_info, get_file_content, get_history
+from svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_file_content, get_history
 from datetime_z import parse_datetime
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
@@ -74,7 +74,7 @@ def _call_svn_to_unicode(cmd, repos=None):
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
         if repos:
-            repos.log.info('#### svn error with cmd "%s": %s' % (cmd[1], e))
+            repos.log.info('#### In svn_cli.py: error with cmd "%s":\n    %s' % (' '.join(cmd), e))
         ret = u''
     return to_unicode(ret, 'utf-8')
 
@@ -860,8 +860,9 @@ class SubversionCliChangeset(Changeset):
         # We intentionally crash here when seeing them
         change_map = {'A': Changeset.ADD,
                       'D': Changeset.DELETE,
-                      'M': Changeset.EDIT}
-        changes, copied = get_changeset_info(self.repos, self.rev)
+                      'M': Changeset.EDIT,
+                      'R': 'replace'}
+        changes, copied, deleted = get_changeset_info(self.repos, self.rev)
         # copied: ['copy/from/path/file', 'copy/from/file2', ...]
         # changes:
         # ({'action': u'M', 'text-mods': u'true', 'kind': u'file', 'copyfrom-rev': '',
@@ -880,25 +881,51 @@ class SubversionCliChangeset(Changeset):
 
             base_path = path
             base_rev = prev_repo_rev
-            if change_type == Changeset.ADD:
+            self.log.info(' +++ Loop %s' % repr((path, kind, attrs)))
+            if change_type in (Changeset.ADD):
                 base_path = None
                 base_rev = -1
                 if attrs['copyfrom-path']:
-                    change = Changeset.MOVE
+                    # This is either a svn-move or svn-copy
+                    if attrs['copyfrom-path'] in deleted:
+                        change = Changeset.MOVE
+                    else:
+                        change = Changeset.COPY
                     base_path = attrs['copyfrom-path']
                     base_rev = int(attrs['copyfrom-rev'])
+            elif change_type == 'replace':
+                if attrs['copyfrom-path'] in deleted:
+                    change = Changeset.MOVE
+                else:
+                    change = Changeset.COPY
+                base_path = attrs['copyfrom-path']
+                base_rev = int(attrs['copyfrom-rev'])
             elif change_type == Changeset.DELETE:
                 if path in copied:
+                    # This is a source path for a svn-move operation
                     continue
                 path = 'deleted'
             elif change_type == Changeset.EDIT:
-                # We need the last changed revision for the edited files
                 base_rev = _svn_changerev(self.repos, prev_repo_rev, path)
+                if base_rev == None:
+                    base_rev = get_change_rev(self.repos, self.rev, path)
+                # if path == u'/simplemultiprojectplugin/tags/smp-0.7.3/setup.cfg':
+                #     base_rev = 17989
+                #     base_path = '/simplemultiprojectplugin/trunk/setup.cfg'
+                # if attrs['action'] == 'M':
+                    # This uses 'svn info ...'
+                    # base_rev = _svn_changerev(self.repos, prev_repo_rev, path)
+                    # We need the last changed revision for the edited files
+                # else:
+                    # If the file is from an ADD or REPLACE we need to use another
+                    # method (svn log) otherwise the revision isn't found
+                    #base_rev = get_change_rev(self.repos, self.rev, path)
             else:
                 self.log.info('## Changeset get_changes() self.rev: %s, prev: %s, %s ' %
                               (self.rev, prev_repo_rev, changes))
-                self.log.info('  ## Unknown change')
+                self.log.info('  ## Unknown change for %s in rev %s' % (path, base_rev))
                 path += u'UNKNOWN_CHANGE_FIX_NEEDED'
+            self.log.info(' ---> Returnsing %s' % repr((path, kind, change, base_path, base_rev)))
             yield path, kind, change, base_path, base_rev
 
 
