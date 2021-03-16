@@ -14,10 +14,14 @@ from setuptools import find_packages, setup
 extra = {}
 
 try:
-    import babel
+    from trac.util.dist import get_l10n_cmdclass
 except ImportError:
-    babel = None
+    cmdclass = None
 else:
+    cmdclass = get_l10n_cmdclass()
+
+if cmdclass:
+    extra['cmdclass'] = cmdclass
     extractors = [
         ('**.py', 'python', None),
         ('**/templates/**.html', 'genshi', None),
