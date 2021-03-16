@@ -24,7 +24,7 @@ class TestSvnCliChangeset(unittest.TestCase):
         print(msg)
 
     def setUp(self):
-        self.log = Mock(info=self._log)
+        self.log = Mock(info=self._log, error=self._log, debug=self._log)
         self.repos = Mock(repo_url=url, log=self.log)
         parms = {'name': 'Test-Repo', 'id': 1}
         if url.startswith('/http'):

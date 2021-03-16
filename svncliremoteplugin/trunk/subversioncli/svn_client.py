@@ -165,6 +165,82 @@ def get_blame_annotations(repos, rev, path):
     return res
 
 
+class CopyHandler(ContentHandler):
+    """Parse changes for a given revision or range of revisions.
+    The xml data is externally provided.
+
+    The input data is from 'svn log -r XXX -v -q --xml ...'
+    or 'svn log -r XXX:YYY -v -q --xml ...'
+    """
+    attrs = ('copyfrom-rev', 'copyfrom-path')
+    def __init__(self):
+        self.clear()
+        self.current_tag = ''
+        self.path_entries = []
+        self.dict_of_path_entries = {}
+        self.copied = []
+        self.rev = 0
+        ContentHandler.__init__(self)
+
+    def clear(self):
+        self.path = ''
+        self.path_attrs = {}
+
+    def get_copy_path_entries(self):
+        return self.dict_of_path_entries
+
+    # Called when an element starts
+    def startElement(self, tag, attributes):
+        self.current_tag = tag
+        if tag == 'logentry':
+            self.rev = int(attributes["revision"])
+        elif tag == 'path':
+            self.path_attrs = {item: attributes.get(item, '') for item in self.attrs}
+            self.path_attrs['rev'] = self.rev
+
+    # Called when an elements ends
+    def endElement(self, tag):
+        if tag == "logentry":
+            for attrs, path in self.path_entries:
+                from_path = attrs.get('copyfrom-path')
+                if from_path:
+                    self.dict_of_path_entries[path] = from_path
+            self.path_entries = []
+        elif tag == 'path':
+            self.path_entries.append((self.path_attrs, self.path))
+            self.clear()
+        self.current_tag = ''
+
+    # Called when a character is read
+    def characters(self, content):
+        if self.current_tag == "path":
+            self.path += content
+
+
+def get_copy_info(repos, start_rev):
+    """Get data for a the given changeset rev to be displayed on the
+    changeset page.
+
+    :param repos: Repository object
+    :param rev: changeset revision
+    :return: a dict {current_path: copyfrom_path}
+    """
+    # svn log -r 11177 -v -q --xml
+    cmd = ['svn', '--non-interactive', 'log',
+           '-r', '%s:1' % (start_rev,),
+           '-v', '-q', '--xml',
+           repos.repo_url]
+
+    ret = call_svn_to_unicode(cmd, repos)
+    if ret:
+        handler = CopyHandler()  # This parses a log with one or more logentries
+        parseString(ret.encode('utf-8'), handler)
+        res = handler.get_copy_path_entries()
+        return res
+    else:
+        return {}
+
+
 class ChangesHandler(ContentHandler):
     """Parse changes for a given revision or range of revisions.
     The xml data is externally provided.
@@ -197,6 +273,7 @@ class ChangesHandler(ContentHandler):
             self.rev = int(attributes["revision"])
         elif tag == 'path':
             self.path_attrs = {item: attributes.get(item, '') for item in self.attrs}
+            # self.path_attrs = {k: v for k, v in attributes.items()}
             self.path_attrs['rev'] = self.rev
 
     # Called when an elements ends
@@ -210,6 +287,7 @@ class ChangesHandler(ContentHandler):
                 self.copied.append(self.path_attrs.get('copyfrom-path', ''))
             if self.path_attrs.get('action') == 'D':
                 self.deleted.append(self.path)
+            # if self.path.startswith('/htgroupsplugin'):
             self.path_entries.append((self.path_attrs, self.path))
             self.clear()
         self.current_tag = ''

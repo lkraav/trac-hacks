@@ -36,6 +36,38 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertFalse(node.isdir)
         self.assertEqual(path, node.path)
 
+    def test_get_file_node_size_0(self):
+        """Test getting a file node"""
+        # The file has a file size of 0.
+        path = 'backlinksmacro/trunk/backlinks/__init__.py'
+        rev = 15133
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        self.assertEqual(15133, node.created_rev)
+        self.assertTrue(node.isfile)
+        self.assertFalse(node.isdir)
+        self.assertEqual(path, node.path)
+        self.assertEqual(0, node.size)
+
+    def test_get_file_node_copied(self):
+        """Test getting a special file node."""
+        # This node is a file in a branch at rev 399. The file wasn't edited after the branching.
+        # the file doesn't exist anymore in the tree so it can't be found with
+        # ' svn list -r 399 path/in/branch/init.py'
+        # The node can't be created, because it's impossible to ge the file size in the branch. (and
+        # probably the content, too)
+        # See changeset 15264 which triggers the problem
+        # TODO: this test case does fail atm
+        path = 'htgroupsplugin/trunk/htgroups/__init__.py'
+        rev = 399
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        self.assertEqual(399, node.created_rev)
+        self.assertTrue(node.isfile)
+        self.assertFalse(node.isdir)
+        self.assertEqual(path, node.path)
+        self.assertEqual(0, node.size)
+
     def test_get_dir_node(self):
         """Test getting a directory node"""
         path = 'customfieldadminplugin/0.11/customfieldadmin/'

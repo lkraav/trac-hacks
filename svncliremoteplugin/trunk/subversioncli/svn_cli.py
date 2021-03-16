@@ -17,7 +17,8 @@ from datetime import datetime
 from io import BytesIO, StringIO
 from pkg_resources import parse_version
 
-from svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_file_content, get_history
+from svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_copy_info,\
+    get_file_content, get_history
 from datetime_z import parse_datetime
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
@@ -69,7 +70,7 @@ def _call_svn_to_unicode(cmd, repos=None):
 
     Note: an error may occur when svn can't find a path or revision.
     """
-    # print('  ## running %s' % (cmd,))
+    # print('  ## In svn_cli.py: running %s' % (' '.join(cmd),))
     try:
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
@@ -480,13 +481,20 @@ class SubversionRepositoryCli(Repository):
         revision is returned, otherwise the Node corresponding to the youngest
         revision is returned.
         """
+        # self.log.info('  ## In get_node()')
         path = path or ''
 
         if path and path != '/' and path[-1] == '/':
             path = path[:-1]
 
         rev = self.normalize_rev(rev) or self.youngest_rev
-        node = SubversionCliNode(self, path, rev, self.log)
+        try:
+            node = SubversionCliNode(self, path, rev, self.log)
+        except NoSuchNode:
+            self.log.debug('###########################################')
+            self.log.debug('No Node for %s %s' % (path, rev))
+            self.log.debug('###########################################')
+            return None
         return node
 
     def get_oldest_rev(self):
@@ -593,8 +601,8 @@ class SubversionRepositoryCli(Repository):
         The old_node is assumed to be None when the change is an ADD,
         the new_node is assumed to be None when the change is a DELETE.
         """
-        # self.log.info('## Repository ## In get_changes old: %s %s, new: %s %s' %
-        #               (old_path,old_rev, new_path, new_rev))
+        self.log.info('## Repository ## In get_changes old: %s %s, new: %s %s' %
+                      (old_path,old_rev, new_path, new_rev))
         old_rev = self.normalize_rev(old_rev)
         new_rev = self.normalize_rev(new_rev)
 
@@ -616,8 +624,7 @@ class SubversionRepositoryCli(Repository):
         yield (old_node, new_node, Node.FILE, Changeset.EDIT)
 
 
-class SubversionCliNode(Node):
-
+class SubversionCliEmptyNode(Node):
     def __init__(self, repos, path, rev, log, file_info=None):
 
         self.log = log
@@ -626,43 +633,57 @@ class SubversionCliNode(Node):
         self.rev = rev
         self.repos = repos
         self.path = path
+        self.size = 0
+        self.kind = Node.FILE
 
-        # self.log.info('## Node __init__() with %s %s' % (path, rev))
+        Node.__init__(self, repos, path, rev, self.kind)
+
+        def get_content_length(self):
+            return self.size
+
+
+class SubversionCliNode(Node):
+
+    def __init__(self, repos, path, rev, log, file_info=None):
+        def set_node_data_from_file_info():
+            self.created_rev = file_info[1]
+            if file_info[0] == None:
+                self.size = None
+                self.kind = Node.DIRECTORY
+            else:
+                self.size = file_info[0]
+                self.kind = Node.FILE
+
+        self.log = log
+        # This is used for creating the correct links on the changeset page
+        self.created_path = path
+        self.rev = rev
+        self.repos = repos
+        self.path = path
+        self.size = None
+
+        # self.log.info('## Node __init__(%s, %s, ..., %s' % (path, rev, file_info))
         if file_info:
             # We are coming from self.get_entries() with the following information:
             #
             # file_info[0]: size for file, None for directories
             # file_info[1]: change revision
             self.info = None
-            self.created_rev = file_info[1]
-            if file_info[0]:
-                self.size = file_info[0]
-                self.kind = Node.FILE
-            else:
-                # For directories the size entry is 'None'
-                self.size = None
-                self.kind = Node.DIRECTORY
+            set_node_data_from_file_info()
         else:
             if path == '/':
                 self.kind = Node.DIRECTORY
                 self.created_rev = 1
             else:
-                # self.log.info('####### Calling self._list_path() for rev %s, %s' % (rev, path))
-                # f_info[0]: size for file, None for directories
-                # f_info[1]: change revision
+                self.log.info('  ## Calling self._list_path() for rev %s, %s, %s' % (rev, path, file_info))
+                # file_info[0]: size for file, None for directories
+                # file_info[1]: change revision
                 try:
-                    path_, f_info = self._list_path(True)[0]
+                    path_, file_info = self._list_path(True)[0]
                 except IndexError:
                     raise NoSuchNode(path, rev)
-                self.created_rev = f_info[1]
-                if f_info[0]:
-                    self.size = f_info[0]
-                    self.kind = Node.FILE
-                else:
-                    # For directories the size entry is 'None'
-                    self.size = None
-                    self.kind = Node.DIRECTORY
-                # self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s' %
+                set_node_data_from_file_info()
+                # self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s\n' %
                 #                (self.size, self.created_rev, self.kind))
         # self.log.info('### Node init: %s %s' % (self.size, file_info))
 
@@ -721,7 +742,23 @@ class SubversionCliNode(Node):
 
         ret = _call_svn_to_unicode(cmd)
         if not ret:
-            return []
+            print('  ++ svn \'list\' failed WITHOUT ../path@rev. Now trying with @rev\n')
+            cmd = cmd[:-1] + [_add_rev(cmd[-1], self.rev)]
+            ret = _call_svn_to_unicode(cmd)
+            # Slow workaround for problem with some changesets notavly 15264
+            if not ret:
+                copied = get_copy_info(self.repos, self.repos.youngest_rev)
+                print('    Failed with @rev. now trying with copy data...')
+                for item, val in copied.items():
+                    if self.path.startswith(item):
+                        path = self.path.replace(item, val)
+                        path = _add_rev(_create_path(self.repos.repo_url, path), self.rev)
+                        cmd = cmd[:-1] + [path]
+                        ret = _call_svn_to_unicode(cmd)
+                        if not ret:
+                            print('    ++++++ svn \'list\' failed again. Giving up... ++++++\n')
+                            return []
+                        break
 
         res = []
         changerev, name, size = 0, -1, -5
@@ -804,7 +841,7 @@ class SubversionCliNode(Node):
 
         Will be `None` for a directory.
         """
-        # self.log.info('## Node ## In get_content_length: %s' % self.size)
+        # self.log.info('## Node ## In get_content_length for %s rev %s, size %s' % (self.path, self.rev, self.size))
         if self.isfile:
             return self.size
         else:
