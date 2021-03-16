@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = "TracSqlQueryMacro",
-    version = "0.2",
+    version = "0.3",
     packages = ["sqlquery"],
     package_data = {"sqlquery": []},
 
@@ -21,5 +21,4 @@ setup(
             "sqlquery.macro = sqlquery.macro"
         ]
     },
-    install_requires = ['pymills']
 )
