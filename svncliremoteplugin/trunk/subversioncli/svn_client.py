@@ -214,13 +214,14 @@ def get_properties_list(repos, rev, path):
 
     :param repos:
     :param rev:
-    :param path:
+    :param path: full path into the repo including file:// or http://
     :return:
     """
     cmd = ['svn', '--non-interactive', 'proplist',
            '-r', str(rev),
            '-v', '--xml',
-           _create_path(repos.repo_url, path)]
+           path]
+           # _create_path(repos.repo_url, path)]
 
     ret = call_svn_to_unicode(cmd, repos)
     if ret:
@@ -390,7 +391,7 @@ def get_changeset_info(repos, rev):
         handler = ChangesHandler()  # This parses a log with one or more logentries
         parseString(ret.encode('utf-8'), handler)
         # path, copied, deleted = handler.get_path_entries()[0]
-        # return  path[:20], copied, deleted
+        # return  path[190:205], copied, deleted
         return handler.get_path_entries()[0]  # This is a list of tuples but we only requested one log here
     else:
         return [], None

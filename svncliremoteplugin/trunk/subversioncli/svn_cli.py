@@ -671,14 +671,17 @@ class SubversionCliNode(Node):
         self.repos = repos
         self.path = path
         self.size = None
+        # This path will be filled when the file size is queried. It is the correct path into the
+        # repo after accounting for svn-copies and deletions of the original path during the lifetime
+        # of the svn tree..
+        self.query_path = ''
 
-        # self.log.info('## Node __init__(%s, %s, ..., %s' % (path, rev, file_info))
+        # self.log.info('## Node __init__(%s, %s, ..., %s)' % (path, rev, file_info))
         if file_info:
             # We are coming from self.get_entries() with the following information:
             #
             # file_info[0]: size for file, None for directories
             # file_info[1]: change revision
-            self.info = None
             set_node_data_from_file_info()
         else:
             if path == '/':
@@ -823,16 +826,18 @@ class SubversionCliNode(Node):
         """
         # TODO: there is the same function in svn_client. Use that one.
         full_path = _create_path(self.repos.repo_url, self.path)
+        self.query_path = _add_rev(full_path, self.rev)
         cmd = ['svn', '--non-interactive',
                'list', '-v',
                '-r', str(self.rev),
                # _create_path(self.repos.repo_url, self.path)]
                # We need to add the revision to the path. Otherwise any path copied, moved or removed
                # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-               _add_rev(full_path, self.rev)]
+               self.query_path]
 
         ret = _call_svn_to_unicode(cmd)
         if not ret:
+            self.query_path = full_path
             self.log.info('  ++ svn \'list\' failed WITH ../path@rev. Now trying without @rev\n')
             cmd = cmd[:-1] + [full_path]
             ret = _call_svn_to_unicode(cmd)
@@ -844,10 +849,12 @@ class SubversionCliNode(Node):
                     if self.path.startswith(item):
                         path = self.path.replace(item, val)
                         path = _add_rev(_create_path(self.repos.repo_url, path), self.rev)
+                        self.query_path = path
                         cmd = cmd[:-1] + [path]
                         ret = _call_svn_to_unicode(cmd)
                         if not ret:
                             self.log.info('    ++++++ svn \'list\' failed again. Giving up... ++++++\n')
+                            self.query_path = ''
                             return []
                         break
 
@@ -911,7 +918,7 @@ class SubversionCliNode(Node):
 
         The set of properties depends on the version control system.
         """
-        return get_properties_list(self.repos, self.rev, self.path)
+        return get_properties_list(self.repos, self.rev, self.query_path or _create_path(self.rev.repo_url, self.path))
 
     def get_content_length(self):
         """The length in bytes of the content.
