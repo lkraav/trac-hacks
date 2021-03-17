@@ -98,6 +98,16 @@ class TestSvnCliChangeset(unittest.TestCase):
         for idx, change in enumerate(changes):
             self.assertSequenceEqual(expected[idx], change)
 
+    def test_changeset_get_changes_15264(self):
+        expected = []
+        rev = 15264
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        changes = list(changeset.get_changes())
+        for idx, change in enumerate(changes):
+            pass
+
+
 
 if __name__ == '__main__':
     unittest.main()

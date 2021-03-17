@@ -22,6 +22,7 @@ from svn_client import get_blame_annotations, get_change_rev, get_changeset_info
 from datetime_z import parse_datetime
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
+from trac.env import ISystemInfoProvider
 from trac.util.datefmt import to_datetime, utc
 from trac.util.text import exception_to_unicode, to_unicode, to_utf8
 from trac.util.translation import _
@@ -267,7 +268,7 @@ def _svn_rev_info(repos, rev):
 
 
 class SubversionConnector(Component):
-    implements(IRepositoryConnector)
+    implements(IRepositoryConnector, ISystemInfoProvider)
 
     eol_style = ChoiceOption(
         'svn', 'eol_style', ['native', 'LF', 'CRLF', 'CR'], doc=
@@ -310,6 +311,15 @@ class SubversionConnector(Component):
         except (TracError, AttributeError, TypeError):
             raise InvalidRepository("Repository for '%s' can't be loaded." % dir)
         return repos
+
+    # ISystemInfoProvider method
+
+    def get_system_info(self):
+        """Yield a sequence of `(name, version)` tuples describing the
+        name and version information of external packages used by a
+        component.
+        """
+        yield 'Subversion', self._version + u' (svn client)'
 
 
 class SubversionRepositoryCli(Repository):
