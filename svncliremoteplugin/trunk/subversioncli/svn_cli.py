@@ -18,7 +18,7 @@ from io import BytesIO, StringIO
 from pkg_resources import parse_version
 
 from svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_copy_info,\
-    get_file_content, get_history
+    get_file_content, get_history, get_properties_list
 from datetime_z import parse_datetime
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
@@ -675,7 +675,7 @@ class SubversionCliNode(Node):
                 self.kind = Node.DIRECTORY
                 self.created_rev = 1
             else:
-                self.log.info('  ## Calling self.get_file_size_rev(), %s, %s' % (rev, path))
+                # self.log.info('  ## Calling self.get_file_size_rev(), %s, %s' % (rev, path))
                 # file_info[0]: size for file, None for directories
                 # file_info[1]: change revision
                 try:
@@ -901,8 +901,7 @@ class SubversionCliNode(Node):
 
         The set of properties depends on the version control system.
         """
-        self.log.debug('###### Node ## In get_properties NOT IMPLEMENTED ######')
-        return {}
+        return get_properties_list(self.repos, self.rev, self.path)
 
     def get_content_length(self):
         """The length in bytes of the content.

@@ -165,8 +165,79 @@ def get_blame_annotations(repos, rev, path):
     return res
 
 
+class PropertiesHandler(ContentHandler):
+    """Get a dict of all copy operations within the repo.
+
+    This is used to find files for a given revision which were
+    later copied and then removed in a younger revisions.
+
+    Parse log data for a given revision or range of revisions.
+    The xml data is externally provided.
+
+    The input data is from 'svn log -r XXX -v -q --xml ...'
+    or 'svn log -r XXX:YYY -v -q --xml ...'
+    """
+
+    def __init__(self):
+        self.property = ''
+        self.current_tag = ''
+        self.properties = {}
+        ContentHandler.__init__(self)
+
+    def clear(self):
+        self.property = ''
+
+    def get_properties(self):
+        return self.properties
+
+    # Called when an element starts
+    def startElement(self, tag, attributes):
+        self.current_tag = tag
+        if tag == 'property':
+            self.propname = attributes['name']
+
+    # Called when an elements ends
+    def endElement(self, tag):
+        if tag == 'property':
+            self.properties[self.propname] = self.property
+            self.clear()
+        self.current_tag = ''
+
+    # Called when a character is read
+    def characters(self, content):
+        if self.current_tag == "property":
+            self.property += content
+
+
+def get_properties_list(repos, rev, path):
+    """
+
+    :param repos:
+    :param rev:
+    :param path:
+    :return:
+    """
+    cmd = ['svn', '--non-interactive', 'proplist',
+           '-r', str(rev),
+           '-v', '--xml',
+           _create_path(repos.repo_url, path)]
+
+    ret = call_svn_to_unicode(cmd, repos)
+    if ret:
+        handler = PropertiesHandler()  # This parses a log with one or more logentries
+        parseString(ret.encode('utf-8'), handler)
+        return handler.get_properties()
+    else:
+        return {}
+
+
 class CopyHandler(ContentHandler):
-    """Parse changes for a given revision or range of revisions.
+    """Get a dict of all copy operations within the repo.
+
+    This is used to find files for a given revision which were
+    later copied and then removed in a younger revisions.
+
+    Parse log data for a given revision or range of revisions.
     The xml data is externally provided.
 
     The input data is from 'svn log -r XXX -v -q --xml ...'
@@ -178,7 +249,6 @@ class CopyHandler(ContentHandler):
         self.current_tag = ''
         self.path_entries = []
         self.dict_of_path_entries = {}
-        self.copied = []
         self.rev = 0
         ContentHandler.__init__(self)
 
@@ -319,6 +389,8 @@ def get_changeset_info(repos, rev):
     if ret:
         handler = ChangesHandler()  # This parses a log with one or more logentries
         parseString(ret.encode('utf-8'), handler)
+        # path, copied, deleted = handler.get_path_entries()[0]
+        # return  path[:20], copied, deleted
         return handler.get_path_entries()[0]  # This is a list of tuples but we only requested one log here
     else:
         return [], None
