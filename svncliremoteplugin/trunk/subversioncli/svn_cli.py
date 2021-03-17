@@ -675,14 +675,19 @@ class SubversionCliNode(Node):
                 self.kind = Node.DIRECTORY
                 self.created_rev = 1
             else:
-                self.log.info('  ## Calling self._list_path() for rev %s, %s, %s' % (rev, path, file_info))
+                self.log.info('  ## Calling self.get_file_size_rev(), %s, %s' % (rev, path))
                 # file_info[0]: size for file, None for directories
                 # file_info[1]: change revision
                 try:
-                    path_, file_info = self._list_path(True)[0]
+                    # path_, file_info = self._list_path(True)[0]
+                    self.size, self.created_rev = self.get_file_size_rev()
                 except IndexError:
                     raise NoSuchNode(path, rev)
-                set_node_data_from_file_info()
+                # set_node_data_from_file_info()
+                if self.size == None:
+                    self.kind = Node.DIRECTORY
+                else:
+                    self.kind = Node.FILE
                 # self.log.info('  ## after self._list_path(): size %s, created_rev %s, kind %s\n' %
                 #                (self.size, self.created_rev, self.kind))
         # self.log.info('### Node init: %s %s' % (self.size, file_info))
@@ -732,23 +737,24 @@ class SubversionCliNode(Node):
            11168 author           497 Jan 23  2012 __init__.py
         """
         # TODO: there is the same function in svn_client. Use that one.
+        full_path = _create_path(self.repos.repo_url, self.path)
         cmd = ['svn', '--non-interactive',
                'list', '-v',
                '-r', str(self.rev),
                # _create_path(self.repos.repo_url, self.path)]
                # We need to add the revision to the path. Otherwise any path copied, moved or removed
                # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-               _add_rev(_create_path(self.repos.repo_url, self.path), self.rev)]
+               _add_rev(full_path, self.rev)]
 
         ret = _call_svn_to_unicode(cmd)
         if not ret:
-            print('  ++ svn \'list\' failed WITHOUT ../path@rev. Now trying with @rev\n')
-            cmd = cmd[:-1] + [_add_rev(cmd[-1], self.rev)]
+            cmd = cmd[:-1] + [full_path]
+            print('  ++ svn \'list\' failed WITH ../path@rev. Now trying without @rev %s\n' % cmd)
             ret = _call_svn_to_unicode(cmd)
             # Slow workaround for problem with some changesets notavly 15264
             if not ret:
+                print('    ++++++ Failed with @rev. now trying with copy data...')
                 copied = get_copy_info(self.repos, self.repos.youngest_rev)
-                print('    Failed with @rev. now trying with copy data...')
                 for item, val in copied.items():
                     if self.path.startswith(item):
                         path = self.path.replace(item, val)
@@ -783,6 +789,68 @@ class SubversionCliNode(Node):
                 else:
                     res.append((path, (int(parts[size]), int(parts[changerev]))))
         return res
+
+    def get_file_size_rev(self):
+        """Get size of file represented by this node using 'svn list'.
+
+        :param path: a directory or file path
+        :return file size or Npne for directories
+
+        'file size' is 'None' for directories.
+
+        'snv list ...' gives all the directory entries when called for a
+        directory path. Information includes change revision and filesizes
+        (among others we ignore here):
+           11177 author               Jan 23  2012 ./
+           11168 author           497 Jan 23  2012 __init__.py
+           10057 author          4416 Jan 23  2012 admin.py
+
+        For a file path the same information is given for the single file:
+           11168 author           497 Jan 23  2012 __init__.py
+
+        Note that this is usually called from __init__(). No information is yet
+        available if this is a file or a directory.
+        """
+        # TODO: there is the same function in svn_client. Use that one.
+        full_path = _create_path(self.repos.repo_url, self.path)
+        cmd = ['svn', '--non-interactive',
+               'list', '-v',
+               '-r', str(self.rev),
+               # _create_path(self.repos.repo_url, self.path)]
+               # We need to add the revision to the path. Otherwise any path copied, moved or removed
+               # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
+               _add_rev(full_path, self.rev)]
+
+        ret = _call_svn_to_unicode(cmd)
+        if not ret:
+            self.log.info('  ++ svn \'list\' failed WITH ../path@rev. Now trying without @rev\n')
+            cmd = cmd[:-1] + [full_path]
+            ret = _call_svn_to_unicode(cmd)
+            # Slow workaround for problem with some changesets notavly 15264
+            if not ret:
+                copied = get_copy_info(self.repos, self.repos.youngest_rev)
+                self.log.info('    Failed with @rev. now trying with copy data...')
+                for item, val in copied.items():
+                    if self.path.startswith(item):
+                        path = self.path.replace(item, val)
+                        path = _add_rev(_create_path(self.repos.repo_url, path), self.rev)
+                        cmd = cmd[:-1] + [path]
+                        ret = _call_svn_to_unicode(cmd)
+                        if not ret:
+                            self.log.info('    ++++++ svn \'list\' failed again. Giving up... ++++++\n')
+                            return []
+                        break
+
+        changerev, name, size = 0, -1, -5
+        for line in ret.split('\n'):
+            parts = line.split()
+            if parts:
+                if parts[name] == './':
+                    # We want to know the size and revision for the path, not the contents.
+                    # If this is a directory path we end here.
+                    return None, int(parts[changerev])
+                return int(parts[size]), int(parts[changerev])
+        raise TracError("Can't get file size and revision.")
 
     def get_entries(self):
         """Generator that yields the immediate child entries of a directory.
