@@ -337,7 +337,7 @@ class SubversionRepositoryCli(Repository):
         self.base = path  # This is a path specified on the admin page
 
         # Disable repositories for testing
-        # if params['name'] != 'trac-hacks':
+        # if params['name'] not in ('trac-hacks', 'Test-Repo'):
         #     raise InvalidRepository("Ignoring %s" % params['name'])
 
         if params['type'] == 'svn-cli-direct':
@@ -567,7 +567,13 @@ class SubversionRepositoryCli(Repository):
     def normalize_path(self, path):
         """Return a canonical representation of path in the repos."""
         # self.log.info('## In normalize_path "%s"' % path)
-        return path
+        # always start the path with a '/'
+
+        # Remove leading "/" and trailing '/', except for the root
+        if path:
+            return path and path.strip('/') or '/'
+        else:
+            return path  # None or ''. This is different to sfn_fs.py
 
     def normalize_rev(self, rev):
         """Return a (unique) canonical representation of a revision.
@@ -1053,7 +1059,8 @@ class SubversionCliChangeset(Changeset):
                               (self.rev, prev_repo_rev, changes))
                 self.log.info('  ## Unknown change for %s in rev %s' % (path, base_rev))
                 path += u'UNKNOWN_CHANGE_FIX_NEEDED'
-            yield path, kind, change, base_path, base_rev
+            # We have to normalize the path here for Trac
+            yield self.repos.normalize_path(path), kind, change, self.repos.normalize_path(base_path), base_rev
 
 
 # ############################################################### #

@@ -73,6 +73,15 @@ class TestGetChangesetInfo(unittest.TestCase):
             self.assertEqual(expected[path]['rev'], attrs['rev'])
             self.assertEqual(expected[path]['action'], attrs['action'])
 
+    def test_get_changeset_info_399(self):
+        expected = {}
+
+        rev = 399
+        change_tuple = get_changeset_info(self.repos, rev)
+        self.assertEqual(3, len(change_tuple))  # [path_entry 1, path_Entry 2, ...], [copy 1, copy 2, ...]
+        changes, copied, deleted = change_tuple
+        self.assertEqual(9,len(changes))
+
 
 if __name__ == '__main__':
     unittest.main()
