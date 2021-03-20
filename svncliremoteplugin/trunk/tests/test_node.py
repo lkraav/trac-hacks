@@ -10,7 +10,13 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionCliNode
+from subversioncli.svn_cli import SubversionCliNode, SubversionRepositoryCli
+
+
+if repo_url.startswith('http'):
+    url = '/' + repo_url
+else:
+    url = '/' + repo_url[6:].lstrip('/')
 
 
 class TestSvnCliNode(unittest.TestCase):
@@ -20,8 +26,14 @@ class TestSvnCliNode(unittest.TestCase):
         print(msg)
 
     def setUp(self):
-        self.log = Mock(info=self._log)
-        self.repos = Mock(repo_url=repo_url, log=self.log)
+        self.log = Mock(info=self._log, debug=self._log, error=self._log)
+        # self.repos = Mock(repo_url=repo_url, log=self.log)
+        parms = {'name': 'Test-Repo', 'id': 1}
+        if url.startswith('/http'):
+            parms['type'] = 'svn-cli-remote'
+        else:
+            parms['type'] = 'svn-cli-direct'
+        self.repos = SubversionRepositoryCli(url, parms, self.log)
 
     def test_get_file_node(self):
         """Test getting a file node"""
@@ -57,7 +69,6 @@ class TestSvnCliNode(unittest.TestCase):
         # The node can't be created, because it's impossible to ge the file size in the branch. (and
         # probably the content, too)
         # See changeset 15264 which triggers the problem
-        # TODO: this test case does fail atm
         path = 'htgroupsplugin/trunk/htgroups/__init__.py'
         rev = 399
         node = SubversionCliNode(self.repos, path, rev, self.log)
@@ -66,7 +77,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
         self.assertEqual(path, node.path)
-        self.assertEqual(0, node.size)
+        self.assertEqual(72, node.size)
 
     def test_get_dir_node(self):
         """Test getting a directory node"""
@@ -110,6 +121,20 @@ class TestSvnCliNode(unittest.TestCase):
             attrs = expected[entry.path]
             self.assertEqual(attrs['created_rev'], entry.created_rev)
             self.assertEqual(attrs['kind'], entry.kind)
+
+    def test_get_content(self):
+        """This file is special because the rev lives in a path which is later copied and
+        eventually removed from the tree. This makes finding it in the tree rather difficult.
+        node.get_file_size_rev() should have done it though.
+        """
+        path = 'htgroupsplugin/trunk/htgroups/__init__.py'
+        rev = 399
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        self.assertEqual(399, node.created_rev)
+
+        with node.get_content() as stream:
+            self.assertEqual(72, len(stream.read()))
 
 
 if __name__ == '__main__':

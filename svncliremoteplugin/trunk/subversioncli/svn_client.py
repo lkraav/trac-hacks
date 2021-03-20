@@ -23,7 +23,7 @@ def _create_path(base, path):
     return '/'.join([base.rstrip('/'), path.lstrip('/')])
 
 
-def get_file_content(repos, rev, path):
+def get_file_content(repos, rev, path, query_path):
     """Get the contents of the given file as a unicode string.
 
     :param repos: Repository object. This holds e.g. the repo root information
@@ -33,6 +33,20 @@ def get_file_content(repos, rev, path):
 
     Note: an error may occur when svn can't find a path or revision.
     """
+    if query_path:
+        try:
+            ret = subprocess.check_output(['svn', 'cat',
+                                           '-r', str(rev),
+                                           query_path])
+            return ret
+        except subprocess.CalledProcessError as e:
+            repos.log.error('#### svn cat failed for %s' % _add_rev(query_path, rev))
+            raise TracError('svn cat: query_path is there but is not working!')  # We shouldn't end here
+
+    raise TracError('svn cat: query_path is empty! (%s, %s, %s )' %
+                    (path, repr(query_path), rev))  # We shouldn't end here (?)
+
+    #TODO: remove this after thorough testing:
     full_path = _create_path(repos.repo_url, path)
     try:
         # repos.log.info('## ## cat: %s %s' % (rev, path))
@@ -260,6 +274,9 @@ class CopyHandler(ContentHandler):
     def get_copy_path_entries(self):
         return self.dict_of_path_entries
 
+    def normalize_path(self, path):
+        return path.lstrip('/') or '/'
+
     # Called when an element starts
     def startElement(self, tag, attributes):
         self.current_tag = tag
@@ -275,7 +292,7 @@ class CopyHandler(ContentHandler):
             for attrs, path in self.path_entries:
                 from_path = attrs.get('copyfrom-path')
                 if from_path:
-                    self.dict_of_path_entries[path] = from_path
+                    self.dict_of_path_entries[self.normalize_path(path)] = self.normalize_path(from_path)
             self.path_entries = []
         elif tag == 'path':
             self.path_entries.append((self.path_attrs, self.path))
@@ -391,7 +408,7 @@ def get_changeset_info(repos, rev):
         handler = ChangesHandler()  # This parses a log with one or more logentries
         parseString(ret.encode('utf-8'), handler)
         # path, copied, deleted = handler.get_path_entries()[0]
-        # return  path[190:205], copied, deleted
+        # return  path[163:164], copied, deleted
         return handler.get_path_entries()[0]  # This is a list of tuples but we only requested one log here
     else:
         return [], None

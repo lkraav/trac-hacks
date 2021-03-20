@@ -368,6 +368,7 @@ class SubversionRepositoryCli(Repository):
         # Whenever a new subtree is opened a new repository is created with an empty cache.
         self._lock = RLock()
         self.rev_cache = {}
+        self._copy_info_from_log = {}
         # self.msg_len = 0  # For testing only
         self.clear()
 
@@ -414,6 +415,25 @@ class SubversionRepositoryCli(Repository):
             dt = parse_datetime(u'{} {}{}'.format(*date))
             self._tzinfo = dt.tzinfo
         return self._tzinfo
+
+    @property
+    def copy_info(self):
+        """Get information about path copying in the repository.
+
+        This method queries the log for any copy operation in the past and
+        records it in a dict. This is used to build a path when getting
+        information about old revisions which may no longer exist at the creation
+        location.
+
+        :return: dict key: original path, val: current path
+        """
+        with self._lock:
+            # We block any other thread while getting the information from the
+            # repo. This way we prevent that other threads start the query process
+            # in parallel.
+            if not self._copy_info_from_log:
+                self._copy_info_from_log = get_copy_info(self, self.youngest_rev)
+            return self._copy_info_from_log
 
     def get_rev_info(self, rev):
         """Get information about the given revision rev.
@@ -679,7 +699,7 @@ class SubversionCliNode(Node):
         self.size = None
         # This path will be filled when the file size is queried. It is the correct path into the
         # repo after accounting for svn-copies and deletions of the original path during the lifetime
-        # of the svn tree..
+        # of the svn tree.
         self.query_path = ''
 
         # self.log.info('## Node __init__(%s, %s, ..., %s)' % (path, rev, file_info))
@@ -772,8 +792,9 @@ class SubversionCliNode(Node):
             ret = _call_svn_to_unicode(cmd)
             # Slow workaround for problem with some changesets notavly 15264
             if not ret:
+                #TODO: we already got a real path in get_file_size_rev(). Is this still necessary?
                 print('    ++++++ Failed with @rev. now trying with copy data...')
-                copied = get_copy_info(self.repos, self.repos.youngest_rev)
+                copied = self.repos.copy_info  # get_copy_info(self.repos, self.repos.youngest_rev)
                 for item, val in copied.items():
                     if self.path.startswith(item):
                         path = self.path.replace(item, val)
@@ -849,8 +870,8 @@ class SubversionCliNode(Node):
             ret = _call_svn_to_unicode(cmd)
             # Slow workaround for problem with some changesets notavly 15264
             if not ret:
-                copied = get_copy_info(self.repos, self.repos.youngest_rev)
                 self.log.info('    Failed with @rev. now trying with copy data...')
+                copied = self.repos.copy_info  # get_copy_info(self.repos, self.repos.youngest_rev)
                 for item, val in copied.items():
                     if self.path.startswith(item):
                         path = self.path.replace(item, val)
@@ -873,7 +894,7 @@ class SubversionCliNode(Node):
                     # If this is a directory path we end here.
                     return None, int(parts[changerev])
                 return int(parts[size]), int(parts[changerev])
-        raise TracError("Can't get file size and revision.")
+        raise TracError("Can't get file size and revision for %s %s." % (self.path, self.rev))
 
     def get_entries(self):
         """Generator that yields the immediate child entries of a directory.
@@ -1094,16 +1115,13 @@ class FileContentStream(object):
         self.buffer = ''
         self.repos = node.repos
         self.node = node
-        f_contents = get_file_content(node.repos, node.rev, node.path)
+        f_contents = get_file_content(node.repos, node.rev, node.path, node.query_path)
         try:
             self.stream = BytesIO(initial_bytes=bytes(f_contents))
         except UnicodeEncodeError as e:
             self.repos.log.info('#### ERROR for %s. Using empty textfile instead.' % node)
             self.stream = BytesIO(initial_bytes=bytes(error_msg % node.rev))
-        # self.stream = BytesIO(initial_bytes=f_contents)
 
-        # Note: we _must_ use a detached pool here, as the lifetime of
-        # this object can exceed those of the node or even the repository
         if keyword_substitution:
             pass
 
