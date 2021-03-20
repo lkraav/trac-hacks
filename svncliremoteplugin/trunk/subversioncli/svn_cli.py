@@ -174,7 +174,7 @@ class LogHandler(ContentHandler):
         ContentHandler.__init__(self)
 
     def clear(self):
-        self.date = datetime(1970, 1, 1, tzinfo=utc)
+        self.date = None  # datetime(1970, 1, 1, tzinfo=utc)
         self.msg = ""
         self.author = ""
         self.rev = None
@@ -300,7 +300,7 @@ class SubversionConnector(Component):
         yield ("svn-cli-direct", prio * 4)
         yield ("svn-cli-remote", prio * 4)
 
-    def get_repository(self, type, dir, params):
+    def get_repository(self, type_, dir, params):
         """Return a `SubversionRepository`.
 
         The repository is wrapped in a `CachedRepository`
@@ -482,16 +482,16 @@ class SubversionRepositoryCli(Repository):
                     # self.msg_len += len(item[3])
                 try:
                     rev_, author, date, msg = self.rev_cache[rev]
-                except KeyError as e:
+                except KeyError:
                     self.log.info('###### Rev: %s can not be found ##############' % (rev,))
                     # print(cmd)
                     # for item in handler.get_log_entries():
                     #     print("%s: %s" % (item[0], item))
-                    return '', datetime(1970, 1, 1, tzinfo=utc), ''
+                    return '', None, ''
                 return author, date, msg
         else:
             self.log.info('#### Changeset %s is broken' % rev)
-            return '', datetime.now(utc), ''
+            return '', None, ''
 
     def get_path_history(self, path, rev=None, limit=None):
         self.log.info('## In get_path_history(%s, %s, %s) NOT IMPLEMENTED' %
@@ -554,13 +554,19 @@ class SubversionRepositoryCli(Repository):
         rev_ = int(rev)
         if not path:
             if rev_ > 1:
-                # self.log.info('  ## In previous_rev with %s %s, returning: %s' %
-                #              (rev, path, rev_ - 1))
-                return rev_ - 1
+                rev_ -= 1
+                # There may be broken changesets so get a valid older revision. A broken
+                # changeset has no date.
+                author, date, message = self.get_rev_info(rev_)
+                while not date:  # broken revisions have data=None
+                    rev_ -= 1
+                    if rev_ < 1:
+                        return None
+                    author, date, message = self.get_rev_info(rev_)
+                return rev_
         # This must be called with the previous *repo* revision here. Otherwise we get
         # the current revision again.
-        return _svn_changerev(self, rev_ -1 , path)
-        # self.log.info('## In previous_rev(%s, %s) NOT IMPLEMENTED' % (rev, path))
+        return _svn_changerev(self, rev_ - 1, path)
 
     def next_rev(self, rev, path=''):
         """Return the revision immediately following the specified revision.
@@ -572,10 +578,19 @@ class SubversionRepositoryCli(Repository):
         """
         rev_ = int(rev)
         if not path:
-            if rev_ < self.youngest:
-                return rev_ + 1
-        #return _svn_changerev(self, rev_ + 1, path)
-        self.log.info('#### In next_rev(%s, %s) NOT IMPLEMENTED' % (rev, path))
+            if rev_ < self.youngest_rev:
+                rev_ += 1
+                # There may be broken changesets so get a valid older revision. A broken
+                # changeset has no date.
+                author, date, message = self.get_rev_info(rev_)
+                while not date:  # broken revisions have data=None
+                    rev_ += 1
+                    if rev_ > self.youngest_rev:
+                        return None
+                    author, date, message = self.get_rev_info(rev_)
+                return rev_
+        # return _svn_changerev(self, rev_ + 1, path)
+        self.log.info('#### In next_rev(%s, %s) for path: NOT IMPLEMENTED' % (rev, path))
 
     def rev_older_than(self, rev1, rev2):
         """Provides a total order over revisions.
@@ -638,7 +653,7 @@ class SubversionRepositoryCli(Repository):
         the new_node is assumed to be None when the change is a DELETE.
         """
         self.log.info('## Repository ## In get_changes old: %s %s, new: %s %s' %
-                      (old_path,old_rev, new_path, new_rev))
+                      (old_path, old_rev, new_path, new_rev))
         old_rev = self.normalize_rev(old_rev)
         new_rev = self.normalize_rev(new_rev)
 
@@ -759,7 +774,6 @@ class SubversionCliNode(Node):
         """Get a list of files/directories with file sizes for the given path
         using 'svn list' .
 
-        :param path: a directory or file path
         :return list of tuples, (path, (filesize, changerev))
 
         'filesize' is 'None' for directories. If path is a file the list only
@@ -792,7 +806,7 @@ class SubversionCliNode(Node):
             ret = _call_svn_to_unicode(cmd)
             # Slow workaround for problem with some changesets notavly 15264
             if not ret:
-                #TODO: we already got a real path in get_file_size_rev(). Is this still necessary?
+                # TODO: we already got a real path in get_file_size_rev(). Is this still necessary?
                 print('    ++++++ Failed with @rev. now trying with copy data...')
                 copied = self.repos.copy_info  # get_copy_info(self.repos, self.repos.youngest_rev)
                 for item, val in copied.items():
@@ -833,7 +847,6 @@ class SubversionCliNode(Node):
     def get_file_size_rev(self):
         """Get size of file represented by this node using 'svn list'.
 
-        :param path: a directory or file path
         :return file size or Npne for directories
 
         'file size' is 'None' for directories.
@@ -911,7 +924,6 @@ class SubversionCliNode(Node):
             yield SubversionCliNode(self.repos, path, self.rev, self.log, info)
         return
 
-
     def get_history(self, limit=None):
         """Provide backward history for this Node.
 
@@ -984,6 +996,8 @@ class SubversionCliChangeset(Changeset):
 
         # repos.log.info('## Changeset Rev %s' % rev)
         author, date, message = repos.get_rev_info(rev)
+        if not date:
+            raise NoSuchChangeset(rev)
         date = to_datetime(date)
         Changeset.__init__(self, repos, rev, message, author, date)
 
@@ -1030,7 +1044,7 @@ class SubversionCliChangeset(Changeset):
 
             base_path = path
             base_rev = prev_repo_rev
-            if change_type in (Changeset.ADD):
+            if change_type == Changeset.ADD:
                 base_path = None
                 base_rev = -1
                 if attrs['copyfrom-path']:
@@ -1118,7 +1132,7 @@ class FileContentStream(object):
         f_contents = get_file_content(node.repos, node.rev, node.path, node.query_path)
         try:
             self.stream = BytesIO(initial_bytes=bytes(f_contents))
-        except UnicodeEncodeError as e:
+        except UnicodeEncodeError:
             self.repos.log.info('#### ERROR for %s. Using empty textfile instead.' % node)
             self.stream = BytesIO(initial_bytes=bytes(error_msg % node.rev))
 

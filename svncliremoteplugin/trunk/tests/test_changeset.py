@@ -7,9 +7,12 @@
 # you should have received as part of this distribution.
 #
 import unittest
+import datetime
 
 from tests import repo_url
 from trac.test import EnvironmentStub, Mock, MockRequest
+from trac.util.datefmt import to_datetime
+from trac.versioncontrol.api import DbRepositoryProvider, NoSuchChangeset
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from subversioncli.svn_cli import SubversionCliChangeset, SubversionRepositoryCli
 
@@ -26,7 +29,8 @@ class TestSvnCliChangeset(unittest.TestCase):
         print(msg)
 
     def setUp(self):
-        self.env = EnvironmentStub(True)
+        self.env = EnvironmentStub(True, ['trac.versioncontrol.*',
+                                          'subversioncli.svn_cli.*'])
         self.log = Mock(info=self._log, error=self._log, debug=self._log)
         # self.repos = Mock(repo_url=url, log=self.log)
         parms = {'name': 'Test-Repo', 'id': 1}
@@ -100,6 +104,12 @@ class TestSvnCliChangeset(unittest.TestCase):
         self.assertEqual(6, len(changes))
         for idx, change in enumerate(changes):
             self.assertSequenceEqual(expected[idx], change)
+
+    def test_changeset_get_changeset_17976(self):
+        """Check if changeset 17976 raises NoSuchChangeset"""
+        # This changeset is empty in 'svn log...'.
+        rev = 17976
+        self.assertRaises(NoSuchChangeset, SubversionCliChangeset, self.repos, rev)
 
     def test_changeset_properties_399(self):
         """Check a changeset only containing property changes.
@@ -204,6 +214,22 @@ class TestSvnCliChangeset(unittest.TestCase):
         self.assertEqual(3, res['filestats']['edit'])
         for file in res['files']:
             self.assertIn(file, (u'htgroupsplugin', u'htgroupsplugin/0.9', u'htgroupsplugin/0.9/README.txt'))
+
+    def test_timeline_broken_changeset_17976(self):
+        """Test get_timeline_events() with interval containing a broken changeset."""
+        # Changeset 17976 is empty in 'svn log ...'. Make sure we handle this gracefully.
+        repoprovider = DbRepositoryProvider(self.env)
+        repoprovider.add_repository(self.repos.reponame, url, type_='svn-cli-direct')
+        # There is some broken changeset in this interval: 17976
+        start = to_datetime(datetime.datetime(2020, 12, 17, 23, 59, 59, 999999))
+        stop = to_datetime(datetime.datetime(2021, 1, 17, 23, 59, 59, 999999))
+        cm = ChangesetModule(self.env)
+        req = MockRequest(self.env)
+        filters = cm.get_timeline_filters(req)[0]
+        csets = list(cm.get_timeline_events(req, start, stop, filters))  # This is a generator
+        self.assertEqual(17, len(csets))
+        for item in csets:
+            print(item)
 
 
 if __name__ == '__main__':
