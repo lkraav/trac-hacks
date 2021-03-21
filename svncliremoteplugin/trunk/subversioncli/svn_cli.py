@@ -476,7 +476,14 @@ class SubversionRepositoryCli(Repository):
 
             # get_log_entries(): [(rev, author, date, msg), ...]
             with self._lock:
-                for item in handler.get_log_entries():
+                # Fill with defaults first. If we have a repo of a subtree we don't get
+                # necessarily a log entry for every revision because the missing revision
+                # may be for another subtree.
+                # Without this a new 'svn log ...' would be started for any non existent
+                # rev in the dict.
+                for num in xrange(start_rev, end_rev + 1):
+                    self.rev_cache[num] = num, '', None, ''
+                for idx, item in enumerate(handler.get_log_entries()):
                     self.rev_cache[item[0]] = item
                     # self.log.info('  #### %s: %s' % (item[0], item))
                     # self.msg_len += len(item[3])
