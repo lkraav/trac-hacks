@@ -2,7 +2,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliRepository
 from subversioncli.svn_client import get_change_rev
 
 
@@ -24,7 +24,7 @@ class TestSvnCliRepository(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_get_rev_info(self):
         info = self.repos.get_rev_info(17788)
@@ -51,7 +51,7 @@ class TestSvnCliRepositorySubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_get_rev_info(self):
         info = self.repos.get_rev_info(17788)

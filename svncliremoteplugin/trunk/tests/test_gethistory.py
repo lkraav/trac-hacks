@@ -2,7 +2,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionCliNode, SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliNode, SubversionCliRepository
 from subversioncli.svn_client import get_history
 
 
@@ -25,7 +25,7 @@ class TestGetHistory(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_get_history_11177(self):
         """The path was copied in revision 11177 from another/path@11168"""
@@ -107,7 +107,7 @@ class TestGetHistorySubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_get_history_11177(self):
         """The path was copied in revision 11177 from another/path@11168"""

@@ -10,7 +10,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionCliNode, SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliNode, SubversionCliRepository
 
 
 if repo_url.startswith('http'):
@@ -33,7 +33,7 @@ class TestSvnCliNode(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(url, parms, self.log)
+        self.repos = SubversionCliRepository(url, parms, self.log)
 
     def test_get_file_node(self):
         """Test getting a file node"""
@@ -159,7 +159,7 @@ class TestSvnCliNodeSubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_get_file_node(self):
         """Test getting a file node"""

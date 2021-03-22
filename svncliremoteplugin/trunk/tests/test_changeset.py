@@ -14,7 +14,7 @@ from trac.test import EnvironmentStub, Mock, MockRequest
 from trac.util.datefmt import to_datetime
 from trac.versioncontrol.api import DbRepositoryProvider, NoSuchChangeset
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
-from subversioncli.svn_cli import SubversionCliChangeset, SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliChangeset, SubversionCliRepository
 
 
 class TestSvnCliChangeset(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestSvnCliChangeset(unittest.TestCase):
         else:
             parms['type'] = 'svn-cli-direct'
         self.svn_type = parms['type']
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_changeset_get_changes_11177(self):
         expected = [(u'customfieldadminplugin/0.11/customfieldadmin/admin.py', 'file', 'move',
@@ -297,7 +297,7 @@ class TestSvnCliChangesetSubtree(unittest.TestCase):
         else:
             parms['type'] = 'svn-cli-direct'
 
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_changeset_get_changes_11177(self):
         expected = [(u'0.11/customfieldadmin/admin.py', 'file', 'move',

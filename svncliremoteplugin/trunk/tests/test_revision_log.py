@@ -2,7 +2,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionCliNode, SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliNode, SubversionCliRepository
 
 
 class TestRevisionLog(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestRevisionLog(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_revision_log(self):
         """Test getting a revision log"""
@@ -117,7 +117,7 @@ class TestRevisionLogSubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_revision_log(self):
         """Test getting a file node"""

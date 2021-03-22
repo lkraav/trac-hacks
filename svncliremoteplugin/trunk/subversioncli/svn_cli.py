@@ -83,7 +83,7 @@ def _call_svn_to_unicode(cmd, repos=None):
 def _get_svn_info(repos, rev, path=''):
     """Get information about the given path from the local repo.
 
-    :param repos: a SubversionRepositoryCli object
+    :param repos: a SubversionCliRepository object
     :param path: path into the repo, relative to root. For subtree repos it's the real root.
     :return: dict
 
@@ -205,7 +205,7 @@ def _svn_changerev(repos, rev, path):
 class SubversionCliError(TracError):
     """Exception raised for internal errors."""
 
-class SubversionConnector(Component):
+class SubversionCliConnector(Component):
     implements(IRepositoryConnector, ISystemInfoProvider)
 
     eol_style = ChoiceOption(
@@ -245,7 +245,7 @@ class SubversionConnector(Component):
         """
         params.setdefault('eol_style', self.eol_style)
         try:
-            repos = SubversionRepositoryCli(dir, params, self.log)
+            repos = SubversionCliRepository(dir, params, self.log)
         except (TracError, AttributeError, TypeError):
             raise InvalidRepository("Repository for '%s' can't be loaded." % dir)
         return repos
@@ -260,7 +260,7 @@ class SubversionConnector(Component):
         yield 'Subversion', self._version + u' (svn client)'
 
 
-class SubversionRepositoryCli(Repository):
+class SubversionCliRepository(Repository):
 
     has_linear_changesets = True
 
@@ -628,24 +628,6 @@ class SubversionRepositoryCli(Repository):
         # self.log.info('  ## old_node: %s %s, new_node: %s %s' %
         #               (old_node, old_node.kind, new_node, new_node.kind))
         yield (old_node, new_node, Node.FILE, Changeset.EDIT)
-
-
-class SubversionCliEmptyNode(Node):
-    def __init__(self, repos, path, rev, log, file_info=None):
-
-        self.log = log
-        # This is used for creating the correct links on the changeset page
-        self.created_path = path
-        self.rev = rev
-        self.repos = repos
-        self.path = path
-        self.size = 0
-        self.kind = Node.FILE
-
-        Node.__init__(self, repos, path, rev, self.kind)
-
-        def get_content_length(self):
-            return self.size
 
 
 class SubversionCliNode(Node):

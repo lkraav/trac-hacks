@@ -2,7 +2,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliRepository
 from subversioncli.svn_client import get_copy_info
 
 
@@ -25,7 +25,7 @@ class TestGetCopyInfo(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_copy_info_1000(self):
         res = get_copy_info(self.repos, 1000)
@@ -53,7 +53,7 @@ class TestGetCopyInfoSubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_copy_info_1000(self):
         res = get_copy_info(self.repos, 1000)

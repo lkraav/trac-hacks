@@ -10,7 +10,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliRepository
 from subversioncli.svn_client import get_changeset_info
 
 
@@ -32,7 +32,7 @@ class TestGetChangesetInfo(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_get_changeset_info_11177(self):
         expected = {u'/customfieldadminplugin/0.11/customfieldadmin/api.py':
@@ -200,7 +200,7 @@ class TestGetChangesetInfoSubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_get_changeset_info_11177(self):
         # Note that the path is *not* normalized here!

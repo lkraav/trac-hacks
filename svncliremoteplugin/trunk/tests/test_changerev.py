@@ -2,7 +2,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliRepository
 from subversioncli.svn_client import get_change_rev
 
 
@@ -25,7 +25,7 @@ class TestCangeRevison(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
         self.path = path = 'customfieldadminplugin/0.11/customfieldadmin/customfieldadmin.py'
 
     def test_chgrev_is_currev(self):
@@ -58,7 +58,7 @@ class TestCangeRevisonSubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
         self.path = 'customfieldadminplugin/0.11/customfieldadmin/customfieldadmin.py'
 
     def test_chgrev_is_currev(self):

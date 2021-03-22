@@ -10,7 +10,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliRepository
 from subversioncli.svn_client import get_blame_annotations
 
 
@@ -33,7 +33,7 @@ class TestBlameAnnotations(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_blame_2389(self):
         """Test blame annotations for a file with svn-copy."""
@@ -88,7 +88,7 @@ class TestBlameAnnotationsSubtree(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+        self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_blame_2389(self):
         """Test blame annotations for a file with svn-copy."""
