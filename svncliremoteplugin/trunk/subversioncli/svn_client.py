@@ -29,6 +29,8 @@ def get_file_content(repos, rev, path, query_path):
     :param repos: Repository object. This holds e.g. the repo root information
     :param rev: revision
     :param path: the file path relative to the repository root
+    :param query_path: fully qualified path into the repo. This may include
+           revisions and has already followed every copy operation. Known to have worked in the past.
     :return: In case of error an empty string is returned.
 
     Note: an error may occur when svn can't find a path or revision.
@@ -39,14 +41,14 @@ def get_file_content(repos, rev, path, query_path):
                                            '-r', str(rev),
                                            query_path])
             return ret
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             repos.log.error('#### svn cat failed for %s' % _add_rev(query_path, rev))
             raise TracError('svn cat: query_path is there but is not working!')  # We shouldn't end here
 
     raise TracError('svn cat: query_path is empty! (%s, %s, %s )' %
                     (path, repr(query_path), rev))  # We shouldn't end here (?)
 
-    #TODO: remove this after thorough testing:
+    # TODO: remove this after thorough testing:
     full_path = _create_path(repos.repo_url, path)
     try:
         # repos.log.info('## ## cat: %s %s' % (rev, path))
@@ -62,7 +64,7 @@ def get_file_content(repos, rev, path, query_path):
             ret = subprocess.check_output(['svn', 'cat',
                                            '-r', str(rev),
                                            _add_rev(full_path, rev)])
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         repos.log.error('#### svn cat failed for %s' % _add_rev(full_path, rev))
         ret = u''
     # The file contents is utf-8 encoded
@@ -74,6 +76,7 @@ def call_svn_to_unicode(cmd, repos=None):
     command output as unicode or an empty string in case of error.
 
     :param cmd: list with command, sub command and parameters
+    :param repos: Repository object for using logging
     :return: unicode string. In case of error an empty string is returned.
 
     Note: an error may occur when svn can't find a path or revision.
@@ -92,6 +95,8 @@ def list_path(repos, rev, path):
     """Get a list of files/directories with file sizes for the given path
     using 'svn list' .
 
+    :param repos: Repository object
+    :param rev: revision of file/directory we query
     :param path: a directory or file path relative to the real root of the repo
     :return list of tuples, (path, (filesize, changerev))
 
@@ -160,7 +165,7 @@ def get_blame_annotations(repos, rev, path):
 
     :param repos: Repository object
     :param rev: changeset revision
-    :paramm path: the filepath. This is a relative path into the repo
+    :param path: the filepath. This is a relative path into the repo
     :return: list
     """
     full_path = _create_path(repos.repo_url, path)
@@ -169,7 +174,7 @@ def get_blame_annotations(repos, rev, path):
            _add_rev(full_path, rev)]
     ret = call_svn_to_unicode(cmd, repos)
 
-    res =[]
+    res = []
     if ret:
         for line in ret.split('\n'):
             parts = [x.strip() for x in line.split()]
@@ -257,6 +262,7 @@ class CopyHandler(ContentHandler):
     or 'svn log -r XXX:YYY -v -q --xml ...'
     """
     attrs = ('copyfrom-rev', 'copyfrom-path')
+
     def __init__(self):
         self.clear()
         self.current_tag = ''
@@ -304,12 +310,14 @@ class CopyHandler(ContentHandler):
 
 
 def get_copy_info(repos, start_rev):
-    """Get data for a the given changeset rev to be displayed on the
-    changeset page.
+    """Get all copy operation in the past starting with start_rev.
 
     :param repos: Repository object
-    :param rev: changeset revision
+    :param start_rev: youngest changeset revision we start with.
     :return: a dict {current_path: copyfrom_path}
+
+    This data is used when trying to follow a path which may have moved in the past when
+    querying the history.
     """
     # svn log -r 11177 -v -q --xml
     cmd = ['svn', '--non-interactive', 'log',
@@ -335,6 +343,7 @@ class ChangesHandler(ContentHandler):
     or 'svn log -r XXX:YYY -v -q --xml ...'
     """
     attrs = ('action', 'kind', 'text-mods', 'copyfrom-rev', 'copyfrom-path')
+
     def __init__(self):
         self.clear()
         self.current_tag = ''
@@ -420,8 +429,8 @@ def get_history(node, limit=None):
 
     This is called from Node.get_history() when showing the revision log.
     """
-    def is_copied_dir(attrs):
-        return attrs.get('action') == 'A' and attrs.get('kind') == 'dir' and attrs.get('copyfrom-path')
+    def is_copied_dir(attrs_):
+        return attrs_.get('action') == 'A' and attrs_.get('kind') == 'dir' and attrs_.get('copyfrom-path')
 
     # See htgroupsplugin/trunk/htgroups/__init__.py@1984: don't use created_rev here
     rev = node.rev
@@ -449,6 +458,7 @@ def get_history(node, limit=None):
             path_entries, copied, deleted = entry
             for attrs, path_ in path_entries:
                 path_ = path_[1:]  # returned path has a leading '/'
+                # With is_copied_dir(attrs) check for svn-copied parent directories, e.g. when branching.
                 if path_ == cur_path or is_copied_dir(attrs):
                     if attrs['action'] == 'M':
                         history.append((path_, attrs['rev'], Changeset.EDIT))
@@ -456,25 +466,25 @@ def get_history(node, limit=None):
                         if attrs['copyfrom-path']:
                             copied_path = attrs['copyfrom-path'][1:]
                             if is_copied_dir(attrs):
-                                # A copied directory needs special dealing with paths
-                                # history.append((cur_path, attrs['rev'], Changeset.EDIT))
-                                history.append((cur_path, attrs['rev'], Changeset.COPY))
-                                # Because we copied the whole directory we have to adjust the leading
-                                # directory sub path to the old location.
-                                cur_path = cur_path.replace(path_, copied_path)
+                                # Only add to history and adjust path if this copy operation
+                                # affects our path
+                                if cur_path.startswith(path_):
+                                    # A copied directory needs special dealing with paths
+                                    history.append((cur_path, attrs['rev'], Changeset.COPY))
+                                    # Because we copied the whole directory we have to adjust the leading
+                                    # directory sub path to the older location.
+                                    cur_path = cur_path.replace(path_, copied_path, 1)
                             else:
-                                history.append((path_, attrs['rev'], Changeset.COPY))
                                 # Note that copyfrom-rev is the revision of the subversion tree when the copy took
                                 # place. It isn't the change revision of the file being copied.
-                                cur_path = cur_path.replace(path_, copied_path)
+                                history.append((path_, attrs['rev'], Changeset.COPY))
+                                # Account for path change due to copy
+                                # cur_path = cur_path.replace(path_, copied_path)
+                                cur_path = copied_path
                         else:
                             history.append((cur_path, attrs['rev'], Changeset.ADD))
     return history
 
 
 if __name__ == '__main__':
-    for item in get_changeset_info(None, 11177):
-        attrs, path = item
-        if attrs['action'] == u'M':
-            pass
-        print(item)
+    pass

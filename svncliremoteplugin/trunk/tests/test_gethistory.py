@@ -55,7 +55,7 @@ class TestGetHistory(unittest.TestCase):
             self.assertSequenceEqual(res[idx], item)
 
     def test_get_history_3342(self):
-        """The path was copied in revision 11177 from another/path@11168"""
+        """"""
         res = [(u'simpleticketplugin/0.11/simpleticket/web_ui.py', 3342, 'edit'),
                (u'simpleticketplugin/0.11/simpleticket/web_ui.py', 3340, 'copy'),
                (u'simpleticketplugin/0.10/simpleticket/web_ui.py', 1545, 'edit'),
@@ -70,6 +70,18 @@ class TestGetHistory(unittest.TestCase):
         node = SubversionCliNode(self.repos, path, 3342, self.log)
         history = get_history(node)
         self.assertEqual(9, len(history))
+        for idx, item in enumerate(history):
+            self.assertSequenceEqual(res[idx], item)
+
+    def test_get_history_16400(self):
+        """This directory is deleted"""
+        res = [(u'bittenforgitplugin/0.11/setup.py', 16400, 'copy'),
+               (u'bittenforgitplugin/0.11/0.6b2/setup.py', 8507, 'add')]
+
+        path = u'bittenforgitplugin/0.11/setup.py'
+        node = SubversionCliNode(self.repos, path, 16400, self.log)
+        history = get_history(node)
+        self.assertEqual(2, len(history))
         for idx, item in enumerate(history):
             self.assertSequenceEqual(res[idx], item)
 

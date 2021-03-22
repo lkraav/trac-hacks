@@ -8,7 +8,7 @@
 #
 import unittest
 
-from tests import repo_url, sub_repo_url
+from tests import repo_url
 from trac.test import Mock
 from subversioncli.svn_cli import SubversionCliNode, SubversionRepositoryCli
 

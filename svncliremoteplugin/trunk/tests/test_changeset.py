@@ -9,7 +9,7 @@
 import unittest
 import datetime
 
-from tests import repo_url, sub_repo_url
+from tests import repo_url, pre_1_2
 from trac.test import EnvironmentStub, Mock, MockRequest
 from trac.util.datefmt import to_datetime
 from trac.versioncontrol.api import DbRepositoryProvider, NoSuchChangeset
@@ -37,6 +37,7 @@ class TestSvnCliChangeset(unittest.TestCase):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
+        self.svn_type = parms['type']
         self.repos = SubversionRepositoryCli(self.url, parms, self.log)
 
     def test_changeset_get_changes_11177(self):
@@ -176,16 +177,20 @@ class TestSvnCliChangeset(unittest.TestCase):
                 'new': 399, 'new_rev': 399, 'new_path': path}
         req = MockRequest(self.env)
         # restricted = False,because we query the whole changeet
-        res = cm._render_html(req, self.repos, changeset, False, data)
-        # for key, val in res.items():
-        #     print(key, repr(val))
+        if pre_1_2:
+            res = cm._render_html(req, self.repos, changeset, False, None, data)
+        else:
+            res = cm._render_html(req, self.repos, changeset, False, data)
+        for key, val in res.items():
+            print(key, repr(val))
 
         self.assertEqual(9, len(res['changes']))
         self.assertEqual(9, len(set(res['files'])))
         self.assertEqual(u'htgroupsplugin', res['location'])
         # files with changes after processing changeset data in _render_html()
-        self.assertEqual(5, res['diff_files'])
-        self.assertTrue(res['show_diffs'])
+        if not pre_1_2:
+            self.assertEqual(5, res['diff_files'])
+            self.assertTrue(res['show_diffs'])
         self.assertFalse(res['has_diffs'])  # No content change, just properties
         # Items which were edited. This is the given file but also the containing parent directories.
         # Filtering is done in render_html()
@@ -231,7 +236,10 @@ class TestSvnCliChangeset(unittest.TestCase):
                 'new': 399, 'new_rev': 399, 'new_path': path}
         req = MockRequest(self.env)
         # restricted = True,because we query a path
-        res = cm._render_html(req, self.repos, changeset, True, data)
+        if pre_1_2:
+            res = cm._render_html(req, self.repos, changeset, True, None, data)
+        else:
+            res = cm._render_html(req, self.repos, changeset, True, data)
         # for key, val in res.items():
         #     print(key, repr(val))
 
@@ -239,8 +247,9 @@ class TestSvnCliChangeset(unittest.TestCase):
         self.assertEqual(3, len(set(res['files'])))
         self.assertEqual(u'htgroupsplugin', res['location'])
         # files with changes after processing changeset data in _render_html()
-        self.assertEqual(1, res['diff_files'])
-        self.assertTrue(res['show_diffs'])
+        if not pre_1_2:
+            self.assertEqual(1, res['diff_files'])
+            self.assertTrue(res['show_diffs'])
         self.assertFalse(res['has_diffs'])  # No content change, just properties
         # Items which were edited. This is the given file but also the containing parent directories.
         # Filtering is done in render_html()
@@ -252,7 +261,7 @@ class TestSvnCliChangeset(unittest.TestCase):
         """Test get_timeline_events() with interval containing a broken changeset."""
         # Changeset 17976 is empty in 'svn log ...'. Make sure we handle this gracefully.
         repoprovider = DbRepositoryProvider(self.env)
-        repoprovider.add_repository(self.repos.reponame, self.url, type_='svn-cli-direct')
+        repoprovider.add_repository(self.repos.reponame, self.url, type_=self.svn_type)
         # There is some broken changeset in this interval: 17976
         start = to_datetime(datetime.datetime(2020, 12, 17, 23, 59, 59, 999999))
         stop = to_datetime(datetime.datetime(2021, 1, 17, 23, 59, 59, 999999))
