@@ -2,7 +2,7 @@ import unittest
 
 from tests import repo_url
 from trac.test import Mock
-from subversioncli.svn_cli import SubversionRepositoryCli
+from subversioncli.svn_cli import SubversionCliNode, SubversionRepositoryCli
 from subversioncli.svn_client import get_history
 
 
@@ -48,7 +48,8 @@ class TestGetHistory(unittest.TestCase):
                (u'customfieldadminplugin/0.10/customfieldadmin/customfieldadmin.py', 2250, 'add'),
                ]
         path = 'customfieldadminplugin/0.11/customfieldadmin/admin.py'
-        history = get_history(self.repos, 11177, path)
+        node = SubversionCliNode(self.repos, path, 11177, self.log)
+        history = get_history(node)
         self.assertEqual(17, len(history))
         for idx, item in enumerate(history):
             self.assertSequenceEqual(res[idx], item)
@@ -66,10 +67,12 @@ class TestGetHistory(unittest.TestCase):
                (u'simpleticketplugin/0.9/simpleticket/web_ui.py', 997, 'add')]
 
         path = u'simpleticketplugin/0.11/simpleticket/web_ui.py'
-        history = get_history(self.repos, 3342, path)
+        node = SubversionCliNode(self.repos, path, 3342, self.log)
+        history = get_history(node)
         self.assertEqual(9, len(history))
         for idx, item in enumerate(history):
             self.assertSequenceEqual(res[idx], item)
+
 
 class TestGetHistorySubtree(unittest.TestCase):
     """Test function get_history() in svn_client.py"""
@@ -115,26 +118,9 @@ class TestGetHistorySubtree(unittest.TestCase):
                (u'customfieldadminplugin/0.10/customfieldadmin/customfieldadmin.py', 2250, 'add'),
                ]
         path = 'customfieldadminplugin/0.11/customfieldadmin/admin.py'
-        history = get_history(self.repos, 11177, path)
+        node = SubversionCliNode(self.repos, path, 11177, self.log)
+        history = get_history(node)
         self.assertEqual(17, len(history))
-        for idx, item in enumerate(history):
-            self.assertSequenceEqual(res[idx], item)
-
-    def test_get_history_3342(self):
-        """The path was copied in revision 11177 from another/path@11168"""
-        res = [(u'simpleticketplugin/0.11/simpleticket/web_ui.py', 3342, 'edit'),
-               (u'simpleticketplugin/0.11/simpleticket/web_ui.py', 3340, 'copy'),
-               (u'simpleticketplugin/0.10/simpleticket/web_ui.py', 1545, 'edit'),
-               (u'simpleticketplugin/0.10/simpleticket/web_ui.py', 1332, 'edit'),
-               (u'simpleticketplugin/0.10/simpleticket/web_ui.py', 1307, 'edit'),
-               (u'simpleticketplugin/0.10/simpleticket/web_ui.py', 1148, 'edit'),
-               (u'simpleticketplugin/0.10/simpleticket/web_ui.py', 1147, 'copy'),
-               (u'simpleticketplugin/0.9/simpleticket/web_ui.py', 1002, 'edit'),
-               (u'simpleticketplugin/0.9/simpleticket/web_ui.py', 997, 'add')]
-
-        path = u'simpleticketplugin/0.11/simpleticket/web_ui.py'
-        history = get_history(self.repos, 3342, path)
-        self.assertEqual(9, len(history))
         for idx, item in enumerate(history):
             self.assertSequenceEqual(res[idx], item)
 
