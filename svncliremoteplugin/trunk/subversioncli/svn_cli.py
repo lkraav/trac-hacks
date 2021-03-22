@@ -1029,7 +1029,6 @@ class SubversionCliChangeset(Changeset):
                 if path in copied:
                     # This is a source path for a svn-move operation
                     continue
-                path = 'deleted'
             elif change_type == Changeset.EDIT:
                 base_rev = _svn_changerev(self.repos, prev_repo_rev, path)
                 if base_rev == None:

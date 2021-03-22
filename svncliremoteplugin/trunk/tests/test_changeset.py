@@ -103,6 +103,41 @@ class TestSvnCliChangeset(unittest.TestCase):
         for idx, change in enumerate(changes):
             self.assertSequenceEqual(expected[idx], change)
 
+    def test_changeset_get_changes_16400(self):
+
+        # This changeset contains some deleted directories.
+        expected = [(u'bittenforgitplugin/0.11/0.6b2', 'dir', 'delete',
+                     u'bittenforgitplugin/0.11/0.6b2', 16399),
+                    (u'bittenforgitplugin/0.11/COPYING', 'file', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/COPYING', 16399),
+                    (u'bittenforgitplugin/0.11/ChangeLog', 'file', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/ChangeLog', 16399),
+                    (u'bittenforgitplugin/0.11/MANIFEST-SLAVE.in', 'file', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/MANIFEST-SLAVE.in', 16399),
+                    (u'bittenforgitplugin/0.11/MANIFEST.in', 'file', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/MANIFEST.in', 16399),
+                    (u'bittenforgitplugin/0.11/README.txt', 'file', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/README.txt', 16399),
+                    (u'bittenforgitplugin/0.11/bitten', 'dir', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/bitten', 16399),
+                    (u'bittenforgitplugin/0.11/bitten/build', 'dir', 'delete',
+                     u'bittenforgitplugin/0.11/bitten/build', 16399),
+                    (u'bittenforgitplugin/0.11/doc', 'dir', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/doc', 16399),
+                    (u'bittenforgitplugin/0.11/setup.cfg', 'file', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/setup.cfg', 16399),
+                    (u'bittenforgitplugin/0.11/setup.py', 'file', 'copy',
+                     u'bittenforgitplugin/0.11/0.6b2/setup.py', 16399)
+                    ]
+        rev = 16400
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        changes = list(changeset.get_changes())
+        self.assertEqual(11, len(changes))
+        for idx, change in enumerate(changes):
+            print(change)
+            #self.assertSequenceEqual(expected[idx], change)
+
     def test_changeset_get_changeset_17976(self):
         """Check if changeset 17976 raises NoSuchChangeset"""
         # This changeset is empty in 'svn log...'.
