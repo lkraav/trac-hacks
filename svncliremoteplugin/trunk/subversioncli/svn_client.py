@@ -78,7 +78,7 @@ def call_svn_to_unicode(cmd, repos=None):
 
     Note: an error may occur when svn can't find a path or revision.
     """
-    # print('  ## svn_client.py running %s' % (cmd,))
+    # print('  ## svn_client.py running %s' % (' '.join(cmd),))
     try:
         ret = subprocess.check_output(cmd)
     except subprocess.CalledProcessError as e:
@@ -92,7 +92,7 @@ def list_path(repos, rev, path):
     """Get a list of files/directories with file sizes for the given path
     using 'svn list' .
 
-    :param path: a directory or file path
+    :param path: a directory or file path relative to the real root of the repo
     :return list of tuples, (path, (filesize, changerev))
 
     'filesize' is 'None' for directories. If path is a file the list only
@@ -111,10 +111,9 @@ def list_path(repos, rev, path):
     cmd = ['svn', '--non-interactive',
            'list', '-v',
            '-r', str(rev),
-           # _create_path(self.repos.repo_url, self.path)]
            # We need to add the revision to the path. Otherwise any path copied, moved or removed
            # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-           _add_rev(_create_path(repos.repo_url, path), rev)]
+           _add_rev(_create_path(repos.root, path), rev)]
 
     ret = call_svn_to_unicode(cmd)
     if not ret:
@@ -137,13 +136,14 @@ def list_path(repos, rev, path):
                             ))
     return res
 
-
+# TODO: this is the only function calling list_path. Unify them after checking the similar method
+# in Changeset class
 def get_change_rev(repos, rev, path):
     """
 
     :param repos: Repository object, needed for base url
     :param rev: revision we query the change for. This is usually a subversion tree revision
-    :param path: path of the file/directory
+    :param path: path of the file/directory relative to the real root of the repo.
     :return: change revision for the given path (int)
     """
     file_info = list_path(repos, rev, path)[0]
@@ -156,18 +156,17 @@ def get_change_rev(repos, rev, path):
 
 
 def get_blame_annotations(repos, rev, path):
-    """Get data for a the given changeset rev to be displayed on the
-    changeset page.
+    """Get blame inforamtion for the given file with given rev.
 
     :param repos: Repository object
     :param rev: changeset revision
+    :paramm path: the filepath. This is a relative path into the repo
     :return: list
     """
     full_path = _create_path(repos.repo_url, path)
     cmd = ['svn', '--non-interactive', 'blame',
            '-r', '%s' % (rev,),
            _add_rev(full_path, rev)]
-           # repos.repo_url]
     ret = call_svn_to_unicode(cmd, repos)
 
     res =[]
@@ -235,7 +234,6 @@ def get_properties_list(repos, rev, path):
            '-r', str(rev),
            '-v', '--xml',
            path]
-           # _create_path(repos.repo_url, path)]
 
     ret = call_svn_to_unicode(cmd, repos)
     if ret:
@@ -317,7 +315,7 @@ def get_copy_info(repos, start_rev):
     cmd = ['svn', '--non-interactive', 'log',
            '-r', '%s:1' % (start_rev,),
            '-v', '-q', '--xml',
-           repos.repo_url]
+           repos.root]
 
     ret = call_svn_to_unicode(cmd, repos)
     if ret:
@@ -400,8 +398,7 @@ def get_changeset_info(repos, rev):
            '-v', '-q', '--xml',
            # We need to add the revision to the path. Otherwise any path copied, moved or removed
            # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-           _add_rev(repos.repo_url, rev)]
-           # repos.repo_url]
+           _add_rev(repos.root, rev)]
 
     ret = call_svn_to_unicode(cmd, repos)
     if ret:
@@ -414,12 +411,10 @@ def get_changeset_info(repos, rev):
         return [], None
 
 
-def get_history(repos, rev, path, limit=None):
+def get_history(node, limit=None):
     """Get the history for the given path at revision rev.
 
-    :param repos: Repository object. This holds e.g. the repo root information
-    :param rev: revision
-    :param path: the file/directory path relative to the repository root
+    :param node: a Node object
     :param limit: number of history items to return
     :return: a list of tuples: (path, revisions, change)
 
@@ -427,13 +422,17 @@ def get_history(repos, rev, path, limit=None):
     """
     def is_copied_dir(attrs):
         return attrs.get('action') == 'A' and attrs.get('kind') == 'dir' and attrs.get('copyfrom-path')
+
+    # See htgroupsplugin/trunk/htgroups/__init__.py@1984: don't use created_rev here
+    rev = node.rev
+    path = node.repos.full_path_from_normalized(node.path)
     cmd = ['svn', '--non-interactive',
            'log',
            '-q', '-v', '--xml',
            '-r', '%s:1' % rev]
     if limit:
         cmd += ['-l', str(limit)]
-    cmd.append(_add_rev(_create_path(repos.repo_url, path), rev))
+    cmd.append(_add_rev(_create_path(node.repos.root, path), rev))
 
     ret = call_svn_to_unicode(cmd)
     history = []
@@ -463,7 +462,6 @@ def get_history(repos, rev, path, limit=None):
                                 # Because we copied the whole directory we have to adjust the leading
                                 # directory sub path to the old location.
                                 cur_path = cur_path.replace(path_, copied_path)
-                                #change_rev = get_change_rev(repos, attrs['copyfrom-rev'], cur_path)
                             else:
                                 history.append((path_, attrs['rev'], Changeset.COPY))
                                 # Note that copyfrom-rev is the revision of the subversion tree when the copy took

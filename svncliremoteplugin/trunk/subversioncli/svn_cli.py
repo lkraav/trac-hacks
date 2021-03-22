@@ -13,8 +13,7 @@ import time
 
 from xml.sax import parseString
 from xml.sax.handler import ContentHandler
-from datetime import datetime
-from io import BytesIO, StringIO
+from io import BytesIO
 from pkg_resources import parse_version
 
 from svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_copy_info,\
@@ -85,7 +84,7 @@ def _get_svn_info(repos, rev, path=''):
     """Get information about the given path from the local repo.
 
     :param repos: a SubversionRepositoryCli object
-    :param path: relative path in the repo
+    :param path: path into the repo, relative to root. For subtree repos it's the real root.
     :return: dict
 
     The output of 'svn info -r XXX repo/path' is parsed and put into a dict.
@@ -112,13 +111,9 @@ def _get_svn_info(repos, rev, path=''):
     The part left from ':' is the dict key, the right part is the value.
     """
     # TODO: check if concat of url and path is always working. Use posix_path instead
-    full_path = _create_path(repos.repo_url, path)
-    # repos.log.info('#################################')
-    # repos.log.info('%s, %s, %s' % (repos.repo_url, path, full_path))
-    # repos.log.info('#################################')
+    full_path = _create_path(repos.root, path)
     cmd = ['svn', '--non-interactive',
            'info',
-           # '-r', str(rev),
            _add_rev(full_path, rev)]
     ret = _call_svn_to_unicode(cmd, repos)  # to_unicode(ret, 'utf-8')
 
@@ -132,36 +127,6 @@ def _get_svn_info(repos, rev, path=''):
             key, nope, val = item.partition(':')
             repo_info[key.strip()] = val.strip()
     return repo_info
-
-
-def _get_svn_history(repos, rev, path, limit=None):
-    """Get the history for the given path at revision rev.
-
-    :param repos: Repository object. This holds e.g. the repo root information
-    :param rev: revision
-    :param path: the file/directory path relative to the repository root
-    :param limit: number of history items to return
-    :return: a list of revisions
-
-    This is called from Node.get_history() when showing the revision log.
-    """
-    # repos.log.info('### in _get_svn_history(%s, %s, %s, %s)' % (repos, rev, path, limit))
-    cmd = ['svn', '--non-interactive',
-           'log',
-           '-q',
-           '-r', '%s:1' % str(rev)]
-    if limit:
-        cmd += ['-l', str(limit)]
-    # TODO: check if we should use @rev here
-    cmd.append(_create_path(repos.repo_url, path))
-    ret = _call_svn_to_unicode(cmd).split('\n')
-
-    history = []
-    for line in ret:
-        if line and not line.startswith(u'---'):
-            history.append(int(line.split('|')[0].strip('r ')))
-
-    return history
 
 
 class LogHandler(ContentHandler):
@@ -237,35 +202,8 @@ def _svn_changerev(repos, rev, path):
     return int(info['Last Changed Rev'])
 
 
-def _svn_rev_info(repos, rev):
-    """Get information about the revision rev.
-
-    This calls 'svn log -r <xxx> path/to/repo' on the repository to get
-    changeset information (no info about changeset diffs here).
-
-    Returns author, datetime, message
-    """
-    # repos.log.info('### in _svn_rev_info(%s, %s)' % ('repos', rev))
-    cmd = ['svn', 'log',
-           '-r', str(rev),
-           repos.repo_url]
-
-    ret = _call_svn_to_unicode(cmd)
-    if ret:
-        info = ret.split('\n')
-        # The date is something like '2021-03-07 14:59:56 +0100 (Sun, 07 Mar 2021)'
-        rev_, author, date, numlines = [x.strip() for x in info[1].split('|')]
-        date = [x.strip() for x in date.partition('(')[0].split()]  # ['2021-03-07', '14:59:56', '+0100']
-
-        # author, datetime, message
-        try:
-            # Note there is a trailing \n in the log output thus an empty string at the end of info[]
-            return author, parse_datetime(u'{} {}{}'.format(*date)), '\n'.join(info[3:-2])
-        except IndexError:
-            pass
-    repos.log.info('#### Changeset %s is broken' % rev)
-    return '', datetime.now(utc), ''
-
+class SubversionCliError(TracError):
+    """Exception raised for internal errors."""
 
 class SubversionConnector(Component):
     implements(IRepositoryConnector, ISystemInfoProvider)
@@ -351,12 +289,18 @@ class SubversionRepositoryCli(Repository):
         else:
             raise InvalidRepository("A repository of type '%s' is not supported." % params['type'])
 
-        self.repo_url = url  # May be local or remote
+        # May be local or remote. This may point to a subtree.
+        self.repo_url = self.root = url
 
         self.info = _get_svn_info(self, 'HEAD')
         if not self.info:
             raise InvalidRepository("Repository for '%s' can't be loaded." % self.repo_url)
         self.uuid = self.info['Repository UUID']
+
+        # Different from self.repo_url if this is repo of a subtree.
+        # Put in the real root after we got some info.
+        self.root = self.info['Repository Root']
+        self.relative_url = self.info['Relative URL'][2:]
 
         name = 'svn-cli:%s:%s' % (self.uuid, path)
         Repository.__init__(self, name, params, log)
@@ -381,7 +325,6 @@ class SubversionRepositoryCli(Repository):
         self._tzinfo = None
 
     def __del__(self):
-        # self.log.info('+++++++++++++++++ %s %s' % (len(self.rev_cache), self.msg_len))
         self.close()
 
     def close(self):
@@ -458,9 +401,10 @@ class SubversionRepositoryCli(Repository):
         if end_rev > youngest:
             end_rev = youngest
 
+        # Is this correct, using the root for repos pointing to subtrees?
         cmd = ['svn', 'log', '--xml',
                '-r', '%s:%s' % (start_rev, end_rev),
-               self.repo_url]
+               self.root]
         ret = _call_svn_to_unicode(cmd)
 
         if ret:
@@ -471,8 +415,8 @@ class SubversionRepositoryCli(Repository):
             try:
                 parseString(ret.encode('utf-8'), handler)
             except UnicodeEncodeError:
-                raise TracError('Internal unicode error with revision %s (num revs: %s)' %
-                                (rev, NUM_REV_INFO))
+                raise SubversionCliError('Internal unicode error with revision %s (num revs: %s)' %
+                                         (rev, NUM_REV_INFO))
 
             # get_log_entries(): [(rev, author, date, msg), ...]
             with self._lock:
@@ -573,7 +517,7 @@ class SubversionRepositoryCli(Repository):
                 return rev_
         # This must be called with the previous *repo* revision here. Otherwise we get
         # the current revision again.
-        return _svn_changerev(self, rev_ - 1, path)
+        return _svn_changerev(self, rev_ - 1, self.full_path_from_normalized(path))
 
     def next_rev(self, rev, path=''):
         """Return the revision immediately following the specified revision.
@@ -606,6 +550,9 @@ class SubversionRepositoryCli(Repository):
         """
         return self.normalize_rev(rev1) < self.normalize_rev(rev2)
 
+    def full_path_from_normalized(self, norm_path):
+        return _create_path(self.relative_url, norm_path).lstrip('/')
+
     def normalize_path(self, path):
         """Return a canonical representation of path in the repos."""
         # self.log.info('## In normalize_path "%s"' % path)
@@ -613,7 +560,10 @@ class SubversionRepositoryCli(Repository):
 
         # Remove leading "/" and trailing '/', except for the root
         if path:
-            return path and path.strip('/') or '/'
+            if not self.relative_url:
+                return path and path.strip('/') or '/'
+            else:
+                return path and path.replace(self.relative_url, '', 1).strip('/') or '/'
         else:
             return path  # None or ''. This is different to sfn_fs.py
 
@@ -675,10 +625,8 @@ class SubversionRepositoryCli(Repository):
                               oldpath=old_path, oldrev=old_rev,
                               newnode=new_node.kind, newpath=new_path,
                               newrev=new_rev))
-        self.log.info('  ## old_node: %s %s, new_node: %s %s' %
-                      (old_node, old_node.kind, new_node, new_node.kind))
-        #if new_node.isdir:
-
+        # self.log.info('  ## old_node: %s %s, new_node: %s %s' %
+        #               (old_node, old_node.kind, new_node, new_node.kind))
         yield (old_node, new_node, Node.FILE, Changeset.EDIT)
 
 
@@ -712,6 +660,7 @@ class SubversionCliNode(Node):
                 self.size = file_info[0]
                 self.kind = Node.FILE
 
+        path = repos.normalize_path(path)
         self.log = log
         # This is used for creating the correct links on the changeset page
         self.created_path = path
@@ -734,7 +683,8 @@ class SubversionCliNode(Node):
         else:
             if path == '/':
                 self.kind = Node.DIRECTORY
-                self.created_rev = 1
+                # self.created_rev = 1
+                self.size, self.created_rev = self.get_file_size_rev()
             else:
                 # self.log.info('  ## Calling self.get_file_size_rev(), %s, %s' % (rev, path))
                 # file_info[0]: size for file, None for directories
@@ -798,10 +748,10 @@ class SubversionCliNode(Node):
         """
         # TODO: there is the same function in svn_client. Use that one.
         full_path = _create_path(self.repos.repo_url, self.path)
+        # full_path = _create_path(self.repos.root, self.path)
         cmd = ['svn', '--non-interactive',
                'list', '-v',
                '-r', str(self.rev),
-               # _create_path(self.repos.repo_url, self.path)]
                # We need to add the revision to the path. Otherwise any path copied, moved or removed
                # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
                _add_rev(full_path, self.rev)]
@@ -873,12 +823,12 @@ class SubversionCliNode(Node):
         """
         # TODO: there is the same function in svn_client. Use that one.
         full_path = _create_path(self.repos.repo_url, self.path)
+        # full_path = _create_path(self.repos.root, self.path)
         self.query_path = _add_rev(full_path, self.rev)
         cmd = ['svn', '--non-interactive',
                'list', '-v',
                '-r', str(self.rev),
-               # _create_path(self.repos.repo_url, self.path)]
-               # We need to add the revision to the path. Otherwise any path copied, moved or removed
+               # We try to add the revision to the path. Otherwise any path copied, moved or removed
                # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
                self.query_path]
 
@@ -888,10 +838,10 @@ class SubversionCliNode(Node):
             self.log.info('  ++ svn \'list\' failed WITH ../path@rev. Now trying without @rev\n')
             cmd = cmd[:-1] + [full_path]
             ret = _call_svn_to_unicode(cmd)
-            # Slow workaround for problem with some changesets notavly 15264
+            # Slow workaround for problem with some changesets notably 15264
             if not ret:
                 self.log.info('    Failed with @rev. now trying with copy data...')
-                copied = self.repos.copy_info  # get_copy_info(self.repos, self.repos.youngest_rev)
+                copied = self.repos.copy_info
                 for item, val in copied.items():
                     if self.path.startswith(item):
                         path = self.path.replace(item, val)
@@ -902,7 +852,8 @@ class SubversionCliNode(Node):
                         if not ret:
                             self.log.info('    ++++++ svn \'list\' failed again. Giving up... ++++++\n')
                             self.query_path = ''
-                            return []
+                            raise SubversionCliError("Can't get file size and revision for %s %s." %
+                                                     (self.path, self.rev))
                         break
 
         changerev, name, size = 0, -1, -5
@@ -914,7 +865,7 @@ class SubversionCliNode(Node):
                     # If this is a directory path we end here.
                     return None, int(parts[changerev])
                 return int(parts[size]), int(parts[changerev])
-        raise TracError("Can't get file size and revision for %s %s." % (self.path, self.rev))
+        raise SubversionCliError("Can't get file size and revision for %s %s." % (self.path, self.rev))
 
     def get_entries(self):
         """Generator that yields the immediate child entries of a directory.
@@ -943,8 +894,9 @@ class SubversionCliNode(Node):
 
         :param limit: if given, yield at most ``limit`` results.
         """
-        # self.log.info('## Node ## In get_history(%s)' % limit)
-        history = get_history(self.repos, self.created_rev, self.path, limit)
+        # self.log.info('## Node ## In get_history(%s), %s %s' % (limit, self.rev, self.created_rev))
+        # history = get_history(self.repos, self.created_rev, self.repos.full_path_from_normalized(self.path), limit)
+        history = get_history(self, limit)
         for item in history:
             yield item
 
@@ -964,7 +916,8 @@ class SubversionCliNode(Node):
 
         The set of properties depends on the version control system.
         """
-        return get_properties_list(self.repos, self.rev, self.query_path or _create_path(self.rev.repo_url, self.path))
+        return get_properties_list(self.repos, self.rev,
+                                   self.query_path or _create_path(self.repos.rrepo_url, self.path))
 
     def get_content_length(self):
         """The length in bytes of the content.
@@ -1001,7 +954,7 @@ class SubversionCliChangeset(Changeset):
         self.log = repos.log
         self.rev = rev
 
-        # repos.log.info('## Changeset Rev %s' % rev)
+        # repos.log.info('## Changeset init rev %s' % rev)
         author, date, message = repos.get_rev_info(rev)
         if not date:
             raise NoSuchChangeset(rev)
@@ -1334,4 +1287,3 @@ class FileContentStream(object):
             n = len(fixed)
             return '$%s:: %-*.*s%s$' % \
                    (keyword, n, n, value, '#' if n < len(value) else ' ')
-

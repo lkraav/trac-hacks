@@ -9,20 +9,19 @@
 import unittest
 import datetime
 
-from tests import repo_url
+from tests import repo_url, sub_repo_url
 from trac.test import EnvironmentStub, Mock, MockRequest
 from trac.util.datefmt import to_datetime
 from trac.versioncontrol.api import DbRepositoryProvider, NoSuchChangeset
 from trac.versioncontrol.web_ui.changeset import ChangesetModule
 from subversioncli.svn_cli import SubversionCliChangeset, SubversionRepositoryCli
 
-if repo_url.startswith('http'):
-    url = '/' + repo_url
-else:
-    url = '/' + repo_url[6:].lstrip('/')
-
 
 class TestSvnCliChangeset(unittest.TestCase):
+    if repo_url.startswith('http'):
+        url = '/' + repo_url
+    else:
+        url = '/' + repo_url[6:].lstrip('/')
 
     @staticmethod
     def _log(msg):
@@ -34,12 +33,11 @@ class TestSvnCliChangeset(unittest.TestCase):
         self.log = Mock(info=self._log, error=self._log, debug=self._log)
         # self.repos = Mock(repo_url=url, log=self.log)
         parms = {'name': 'Test-Repo', 'id': 1}
-        if url.startswith('/http'):
+        if self.url.startswith('/http'):
             parms['type'] = 'svn-cli-remote'
         else:
             parms['type'] = 'svn-cli-direct'
-
-        self.repos = SubversionRepositoryCli(url, parms, self.log)
+        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
 
     def test_changeset_get_changes_11177(self):
         expected = [(u'customfieldadminplugin/0.11/customfieldadmin/admin.py', 'file', 'move',
@@ -144,8 +142,8 @@ class TestSvnCliChangeset(unittest.TestCase):
         req = MockRequest(self.env)
         # restricted = False,because we query the whole changeet
         res = cm._render_html(req, self.repos, changeset, False, data)
-        for key, val in res.items():
-            print(key, repr(val))
+        # for key, val in res.items():
+        #     print(key, repr(val))
 
         self.assertEqual(9, len(res['changes']))
         self.assertEqual(9, len(set(res['files'])))
@@ -199,8 +197,8 @@ class TestSvnCliChangeset(unittest.TestCase):
         req = MockRequest(self.env)
         # restricted = True,because we query a path
         res = cm._render_html(req, self.repos, changeset, True, data)
-        for key, val in res.items():
-            print(key, repr(val))
+        # for key, val in res.items():
+        #     print(key, repr(val))
 
         self.assertEqual(3, len(res['changes']))
         self.assertEqual(3, len(set(res['files'])))
@@ -219,7 +217,7 @@ class TestSvnCliChangeset(unittest.TestCase):
         """Test get_timeline_events() with interval containing a broken changeset."""
         # Changeset 17976 is empty in 'svn log ...'. Make sure we handle this gracefully.
         repoprovider = DbRepositoryProvider(self.env)
-        repoprovider.add_repository(self.repos.reponame, url, type_='svn-cli-direct')
+        repoprovider.add_repository(self.repos.reponame, self.url, type_='svn-cli-direct')
         # There is some broken changeset in this interval: 17976
         start = to_datetime(datetime.datetime(2020, 12, 17, 23, 59, 59, 999999))
         stop = to_datetime(datetime.datetime(2021, 1, 17, 23, 59, 59, 999999))
@@ -228,8 +226,71 @@ class TestSvnCliChangeset(unittest.TestCase):
         filters = cm.get_timeline_filters(req)[0]
         csets = list(cm.get_timeline_events(req, start, stop, filters))  # This is a generator
         self.assertEqual(17, len(csets))
-        for item in csets:
-            print(item)
+
+
+class TestSvnCliChangesetSubtree(unittest.TestCase):
+    """Test changesets for a repo pointing to a subtree."""
+
+    tst_repo = 'https://trac-hacks.org/svn/customfieldadminplugin'
+
+    if tst_repo.startswith('http'):
+        url = '/' + tst_repo
+    else:
+        url = '/' + tst_repo[6:].lstrip('/')
+
+    @staticmethod
+    def _log(msg):
+        print(msg)
+
+    def setUp(self):
+        self.env = EnvironmentStub(True, ['trac.versioncontrol.*',
+                                          'subversioncli.svn_cli.*'])
+        self.log = Mock(info=self._log, error=self._log, debug=self._log)
+        # self.repos = Mock(repo_url=url, log=self.log)
+        parms = {'name': 'Test-Repo', 'id': 1}
+        if self.url.startswith('/http'):
+            parms['type'] = 'svn-cli-remote'
+        else:
+            parms['type'] = 'svn-cli-direct'
+
+        self.repos = SubversionRepositoryCli(self.url, parms, self.log)
+
+    def test_changeset_get_changes_11177(self):
+        expected = [(u'0.11/customfieldadmin/admin.py', 'file', 'move',
+                     u'0.11/customfieldadmin/customfieldadmin.py', 11170),
+                    (u'0.11/customfieldadmin/api.py', 'file', 'edit',
+                     u'0.11/customfieldadmin/api.py', 11168),
+                    (u'0.11/customfieldadmin/locale/customfieldadmin.pot', 'file', 'edit',
+                     u'0.11/customfieldadmin/locale/customfieldadmin.pot', 11168),
+                    (u'0.11/customfieldadmin/locale/ja/LC_MESSAGES/customfieldadmin.po',
+                     'file', 'edit',
+                     u'0.11/customfieldadmin/locale/ja/LC_MESSAGES/customfieldadmin.po', 11171),
+                    (u'0.11/customfieldadmin/locale/nb/LC_MESSAGES/customfieldadmin.po',
+                     'file', 'edit',
+                     u'0.11/customfieldadmin/locale/nb/LC_MESSAGES/customfieldadmin.po', 11168),
+                    (u'0.11/customfieldadmin/locale/ru/LC_MESSAGES/customfieldadmin.po',
+                     'file', 'edit',
+                     u'0.11/customfieldadmin/locale/ru/LC_MESSAGES/customfieldadmin.po', 11168),
+                    (u'0.11/customfieldadmin/templates/customfieldadmin.html', 'file', 'edit',
+                     u'0.11/customfieldadmin/templates/customfieldadmin.html', 11168),
+                    (u'0.11/customfieldadmin/tests/__init__.py', 'file', 'edit',
+                     u'0.11/customfieldadmin/tests/__init__.py', 11168),
+                    (u'0.11/customfieldadmin/tests/admin.py', 'file', 'move',
+                     u'0.11/customfieldadmin/tests/web_ui.py', 11170),
+                    (u'0.11/customfieldadmin/tests/api.py', 'file', 'edit',
+                     u'0.11/customfieldadmin/tests/api.py', 11168),
+                    (u'0.11/setup.py', 'file', 'edit',
+                     u'0.11/setup.py', 11168)
+                    ]
+        rev = 11177
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        changes = list(changeset.get_changes())
+        # get_changeset_info() for this changeset returns 13. But we have 2 * svn-move in the changeset
+        # and svn shows one ADD for the destination and one DELETE for the source of every move.
+        self.assertEqual(11, len(changes))
+        for idx, change in enumerate(changes):
+            self.assertSequenceEqual(expected[idx], change)
 
 
 if __name__ == '__main__':

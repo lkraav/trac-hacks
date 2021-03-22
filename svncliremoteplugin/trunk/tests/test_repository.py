@@ -6,8 +6,7 @@ from subversioncli.svn_cli import SubversionRepositoryCli
 from subversioncli.svn_client import get_change_rev
 
 
-class TestCangeRevison(unittest.TestCase):
-    """Test function get_change_rev()"""
+class TestSvnCliRepository(unittest.TestCase):
 
     if repo_url.startswith('http'):
         url = '/' + repo_url
@@ -26,19 +25,13 @@ class TestCangeRevison(unittest.TestCase):
         else:
             parms['type'] = 'svn-cli-direct'
         self.repos = SubversionRepositoryCli(self.url, parms, self.log)
-        self.path = path = 'customfieldadminplugin/0.11/customfieldadmin/customfieldadmin.py'
 
-    def test_chgrev_is_currev(self):
-        """Check for correct change revision when change rev is the current revision"""
-        self.assertEqual(11168, get_change_rev(self.repos, 11168, self.path))
-
-    def test_chgrev_is_not_currev(self):
-        """Check for correct change revision when change rev is *not* the current revision"""
-        self.assertEqual(11168, get_change_rev(self.repos, 11170, self.path))
+    def test_get_rev_info(self):
+        info = self.repos.get_rev_info(17788)
+        self.assertIsNotNone(info[1])
 
 
-class TestCangeRevisonSubtree(unittest.TestCase):
-    """Test function get_change_rev() for a repo pointing to a subtree"""
+class TestSvnCliRepositorySubtree(unittest.TestCase):
 
     tst_repo = 'https://trac-hacks.org/svn/customfieldadminplugin'
 
@@ -59,17 +52,11 @@ class TestCangeRevisonSubtree(unittest.TestCase):
         else:
             parms['type'] = 'svn-cli-direct'
         self.repos = SubversionRepositoryCli(self.url, parms, self.log)
-        self.path = 'customfieldadminplugin/0.11/customfieldadmin/customfieldadmin.py'
 
-    def test_chgrev_is_currev(self):
-        """Check for correct change revision when change rev is the current revision"""
-        self.assertEqual(11168, get_change_rev(self.repos, 11168, self.path))
-
-    def test_chgrev_is_not_currev(self):
-        """Check for correct change revision when change rev is *not* the current revision"""
-        path = 'customfieldadminplugin/0.11/customfieldadmin/customfieldadmin.py'
-        # The path is normalized in the node. So we do it here, too.
-        self.assertEqual(11168, get_change_rev(self.repos, 11170, path))
+    def test_get_rev_info(self):
+        info = self.repos.get_rev_info(17788)
+        # If a revision can't be found the date is set to None
+        self.assertIsNotNone(info[1])
 
 
 if __name__ == '__main__':
