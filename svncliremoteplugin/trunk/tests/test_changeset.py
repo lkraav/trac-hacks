@@ -136,8 +136,91 @@ class TestSvnCliChangeset(unittest.TestCase):
         changes = list(changeset.get_changes())
         self.assertEqual(11, len(changes))
         for idx, change in enumerate(changes):
-            print(change)
-            #self.assertSequenceEqual(expected[idx], change)
+            self.assertSequenceEqual(expected[idx], change)
+
+    # TODO: This will go into Repository, so remove it here
+    def test_changeset_get_change_rev_200_file_1(self):
+        """Test changeset 200."""
+        # The file was created with 189, copied in 193, 194 and 196
+        # and modified in 200.
+        rev = 200
+        path = u'graphvizplugin/branches/v0.5/examples/GraphvizExamples'
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        chg_path, chg_rev = self.repos.get_change_rev(rev, path)
+        self.assertEqual(193, chg_rev)
+        self.assertEqual('graphvizplugin/0.9/examples/GraphvizExamples', chg_path)
+
+    # TODO: This will go into Repository, so remove it here
+    def test_changeset_get_change_rev_200_file_2(self):
+        """Test changeset 200."""
+        # The file was created with 156, modified several times up to 193.
+        # Copied in 194, and 196.
+        # Modified in 199 and 200.
+        rev = 200
+        path = u'graphvizplugin/branches/v0.5/graphviz/graphviz.py'
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        chg_path, chg_rev = self.repos.get_change_rev(rev, path)
+        self.assertEqual(199, chg_rev)
+        self.assertEqual('graphvizplugin/branches/v0.5/graphviz/graphviz.py', chg_path)
+
+    def test_changeset_get_changes_200(self):
+        """Test changeset 200 with files which have a convoluted copy and edit history."""
+        rev = 200
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        changes = list(changeset.get_changes())
+        self.assertEqual(3, len(changes))
+        expected = [(u'graphvizplugin/branches/v0.5/examples/GraphvizExamples', 'file', 'edit',
+                     u'graphvizplugin/0.9/examples/GraphvizExamples', 193),
+                    (u'graphvizplugin/branches/v0.5/examples/GraphvizExamples%2FWikiLinks', 'file', 'add', None, -1),
+                    (u'graphvizplugin/branches/v0.5/graphviz/graphviz.py', 'file', 'edit',
+                     u'graphvizplugin/branches/v0.5/graphviz/graphviz.py', 199)
+                    ]
+        for idx, change in enumerate(changes):
+            self.assertSequenceEqual(expected[idx], change)
+
+    def test_changeset_get_changes_1066(self):
+        """Test changeset 1066 with files which have the 'replace' marker but no copyfrom-* information."""
+        rev = 1066
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        changes = list(changeset.get_changes())
+        self.assertEqual(17, len(changes))
+        expected = [(u'discussionplugin/0.9/TestingSheet.odt', 'file', 'add', None, -1),
+                    (u'discussionplugin/0.9/setup.py', 'file', 'edit', u'discussionplugin/0.9/setup.py', 1009),
+                    (u'discussionplugin/0.9/tracdiscussion/admin.py', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/admin.py', 1034),
+                    (u'discussionplugin/0.9/tracdiscussion/api.py', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/api.py', 1034),
+                    (u'discussionplugin/0.9/tracdiscussion/core.py', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/core.py', 1034),
+                    (u'discussionplugin/0.9/tracdiscussion/htdocs/css/discussion.css', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/htdocs/css/discussion.css', 1016),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/discussion-header.cs', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/templates/discussion-header.cs', 790),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/forum-add.cs', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/templates/forum-add.cs', 1016),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/forum-admin.cs', 'file', 'add', None, -1),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/forum-list.cs', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/templates/forum-list.cs', 1016),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/group-admin.cs', 'file', 'add', None, -1),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/message-list.cs', 'file',
+                     'edit', u'discussionplugin/0.9/tracdiscussion/templates/message-list.cs', 1009),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/topic-add.cs', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/templates/topic-add.cs', 909),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/topic-list.cs', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/templates/topic-list.cs', 1016),
+                    (u'discussionplugin/0.9/tracdiscussion/templates/topic-move.cs', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/templates/topic-move.cs', 1009),
+                    (u'discussionplugin/0.9/tracdiscussion/timeline.py', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/timeline.py', 1038),
+                    (u'discussionplugin/0.9/tracdiscussion/wiki.py', 'file', 'edit',
+                     u'discussionplugin/0.9/tracdiscussion/wiki.py', 1006)
+                    ]
+        for idx, change in enumerate(changes):
+            self.assertSequenceEqual(expected[idx], change)
 
     def test_changeset_get_changeset_17976(self):
         """Check if changeset 17976 raises NoSuchChangeset"""
@@ -181,8 +264,6 @@ class TestSvnCliChangeset(unittest.TestCase):
             res = cm._render_html(req, self.repos, changeset, False, None, data)
         else:
             res = cm._render_html(req, self.repos, changeset, False, data)
-        for key, val in res.items():
-            print(key, repr(val))
 
         self.assertEqual(9, len(res['changes']))
         self.assertEqual(9, len(set(res['files'])))

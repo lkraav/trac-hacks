@@ -179,6 +179,47 @@ class TestGetChangesetInfo(unittest.TestCase):
         changes, copied, deleted = change_tuple
         self.assertEqual(9, len(changes))
 
+    def test_get_changeset_info_200(self):
+        expected = {u'/graphvizplugin/branches/v0.5/examples/GraphvizExamples':
+                        {'copyfrom-path': '', 'kind': u'file',
+                         'text-mods': u'true', 'rev': 200, 'copyfrom-rev': '', 'action': u'M'},
+                    u'/graphvizplugin/branches/v0.5/examples/GraphvizExamples%2FWikiLinks':
+                        {'copyfrom-path': '', 'kind': u'file',
+                         'text-mods': u'true', 'rev': 200, 'copyfrom-rev': '', 'action': u'A'},
+                    u'/graphvizplugin/branches/v0.5/graphviz/graphviz.py':
+                        {'copyfrom-path': '', 'kind': u'file',
+                         'text-mods': u'true', 'rev': 200, 'copyfrom-rev': '', 'action': u'M'}
+                    }
+        rev = 200
+        change_tuple = get_changeset_info(self.repos, rev)
+        self.assertEqual(3, len(change_tuple))  # [path_entry 1, path_Entry 2, ...], [copy 1, copy 2, ...]
+        changes, copied, deleted = change_tuple
+        self.assertEqual(3, len(changes))
+        for change in changes:
+            attrs, path = change
+            self.assertEqual(expected[path]['copyfrom-path'], attrs['copyfrom-path'])
+            self.assertEqual(expected[path]['copyfrom-rev'], attrs['copyfrom-rev'])
+            self.assertEqual(expected[path]['kind'], attrs['kind'])
+            self.assertEqual(expected[path]['rev'], attrs['rev'])
+            self.assertEqual(expected[path]['action'], attrs['action'])
+
+    def test_get_changeset_info_1066(self):
+        expected = {u'/graphvizplugin/branches/v0.5/examples/GraphvizExamples':
+                        {'copyfrom-path': '', 'kind': u'file',
+                         'text-mods': u'true', 'rev': 200, 'copyfrom-rev': '', 'action': u'M'},
+                    u'/graphvizplugin/branches/v0.5/examples/GraphvizExamples%2FWikiLinks':
+                        {'copyfrom-path': '', 'kind': u'file',
+                         'text-mods': u'true', 'rev': 200, 'copyfrom-rev': '', 'action': u'A'},
+                    u'/graphvizplugin/branches/v0.5/graphviz/graphviz.py':
+                        {'copyfrom-path': '', 'kind': u'file',
+                         'text-mods': u'true', 'rev': 200, 'copyfrom-rev': '', 'action': u'M'}
+                    }
+        rev = 1066
+        change_tuple = get_changeset_info(self.repos, rev)
+        self.assertEqual(3, len(change_tuple))  # [path_entry 1, path_Entry 2, ...], [copy 1, copy 2, ...]
+        changes, copied, deleted = change_tuple
+        self.assertEqual(17, len(changes))
+
 
 class TestGetChangesetInfoSubtree(unittest.TestCase):
 

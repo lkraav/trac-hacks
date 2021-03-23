@@ -39,7 +39,7 @@ class TestRevisionLog(unittest.TestCase):
         self.assertEqual(3, len(history))
 
     def test_revision_log_11190(self):
-        """Test getting a file node"""
+        """Test getting a revision log for a file with several copy operations."""
         # The file was created with 2250, copied in 2388 and again 11177
         # and modified in between up to 11187. Next change was in 11198
         path = 'customfieldadminplugin/0.11/customfieldadmin/admin.py'
@@ -75,9 +75,7 @@ class TestRevisionLog(unittest.TestCase):
             self.assertSequenceEqual(expected[idx], item)
 
     def test_revision_log_1984(self):
-        """Test getting a file node"""
-        # The file was created with 2250, copied in 2388 and again 11177
-        # and modified in between up to 11187. Next change was in 11198
+        """Test getting a rvision log (history)"""
         path = 'htgroupsplugin/trunk/htgroups/__init__.py'
         rev = 1984
         node = SubversionCliNode(self.repos, path, rev, self.log)
@@ -92,6 +90,22 @@ class TestRevisionLog(unittest.TestCase):
                     (u'htgroupsplugin/0.9/htgroups/__init__.py', 399, 'edit'),
                     (u'htgroupsplugin/0.9/htgroups/__init__.py', 398, 'add')
                     ]
+        for idx, item in enumerate(history):
+            self.assertSequenceEqual(expected[idx], item)
+
+    def test_revision_log_200_file_escape_char(self):
+        """Revision log for a file with escape character"""
+        rev = 200
+        path = u'graphvizplugin/branches/v0.5/examples/GraphvizExamples%2FWikiLinks'
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        self.assertTrue(node.isfile)
+        self.assertFalse(node.isdir)
+        self.assertEqual(path, node.path)
+        history = list(node.get_history())
+        self.assertEqual(1, len(history))
+
+        expected = [(u'graphvizplugin/branches/v0.5/examples/GraphvizExamples%2FWikiLinks', 200, 'add')]
         for idx, item in enumerate(history):
             self.assertSequenceEqual(expected[idx], item)
 

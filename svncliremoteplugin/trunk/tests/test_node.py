@@ -48,6 +48,46 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertFalse(node.isdir)
         self.assertEqual(path, node.path)
 
+    def test_get_file_node_193(self):
+        """Test getting a node for a file which was copied numerous times without editing."""
+        # The file was created with 189, copied in 193, 194 and 196
+        # and modified in 200.
+        path = 'graphvizplugin/0.9/examples/GraphvizExamples'
+        rev = 193
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        self.assertEqual(193, node.created_rev)
+        self.assertTrue(node.isfile)
+        self.assertFalse(node.isdir)
+        self.assertEqual(path, node.path)
+
+    def test_get_file_node_200_file_1(self):
+        """Test getting a node for a file which was copied numerous times without editing."""
+        # The file was created with 189, copied in 193, 194 and 196
+        # and modified in 200.
+        path = 'graphvizplugin/branches/v0.5/examples/GraphvizExamples'
+        rev = 200
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        self.assertEqual(200, node.created_rev)
+        self.assertTrue(node.isfile)
+        self.assertFalse(node.isdir)
+        self.assertEqual(path, node.path)
+
+    def test_get_file_node_200_file_2(self):
+        """Test getting a node for a file which was copied numerous times without editing."""
+        # The file was created with 189, copied in 193, 194 and 196
+        # and modified in 200.
+        path = 'graphvizplugin/branches/v0.5/examples/GraphvizExamples%2FWikiLinks'
+        rev = 200
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        self.assertEqual(200, node.created_rev)
+        self.assertTrue(node.isfile)
+        self.assertFalse(node.isdir)
+        self.assertEqual(path, node.path)
+        self.assertEqual(847,node.size)
+
     def test_get_file_node_size_0(self):
         """Test getting a file node"""
         # The file has a file size of 0.
@@ -135,6 +175,16 @@ class TestSvnCliNode(unittest.TestCase):
 
         with node.get_content() as stream:
             self.assertEqual(72, len(stream.read()))
+
+    def test_get_history_2760(self):
+        """File with escape character '%2F' in the name."""
+        rev = 2760
+        path = u'fullblogplugin/0.11/tracfullblog/templates/fullblog_sidebar.html'
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        node = SubversionCliNode(self.repos, path, rev, self.log)
+        self.assertEqual(rev, node.rev)
+        history = node.get_history()
+        #self.assertEqual(2, len(history))
 
 
 class TestSvnCliNodeSubtree(unittest.TestCase):

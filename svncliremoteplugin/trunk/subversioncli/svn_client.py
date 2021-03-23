@@ -20,6 +20,9 @@ def _add_rev(path, rev):
 
 
 def _create_path(base, path):
+    # Some file names are 'Foo%2Fbar' in the repo which are expanded by the svn client
+    # to 'foo/bar' albeit they are properly encoded. Prevent this unescaping.
+    path = path.replace('%2F', '%252F')
     return '/'.join([base.rstrip('/'), path.lstrip('/')])
 
 
@@ -420,10 +423,12 @@ def get_changeset_info(repos, rev):
         return [], None
 
 
-def get_history(node, limit=None):
+def get_history(repos, rev, path, limit=None):
     """Get the history for the given path at revision rev.
 
-    :param node: a Node object
+    :param repos:
+    :param rev:
+    :param path:
     :param limit: number of history items to return
     :return: a list of tuples: (path, revisions, change)
 
@@ -433,15 +438,14 @@ def get_history(node, limit=None):
         return attrs_.get('action') == 'A' and attrs_.get('kind') == 'dir' and attrs_.get('copyfrom-path')
 
     # See htgroupsplugin/trunk/htgroups/__init__.py@1984: don't use created_rev here
-    rev = node.rev
-    path = node.repos.full_path_from_normalized(node.path)
+    path = repos.full_path_from_normalized(path)
     cmd = ['svn', '--non-interactive',
            'log',
            '-q', '-v', '--xml',
            '-r', '%s:1' % rev]
     if limit:
         cmd += ['-l', str(limit)]
-    cmd.append(_add_rev(_create_path(node.repos.root, path), rev))
+    cmd.append(_add_rev(_create_path(repos.root, path), rev))
 
     ret = call_svn_to_unicode(cmd)
     history = []

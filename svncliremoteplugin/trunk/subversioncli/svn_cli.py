@@ -28,6 +28,8 @@ from trac.util.translation import _
 from trac.versioncontrol import Changeset, Node, Repository, \
                                 IRepositoryConnector, InvalidRepository, \
                                 NoSuchChangeset, NoSuchNode
+from trac.versioncontrol.cache import CachedRepository
+
 from threading import RLock
 
 
@@ -53,7 +55,18 @@ def _from_svn(path):
     return path and to_unicode(path, 'utf-8')
 
 
-def _create_path(base, path):
+def _create_path(base, path, conv_escape=True):
+    """Create a full path fromtwo path components. Optionally change escape characters.
+
+    :param base: The first part, usually the base path into a repo
+    :param path: second part, usually the path of a node.
+    :param conv_escape: if set to False, don't escape any escape-characters in the name
+    :return: a joined path with '/' as separator.
+    """
+    # Some file names are 'Foo%2Fbar' in the repo which are expanded by the svn client
+    # to 'foo/bar' albeit they are properly encoded. Prevent this unescaping.
+    if conv_escape:
+        path = path.replace('%2F', '%252F')
     return '/'.join([base.rstrip('/'), path.lstrip('/')])
 
 
@@ -205,6 +218,24 @@ def _svn_changerev(repos, rev, path):
 class SubversionCliError(TracError):
     """Exception raised for internal errors."""
 
+
+# Taken from tracopt.versioncontrol.svn.svn_fs (Trac 1.2)
+class SvnCliCachedRepository(CachedRepository):
+    """Subversion-specific cached repository, zero-pads revision numbers
+    in the cache tables.
+    """
+    has_linear_changesets = True
+
+    def db_rev(self, rev):
+        return '%010d' % rev
+
+    def rev_db(self, rev):
+        return int(rev or 0)
+
+    def normalize_rev(self, rev):
+        return self.repos.normalize_rev(rev)
+
+
 class SubversionCliConnector(Component):
     implements(IRepositoryConnector, ISystemInfoProvider)
 
@@ -245,7 +276,11 @@ class SubversionCliConnector(Component):
         """
         params.setdefault('eol_style', self.eol_style)
         try:
-            repos = SubversionCliRepository(dir, params, self.log)
+            if type_ == 'svn-cli-remote':
+                repos = SubversionCliRepository(dir, params, self.log)
+                # repos = SvnCliCachedRepository(self.env, repos, self.log)
+            else:
+                repos = SubversionCliRepository(dir, params, self.log)
         except (TracError, AttributeError, TypeError):
             raise InvalidRepository("Repository for '%s' can't be loaded." % dir)
         return repos
@@ -444,6 +479,46 @@ class SubversionCliRepository(Repository):
             self.log.info('#### Changeset %s is broken' % rev)
             return '', None, ''
 
+    def get_change_rev(self, rev, path):
+        """Get the previous revision for this path and rev.
+
+        :param rev: start revision
+        :param path: current path
+        :return tuple, (prev_path, prev_rev)
+
+        For any path without an immediate copy operation things are simple.
+        Given the following change history:
+
+        path1, 200, edit  <-- current revision rev
+        path1, 199, edit  <-- prev_path, prev_rev
+        path1, 180, copy
+        path2, 179, add
+
+        With a copy operation:
+
+        path1, 200, edit  <-- current revision rev
+        path1, 196, copy
+        path2, 194, copy
+        path3, 193, copy  <-- prev_path, prev_rev
+        path4, 189, add
+
+
+        """
+        changes = get_history(self, rev, path)
+        if not changes:
+            raise SubversionCliError("In get_change_rev(): can't get history for %s in revision %s" % (path, rev))
+        copy = False
+        for idx, (path, rev, change) in enumerate(changes[1:]):
+            if change in ('edit', 'add'):
+                if copy:
+                    return changes[idx][:2]
+                else:
+                    return changes[idx + 1][:2]
+            elif change is 'copy':
+                copy = True
+        else:
+            return changes[0][:2]
+
     def get_path_history(self, path, rev=None, limit=None):
         self.log.info('## In get_path_history(%s, %s, %s) NOT IMPLEMENTED' %
                       (path, rev, limit))
@@ -517,6 +592,8 @@ class SubversionCliRepository(Repository):
                 return rev_
         # This must be called with the previous *repo* revision here. Otherwise we get
         # the current revision again.
+        # TODO: This may break for some files? See changeset 200
+        #       'graphvizplugin/branches/v0.5/examples/GraphvizExamples@200' for a test. Use history api instead.
         return _svn_changerev(self, rev_ - 1, self.full_path_from_normalized(path))
 
     def next_rev(self, rev, path=''):
@@ -551,7 +628,7 @@ class SubversionCliRepository(Repository):
         return self.normalize_rev(rev1) < self.normalize_rev(rev2)
 
     def full_path_from_normalized(self, norm_path):
-        return _create_path(self.relative_url, norm_path).lstrip('/')
+        return _create_path(self.relative_url, norm_path, False).lstrip('/')
 
     def normalize_path(self, path):
         """Return a canonical representation of path in the repos."""
@@ -803,6 +880,7 @@ class SubversionCliNode(Node):
         Note that this is usually called from __init__(). No information is yet
         available if this is a file or a directory.
         """
+        # self.log.info('  #### In get_file_size_rev()')
         # TODO: there is the same function in svn_client. Use that one.
         full_path = _create_path(self.repos.repo_url, self.path)
         # full_path = _create_path(self.repos.root, self.path)
@@ -878,7 +956,7 @@ class SubversionCliNode(Node):
         """
         # self.log.info('## Node ## In get_history(%s), %s %s' % (limit, self.rev, self.created_rev))
         # history = get_history(self.repos, self.created_rev, self.repos.full_path_from_normalized(self.path), limit)
-        history = get_history(self, limit)
+        history = get_history(self.repos, self.rev, self.path, limit)
         for item in history:
             yield item
 
@@ -1001,18 +1079,29 @@ class SubversionCliChangeset(Changeset):
                     if attrs['kind'] == 'dir':
                         copied_dirs[path] = attrs['copyfrom-path']  # key: destination, value: source
             elif change_type == 'replace':
-                if attrs['copyfrom-path'] in deleted:
-                    change = Changeset.MOVE
+                if attrs['copyfrom-path']:
+                    if attrs['copyfrom-path'] in deleted:
+                        change = Changeset.MOVE
+                    else:
+                        change = Changeset.COPY
+                    base_path = attrs['copyfrom-path']
+                    base_rev = int(attrs['copyfrom-rev'])
                 else:
-                    change = Changeset.COPY
-                base_path = attrs['copyfrom-path']
-                base_rev = int(attrs['copyfrom-rev'])
+                    # Don't know when this is happening but can be seen for changeset 1066
+                    # and file 'discussionplugin/0.9/tracdiscussion/templates/forum-admin.cs'
+                    #
+                    # Maybe some local working copy change which was commited to an empty repo location
+                    # or something.
+                    change = Changeset.ADD
+                    base_path = None
+                    base_rev = -1
             elif change_type == Changeset.DELETE:
                 if path in copied:
                     # This is a source path for a svn-move operation
                     continue
             elif change_type == Changeset.EDIT:
-                base_rev = _svn_changerev(self.repos, prev_repo_rev, path)
+                base_path, base_rev = self.repos.get_change_rev(self.rev,
+                                                          self.repos.normalize_path(path))
                 if base_rev == None:
                     # We have some special file here. There is no older version in
                     # that path but the log doesn't show it a s copied/moved.
