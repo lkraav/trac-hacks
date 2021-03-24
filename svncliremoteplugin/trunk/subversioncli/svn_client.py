@@ -8,22 +8,12 @@
 #
 import subprocess
 
+from util import add_rev, call_cmd_to_unicode, join_path
 from trac.core import TracError
 from trac.util.text import to_unicode
 from trac.versioncontrol import Changeset
 from xml.sax import parseString
 from xml.sax.handler import ContentHandler
-
-
-def _add_rev(path, rev):
-    return '%s@%s' % (path, rev)
-
-
-def _create_path(base, path):
-    # Some file names are 'Foo%2Fbar' in the repo which are expanded by the svn client
-    # to 'foo/bar' albeit they are properly encoded. Prevent this unescaping.
-    path = path.replace('%2F', '%252F')
-    return '/'.join([base.rstrip('/'), path.lstrip('/')])
 
 
 def get_file_content(repos, rev, path, query_path):
@@ -45,53 +35,10 @@ def get_file_content(repos, rev, path, query_path):
                                            query_path])
             return ret
         except subprocess.CalledProcessError:
-            repos.log.error('#### svn cat failed for %s' % _add_rev(query_path, rev))
             raise TracError('svn cat: query_path is there but is not working!')  # We shouldn't end here
 
     raise TracError('svn cat: query_path is empty! (%s, %s, %s )' %
                     (path, repr(query_path), rev))  # We shouldn't end here (?)
-
-    # TODO: remove this after thorough testing:
-    full_path = _create_path(repos.repo_url, path)
-    try:
-        # repos.log.info('## ## cat: %s %s' % (rev, path))
-        process = subprocess.Popen(['svn', 'cat',
-                                       '-r', str(rev),
-                                       full_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        ret, err = process.communicate()
-        if err and u'E200009' in err:
-            # We need to add the revision to the path. Otherwise any path copied, moved or removed
-            # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-            #
-            # We can't always add the revision otherwise we can't view 'normal' files in the browser. See r18058
-            ret = subprocess.check_output(['svn', 'cat',
-                                           '-r', str(rev),
-                                           _add_rev(full_path, rev)])
-    except subprocess.CalledProcessError:
-        repos.log.error('#### svn cat failed for %s' % _add_rev(full_path, rev))
-        ret = u''
-    # The file contents is utf-8 encoded
-    return ret
-
-
-def call_svn_to_unicode(cmd, repos=None):
-    """Start app with the given list of parameters. Returns
-    command output as unicode or an empty string in case of error.
-
-    :param cmd: list with command, sub command and parameters
-    :param repos: Repository object for using logging
-    :return: unicode string. In case of error an empty string is returned.
-
-    Note: an error may occur when svn can't find a path or revision.
-    """
-    # print('  ## svn_client.py running %s' % (' '.join(cmd),))
-    try:
-        ret = subprocess.check_output(cmd)
-    except subprocess.CalledProcessError as e:
-        if repos:
-            repos.log.debug('#### In sVn_client.py: error with cmd "%s": %s' % (' '.join(cmd), e))
-        ret = u''
-    return to_unicode(ret, 'utf-8')
 
 
 def list_path(repos, rev, path):
@@ -121,9 +68,9 @@ def list_path(repos, rev, path):
            '-r', str(rev),
            # We need to add the revision to the path. Otherwise any path copied, moved or removed
            # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-           _add_rev(_create_path(repos.root, path), rev)]
+           add_rev(join_path(repos.root, path), rev)]
 
-    ret = call_svn_to_unicode(cmd)
+    ret = call_cmd_to_unicode(cmd)
     if not ret:
         return []
 
@@ -132,7 +79,7 @@ def list_path(repos, rev, path):
     for line in ret.split('\n'):
         parts = line.split()
         if parts and parts[name] != './':
-            path = _create_path(path, parts[name])
+            path = join_path(path, parts[name])
             if path and path != '/':
                 path = path.rstrip('/')
             if parts[name].strip().endswith('/'):
@@ -145,7 +92,7 @@ def list_path(repos, rev, path):
     return res
 
 # TODO: this is the only function calling list_path. Unify them after checking the similar method
-# in Changeset class
+#       in Changeset class
 def get_change_rev(repos, rev, path):
     """
 
@@ -171,11 +118,11 @@ def get_blame_annotations(repos, rev, path):
     :param path: the filepath. This is a relative path into the repo
     :return: list
     """
-    full_path = _create_path(repos.repo_url, path)
+    full_path = join_path(repos.repo_url, path)
     cmd = ['svn', '--non-interactive', 'blame',
            '-r', '%s' % (rev,),
-           _add_rev(full_path, rev)]
-    ret = call_svn_to_unicode(cmd, repos)
+           add_rev(full_path, rev)]
+    ret = call_cmd_to_unicode(cmd, repos)
 
     res = []
     if ret:
@@ -243,7 +190,7 @@ def get_properties_list(repos, rev, path):
            '-v', '--xml',
            path]
 
-    ret = call_svn_to_unicode(cmd, repos)
+    ret = call_cmd_to_unicode(cmd, repos)
     if ret:
         handler = PropertiesHandler()  # This parses a log with one or more logentries
         parseString(ret.encode('utf-8'), handler)
@@ -328,7 +275,7 @@ def get_copy_info(repos, start_rev):
            '-v', '-q', '--xml',
            repos.root]
 
-    ret = call_svn_to_unicode(cmd, repos)
+    ret = call_cmd_to_unicode(cmd, repos)
     if ret:
         handler = CopyHandler()  # This parses a log with one or more logentries
         parseString(ret.encode('utf-8'), handler)
@@ -410,9 +357,9 @@ def get_changeset_info(repos, rev):
            '-v', '-q', '--xml',
            # We need to add the revision to the path. Otherwise any path copied, moved or removed
            # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-           _add_rev(repos.root, rev)]
+           add_rev(repos.root, rev)]
 
-    ret = call_svn_to_unicode(cmd, repos)
+    ret = call_cmd_to_unicode(cmd, repos)
     if ret:
         handler = ChangesHandler()  # This parses a log with one or more logentries
         parseString(ret.encode('utf-8'), handler)
@@ -445,9 +392,9 @@ def get_history(repos, rev, path, limit=None):
            '-r', '%s:1' % rev]
     if limit:
         cmd += ['-l', str(limit)]
-    cmd.append(_add_rev(_create_path(repos.root, path), rev))
+    cmd.append(add_rev(join_path(repos.root, path), rev))
 
-    ret = call_svn_to_unicode(cmd)
+    ret = call_cmd_to_unicode(cmd)
     history = []
     if ret:
         # Used to track path over copy and move

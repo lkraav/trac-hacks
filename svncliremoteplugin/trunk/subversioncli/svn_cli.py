@@ -9,7 +9,6 @@
 import os
 import re
 import subprocess
-import time
 
 from xml.sax import parseString
 from xml.sax.handler import ContentHandler
@@ -19,6 +18,7 @@ from pkg_resources import parse_version
 from svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_copy_info,\
     get_file_content, get_history, get_properties_list
 from datetime_z import parse_datetime
+from threading import RLock
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
 from trac.env import ISystemInfoProvider
@@ -29,68 +29,10 @@ from trac.versioncontrol import Changeset, Node, Repository, \
                                 IRepositoryConnector, InvalidRepository, \
                                 NoSuchChangeset, NoSuchNode
 from trac.versioncontrol.cache import CachedRepository
-
-from threading import RLock
+from util import add_rev, call_cmd_to_unicode, join_path
 
 
 NUM_REV_INFO = 500
-
-
-class Timer:
-    def __enter__(self):
-        self.start = time.time()
-        return self
-
-    def __exit__(self, *args):
-        self.end = time.time()
-        self.interval = self.end - self.start
-
-
-def _from_svn(path):
-    """Expect an UTF-8 encoded string and transform it to an `unicode` object
-
-    But Subversion repositories built from conversion utilities can have
-    non-UTF-8 byte strings, so we have to convert using `to_unicode`.
-    """
-    return path and to_unicode(path, 'utf-8')
-
-
-def _create_path(base, path, conv_escape=True):
-    """Create a full path fromtwo path components. Optionally change escape characters.
-
-    :param base: The first part, usually the base path into a repo
-    :param path: second part, usually the path of a node.
-    :param conv_escape: if set to False, don't escape any escape-characters in the name
-    :return: a joined path with '/' as separator.
-    """
-    # Some file names are 'Foo%2Fbar' in the repo which are expanded by the svn client
-    # to 'foo/bar' albeit they are properly encoded. Prevent this unescaping.
-    if conv_escape:
-        path = path.replace('%2F', '%252F')
-    return '/'.join([base.rstrip('/'), path.lstrip('/')])
-
-
-def _add_rev(path, rev):
-    return '%s@%s' % (path, rev)
-
-
-def _call_svn_to_unicode(cmd, repos=None):
-    """Start app with the given list of parameters. Returns
-    command output as unicode or an empty string in case of error.
-
-    :param cmd: list with command, sub command and parameters
-    :return: unicode string. In case of error an empty string is returned.
-
-    Note: an error may occur when svn can't find a path or revision.
-    """
-    # print('  ## In svn_cli.py: running %s' % (' '.join(cmd),))
-    try:
-        ret = subprocess.check_output(cmd)
-    except subprocess.CalledProcessError as e:
-        if repos:
-            repos.log.debug('#### In svn_cli.py: error with cmd "%s":\n    %s' % (' '.join(cmd), e))
-        ret = u''
-    return to_unicode(ret, 'utf-8')
 
 
 def _get_svn_info(repos, rev, path=''):
@@ -124,11 +66,11 @@ def _get_svn_info(repos, rev, path=''):
     The part left from ':' is the dict key, the right part is the value.
     """
     # TODO: check if concat of url and path is always working. Use posix_path instead
-    full_path = _create_path(repos.root, path)
+    full_path = join_path(repos.root, path)
     cmd = ['svn', '--non-interactive',
            'info',
-           _add_rev(full_path, rev)]
-    ret = _call_svn_to_unicode(cmd, repos)  # to_unicode(ret, 'utf-8')
+           add_rev(full_path, rev)]
+    ret = call_cmd_to_unicode(cmd, repos)  # to_unicode(ret, 'utf-8')
 
     if not ret:
         return None
@@ -476,7 +418,7 @@ class SubversionCliRepository(Repository):
         cmd = ['svn', 'log', '--xml',
                '-r', '%s:%s' % (start_rev, end_rev),
                self.root]
-        ret = _call_svn_to_unicode(cmd)
+        ret = call_cmd_to_unicode(cmd)
 
         if ret:
             # With 'svn --xml' all datetimes are UTC.
@@ -500,19 +442,17 @@ class SubversionCliRepository(Repository):
                     self.rev_cache[num] = num, '', None, ''
                 for idx, item in enumerate(handler.get_log_entries()):
                     self.rev_cache[item[0]] = item
-                    # self.log.info('  #### %s: %s' % (item[0], item))
-                    # self.msg_len += len(item[3])
                 try:
                     rev_, author, date, msg = self.rev_cache[rev]
                 except KeyError:
-                    self.log.info('###### Rev: %s can not be found ##############' % (rev,))
+                    self.log.warning('###### Rev: %s can not be found ##############' % (rev,))
                     # print(cmd)
                     # for item in handler.get_log_entries():
                     #     print("%s: %s" % (item[0], item))
                     return '', None, ''
                 return author, date, msg
         else:
-            self.log.info('#### Changeset %s is broken' % rev)
+            self.log.warning('#### Changeset %s is broken' % rev)
             return '', None, ''
 
     def get_change_rev(self, rev, path):
@@ -664,7 +604,8 @@ class SubversionCliRepository(Repository):
         return self.normalize_rev(rev1) < self.normalize_rev(rev2)
 
     def full_path_from_normalized(self, norm_path):
-        return _create_path(self.relative_url, norm_path, False).lstrip('/')
+        return '/'.join([self.relative_url.rstrip('/'), norm_path.lstrip('/')]).lstrip('/')
+        #return _create_path(self.relative_url, norm_path, False).lstrip('/')
 
     def normalize_path(self, path):
         """Return a canonical representation of path in the repos."""
@@ -842,20 +783,20 @@ class SubversionCliNode(Node):
            11168 author           497 Jan 23  2012 __init__.py
         """
         # TODO: there is the same function in svn_client. Use that one.
-        full_path = _create_path(self.repos.repo_url, self.path)
+        full_path = join_path(self.repos.repo_url, self.path)
         # full_path = _create_path(self.repos.root, self.path)
         cmd = ['svn', '--non-interactive',
                'list', '-v',
                '-r', str(self.rev),
                # We need to add the revision to the path. Otherwise any path copied, moved or removed
                # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
-               _add_rev(full_path, self.rev)]
+               add_rev(full_path, self.rev)]
 
-        ret = _call_svn_to_unicode(cmd)
+        ret = call_cmd_to_unicode(cmd)
         if not ret:
             cmd = cmd[:-1] + [full_path]
             print('  ++ svn \'list\' failed WITH ../path@rev. Now trying without @rev %s\n' % cmd)
-            ret = _call_svn_to_unicode(cmd)
+            ret = call_cmd_to_unicode(cmd)
             # Slow workaround for problem with some changesets notavly 15264
             if not ret:
                 # TODO: we already got a real path in get_file_size_rev(). Is this still necessary?
@@ -864,9 +805,9 @@ class SubversionCliNode(Node):
                 for item, val in copied.items():
                     if self.path.startswith(item):
                         path = self.path.replace(item, val)
-                        path = _add_rev(_create_path(self.repos.repo_url, path), self.rev)
+                        path = add_rev(join_path(self.repos.repo_url, path), self.rev)
                         cmd = cmd[:-1] + [path]
-                        ret = _call_svn_to_unicode(cmd)
+                        ret = call_cmd_to_unicode(cmd)
                         if not ret:
                             print('    ++++++ svn \'list\' failed again. Giving up... ++++++\n')
                             return []
@@ -886,7 +827,7 @@ class SubversionCliNode(Node):
                         # When querying the contents we don't want to return this entry but only real
                         # entries
                         continue
-                path = _create_path(self.path, parts[name])
+                path = join_path(self.path, parts[name])
                 if path and path != '/':
                     path = path.rstrip('/')
                 if parts[name].strip().endswith('/'):
@@ -918,9 +859,9 @@ class SubversionCliNode(Node):
         """
         # self.log.info('  #### In get_file_size_rev()')
         # TODO: there is the same function in svn_client. Use that one.
-        full_path = _create_path(self.repos.repo_url, self.path)
+        full_path = join_path(self.repos.repo_url, self.path)
         # full_path = _create_path(self.repos.root, self.path)
-        self.query_path = _add_rev(full_path, self.rev)
+        self.query_path = add_rev(full_path, self.rev)
         cmd = ['svn', '--non-interactive',
                'list', '-v',
                '-r', str(self.rev),
@@ -928,12 +869,12 @@ class SubversionCliNode(Node):
                # in a younger revision won't be found by svn. See changeset 11183 in https://trac-hacks.org/svn
                self.query_path]
 
-        ret = _call_svn_to_unicode(cmd)
+        ret = call_cmd_to_unicode(cmd)
         if not ret:
             self.query_path = full_path
             self.log.info('  ++ svn \'list\' failed WITH ../path@rev. Now trying without @rev\n')
             cmd = cmd[:-1] + [full_path]
-            ret = _call_svn_to_unicode(cmd)
+            ret = call_cmd_to_unicode(cmd)
             # Slow workaround for problem with some changesets notably 15264
             if not ret:
                 self.log.info('    Failed with @rev. now trying with copy data...')
@@ -941,10 +882,10 @@ class SubversionCliNode(Node):
                 for item, val in copied.items():
                     if self.path.startswith(item):
                         path = self.path.replace(item, val)
-                        path = _add_rev(_create_path(self.repos.repo_url, path), self.rev)
+                        path = add_rev(join_path(self.repos.repo_url, path), self.rev)
                         self.query_path = path
                         cmd = cmd[:-1] + [path]
-                        ret = _call_svn_to_unicode(cmd)
+                        ret = call_cmd_to_unicode(cmd)
                         if not ret:
                             self.log.info('    ++++++ svn \'list\' failed again. Giving up... ++++++\n')
                             self.query_path = ''
@@ -1013,7 +954,7 @@ class SubversionCliNode(Node):
         The set of properties depends on the version control system.
         """
         return get_properties_list(self.repos, self.rev,
-                                   self.query_path or _create_path(self.repos.rrepo_url, self.path))
+                                   self.query_path or join_path(self.repos.rrepo_url, self.path))
 
     def get_content_length(self):
         """The length in bytes of the content.
