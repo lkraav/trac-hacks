@@ -237,6 +237,20 @@ class SvnCliCachedRepository(CachedRepository):
 
 
 class SubversionCliConnector(Component):
+    """Subversion connector for direct and caching access to subversion repositories.
+
+    * Use {{{svn-cli}}} as connector type with caching
+    * Use {{{svn-cli-direct}}} as connector for uncached access
+
+    For remote repositories prepend the repository URL on the admin page with
+    * {{{/}}} when using a posix like operating system
+    * {{{x:/}}} when using Windows
+
+    Examples:
+        {{{/https://trac-hacks.org/svn}}}
+
+        {{{x:/https://trac-hacks.org/svn}}}
+    """
     implements(IRepositoryConnector, ISystemInfoProvider)
 
     eol_style = ChoiceOption(
@@ -256,7 +270,7 @@ class SubversionCliConnector(Component):
             ver = subprocess.check_output(['svn', '--version', '-q'])
         except OSError as e:
             self.error = e
-            self.log.info(e)
+            self.log.warning("Subversion client can not be started. %s." % e)
         else:
             self._version = str(parse_version(ver.strip('\n')))
 
@@ -292,7 +306,10 @@ class SubversionCliConnector(Component):
         name and version information of external packages used by a
         component.
         """
-        yield 'Subversion', self._version + u' (svn client)'
+        if not self.error:
+            yield 'Subversion', self._version + u' (svn client)'
+        else:
+            yield 'Subversion',  u"(Subversion client not available)"
 
 
 def repo_url_from_path(path):
@@ -346,7 +363,9 @@ class SubversionCliRepository(Repository):
 
         self.info = _get_svn_info(self, 'HEAD')
         if not self.info:
-            raise InvalidRepository("Repository for '%s' can't be loaded." % self.repo_url)
+            raise InvalidRepository(
+                _("%(path)s does not appear to be a Subversion repository.",
+                  path=to_unicode(self.repo_url)))
         self.uuid = self.info['Repository UUID']
 
         # Different from self.repo_url if this is repo of a subtree.
