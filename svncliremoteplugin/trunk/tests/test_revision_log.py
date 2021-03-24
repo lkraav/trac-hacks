@@ -19,11 +19,8 @@ class TestRevisionLog(unittest.TestCase):
 
     def setUp(self):
         self.log = Mock(info=self._log, debug=self._log, error=self._log)
-        parms = {'name': 'Test-Repo', 'id': 1}
-        if self.url.startswith('/http'):
-            parms['type'] = 'svn-cli-remote'
-        else:
-            parms['type'] = 'svn-cli-direct'
+        parms = {'name': 'Test-Repo', 'id': 1,
+                 'type': 'svn-cli-direct'}
         self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_revision_log(self):
@@ -126,11 +123,8 @@ class TestRevisionLogSubtree(unittest.TestCase):
 
     def setUp(self):
         self.log = Mock(info=self._log, debug=self._log, error=self._log)
-        parms = {'name': 'Test-Repo', 'id': 1}
-        if self.url.startswith('/http'):
-            parms['type'] = 'svn-cli-remote'
-        else:
-            parms['type'] = 'svn-cli-direct'
+        parms = {'name': 'Test-Repo', 'id': 1,
+                 'type': 'svn-cli-direct'}
         self.repos = SubversionCliRepository(self.url, parms, self.log)
 
     def test_revision_log(self):

@@ -267,7 +267,7 @@ class SubversionCliConnector(Component):
         if self.error:
             prio = -1
         yield ("svn-cli-direct", prio * 4)
-        yield ("svn-cli-remote", prio * 4)
+        yield ("svn-cli", prio * 8)
 
     def get_repository(self, type_, dir, params):
         """Return a `SubversionRepository`.
@@ -276,9 +276,9 @@ class SubversionCliConnector(Component):
         """
         params.setdefault('eol_style', self.eol_style)
         try:
-            if type_ == 'svn-cli-remote':
+            if type_ == 'svn-cli':
                 repos = SubversionCliRepository(dir, params, self.log)
-                # repos = SvnCliCachedRepository(self.env, repos, self.log)
+                repos = SvnCliCachedRepository(self.env, repos, self.log)
             else:
                 repos = SubversionCliRepository(dir, params, self.log)
         except (TracError, AttributeError, TypeError):
@@ -295,16 +295,44 @@ class SubversionCliConnector(Component):
         yield 'Subversion', self._version + u' (svn client)'
 
 
+def repo_url_from_path(path):
+    """Create a valid url from the given repository admin page path.
+
+    :param path: path as entered on the admin page for repositories
+
+    Since Trac doesn't support remote repos we have to trick the admin page
+    into accepting a remote path by disguising it as an absolute one.
+    This function removes this disguise.
+    """
+    path = path.strip()
+    if os.name == 'nt':
+        if path[3:].startswith('http'):
+            url = path[3:].strip()
+        else:
+            prefix = 'file:///'
+            url = '%s%s' % (prefix, path)  # we may use http with svn later
+    else:
+        # posix
+        if path[1:].startswith('http'):
+            url = path.lstrip('/ ')
+        else:
+            prefix = 'file://'
+            url = '%s%s' % (prefix, path)
+    return url
+
+
 class SubversionCliRepository(Repository):
 
     has_linear_changesets = True
 
     def __init__(self, path, params, log):
         """
-        :param path: path to local subversion repo directory
+        :param path: path to local or remote subversion repo directory
         :param params:
         :param log: logger object
         """
+        if params['type'] not in ('svn-cli-direct', 'svn-cli'):
+            raise InvalidRepository("A repository of type '%s' is not supported." % params['type'])
 
         self.log = log
         self.base = path  # This is a path specified on the admin page
@@ -313,19 +341,8 @@ class SubversionCliRepository(Repository):
         # if params['name'] not in ('trac-hacks', 'Test-Repo'):
         #     raise InvalidRepository("Ignoring %s" % params['name'])
 
-        if params['type'] == 'svn-cli-direct':
-            prefix = 'file:///' if os.name == 'nt' else 'file://'
-            url = '%s%s' % (prefix, path)  # we may use http with svn later
-        elif params['type'] == 'svn-cli-remote':
-            if os.name == 'nt':
-                url = path[3:].strip()
-            else:
-                url = path.lstrip('/ ')
-        else:
-            raise InvalidRepository("A repository of type '%s' is not supported." % params['type'])
-
         # May be local or remote. This may point to a subtree.
-        self.repo_url = self.root = url
+        self.repo_url = self.root = repo_url_from_path(path)
 
         self.info = _get_svn_info(self, 'HEAD')
         if not self.info:
