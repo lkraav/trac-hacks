@@ -202,9 +202,9 @@ class SmpProject(SmpBaseModel):
         prj_id = None
         with self.env.db_transaction as db:
             cursor = db.cursor()
-            cursor.execute("""INSERT INTO smp_project (name, summary, description, closed, restrict_to) 
+            cursor.execute("""INSERT INTO smp_project (name, summary, description, closed, restrict_to)
                            VALUES(%s,%s,%s,%s,%s)""", (name , summary, description, closed, restrict_to))
-            prj_id = db.get_last_id(cursor, 'smp_project')
+            prj_id = db.get_last_id(cursor, 'smp_project', 'id_project')
 
         # keep internal ticket custom field data up to date
         self.get_all_projects()
@@ -255,7 +255,7 @@ class SmpProject(SmpBaseModel):
                                          (prj_id, ))[0][0]
             except IndexError:
                 return
-            db("""UPDATE smp_project 
+            db("""UPDATE smp_project
                   SET name=%s, summary=%s, description=%s, closed=%s, restrict_to=%s
                   WHERE id_project=%s""", (name, summary, desc, closed, restrict_to, prj_id))
             if old_name != name:
@@ -321,7 +321,7 @@ class SmpProject(SmpBaseModel):
         projects = self.get_all_projects()
         prj_cache = {project.name: project for project in projects}
 
-        for project_name in self.env.db_query("""SELECT value FROM ticket_custom 
+        for project_name in self.env.db_query("""SELECT value FROM ticket_custom
                                             WHERE name='project' AND ticket = %s""" % (tkt_id,)):
             name = project_name[0]
             try:

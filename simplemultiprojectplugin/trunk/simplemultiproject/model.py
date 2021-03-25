@@ -54,9 +54,11 @@ class Project(object):
         """
         self.env = env
         self.id = self.name = self._old_name = self.summary = self.description = None
+        self.closed = self.restricted = None
+
         if name:
             for id_project, name, summary, description, closed, restrict_to in self.env.db_query("""
-                                SELECT id_project,name,summary,description,closed,restrict_to 
+                                SELECT id_project,name,summary,description,closed,restrict_to
                                 FROM smp_project WHERE name=%s
                                 """, (name,)):
                 self.id = id_project
@@ -134,10 +136,10 @@ class Project(object):
             cursor.execute("""
                            INSERT INTO smp_project (name, summary, description, closed, restrict_to)
                            VALUES (%s,%s,%s,%s,%s)
-                           """, (self.id, self.name, _to_null(self.summary),
+                           """, (self.name, _to_null(self.summary),
                           _to_null(self.description), _to_null(self.closed),
                                  'YES' if self.restricted else None))
-            self.id = db.get_last_id(cursor, 'smp_project')
+            self.id = db.get_last_id(cursor, 'smp_project', 'id_project')
         # keep internal ticket custom field data up to date
         self.refresh_ticket_custom_list()
 
