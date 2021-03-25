@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2009, 2011, 2013 John Szakmeister
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -56,9 +56,9 @@ class MultiProjectBacklog(Component):
         (u'status', u'Status'), (u'time_created', u'Created')
     ]
 
-    trac_version = get_distribution('trac').version
-    trac_0_12 = parse_version(trac_version) < parse_version(
-        '1.0.0')  # True if Trac V0.12.x
+    # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
+    # creation using trac.util.html.tag and friends
+    pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
 
     def __init__(self):
         if have_smp:
@@ -83,7 +83,7 @@ class MultiProjectBacklog(Component):
                 """, (schema_version,))
 
     def environment_needs_upgrade(self, db=None):
-        with self.env.db_query:
+        with self.env.db_query as db:
             for version, in db("""
                     SELECT value FROM system WHERE name='mp_backlog_version'
                     """):
@@ -186,7 +186,7 @@ $proj
         return milestones_for_project
 
     def post_process_request(self, req, template, data, content_type):
-        if have_smp and template == 'backlog.html':
+        if have_smp and template in ('backlog.html', 'mp_backlog_jinja.html'):
             all_proj = self.env.config.getlist('ticket-custom',
                                                'project.options', sep='|')
 
@@ -308,7 +308,10 @@ $proj
         add_script_data(req, {'mp_post_url': req.base_path + '/mpbacklog',
                               'mp_form_token': req.form_token})
         add_script(req, 'mpbacklog/js/backlog.js')
-        return 'backlog.html', data, None
+        if self.pre_1_3:
+            return 'backlog.html', data, None
+        else:
+            return 'mp_backlog_jinja.html', data, {}
 
     def _get_active_tickets(self, milestone=None):
         with self.env.db_query as db:

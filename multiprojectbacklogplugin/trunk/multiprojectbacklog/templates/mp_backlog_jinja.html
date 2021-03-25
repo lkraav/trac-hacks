@@ -1,0 +1,143 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block title
+            ${_("Backlog")}
+            ${ super() }
+            # endblock title
+        </title>
+        # block head
+        ${ super() }
+        # endblock
+    </head>
+    <body>
+        # block content
+        <div id="content" class="report">
+            <h1>${_("Backlog")}: ${title}</h1>
+            <div id="container">
+                <div class="field">
+                    <legend>${_("Columns")}</legend>
+                </div>
+                <div>
+                    # for field in mp_fields:
+                    <label class="mp-sel-label">
+                        <input type="checkbox" class="prj-field-sel" name="backlog_fields"
+                               value="${field[0]}"
+                               ${{"checked": field[0] in shown_fields_sel}|htmlattr} />
+                        ${field[1]}
+                    </label>
+                    # endfor
+                </div>
+                <div>
+                    <p class="help">${_("Drag tickets to the milestones on the right for assigning")}.</p>
+                </div>
+
+                <div class="backlog-ticket-list">
+                    <table id="tickets_table" class="listing tickets">
+                        <thead>
+                            <tr class="ticket-th">
+                                # if 'id' in shown_fields:
+                                <th class="id">Id</th>
+                                # endif
+                                # if 'summary' in shown_fields:
+                                <th class="summary">Summary</th>
+                                # endif
+                                # if 'component' in shown_fields:
+                                <th class="component">Component</th>
+                                # endif
+                                # if 'version' in shown_fields:
+                                <th class="version">Version</th>
+                                # endif
+                                # if 'type' in shown_fields:
+                                <th class="type">Type</th>
+                                # endif
+                                # if 'owner' in shown_fields:
+                                <th class="owner">Owner</th>
+                                # endif
+                                # if 'status' in shown_fields:
+                                <th class="status">Status</th>
+                                # endif
+                                # if 'time_created' in shown_fields:
+                                <th class="time_created">Created</th>
+                                # endif
+                                # for cf in custom_fields:
+                                <th class="${cf[0]}"
+                                    ${{"style": "display:none" if cf[0] not in shown_fields}|htmlattr}>
+                                    ${cf[1]}
+                                </th>
+                                # endfor
+                            </tr>
+                        </thead>
+                        <tbody id="tickets">
+                            # for ticket in tickets:
+                            # if not mp_proj or mp_proj == ticket['project']:
+                            <tr id="ticket_${ticket.id}" class="ticket-tr">
+                                # if 'id' in shown_fields:
+                                <td class="id"><a href="${href.ticket(ticket.id)}">#${ticket.id}</a></td>
+                                # endif
+                                # if 'summary' in shown_fields:
+                                <td class="summary"><a href="${href.ticket(ticket.id)}">${ticket.summary}</a></td>
+                                # endif
+                                # if 'component' in shown_fields:
+                                <td class="component">${ticket.component}</td>
+                                # endif
+                                # if 'version' in shown_fields:
+                                <td class="version">${ticket.version}</td>
+                                # endif
+                                # if 'type' in shown_fields:
+                                <td class="type">${ticket.type}</td>
+                                # endif
+                                # if 'owner' in shown_fields:
+                                <td class="owner">${ticket.owner}</td>
+                                # endif
+                                # if 'status' in shown_fields:
+                                <td class="status">${ticket.status}</td>
+                                # endif
+                                # if 'time_created' in shown_fields:
+                                <td class="time_created">${format_date(ticket.time_created)}</td>
+                                # endif
+                                # for cf in custom_fields:
+                                <td class="${cf[0]}"
+                                    ${{"style": "display:none" if cf[0] not in shown_fields}|htmlattr}>
+                                    ${ticket[cf[0]]}
+                                </td>
+                                # endfor
+                            </tr>
+                            # endif
+                            # endfor
+                        </tbody>
+                    </table>
+                </div>
+                <div class="milestone_list">
+                    # for milestone in active_milestones:
+                    #    set show = not mp_proj or milestone.name == '(unscheduled)' or milestone.name in ms_for_proj[mp_proj]
+                    <div ${{"class": 'milestone' if show else 'hide-ms-div'}|htmlattr}
+                         id="${milestone.id}">
+                        <h4>
+                            # if milestone.name == '(unscheduled)':
+                            <a href="${href.mpbacklog(mp_proj=mp_proj or None)}">${milestone.name}</a>
+                            # else:
+                            <a href="${href.mpbacklog('milestone', milestone.name, mp_proj=mp_proj or None)}">${milestone.name}</a>
+                            # endif
+                        </h4>
+                        <table>
+                              <tr><td>${_("Due")}:</td><td>${milestone.due}</td></tr>
+                              <tr><td>${_("Tickets")}:</td><td class="num_tickets">${milestone.num_tickets}</td></tr>
+                        </table>
+                    </div>
+                    # endfor
+                </div>
+            </div>
+        </div>
+        # endblock
+    </body>
+</html>
