@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2020 Cinc
+# Copyright (C) 2015-2021 Cinc
 #
 # All rights reserved.
 #
@@ -9,7 +9,12 @@
 
 import io
 import json
-from ConfigParser import SafeConfigParser, ParsingError
+
+try:
+    from ConfigParser import SafeConfigParser, ParsingError
+except ImportError:
+    # Python 3
+    from configparser import SafeConfigParser, ParsingError
 from pkg_resources import resource_filename, get_distribution, parse_version
 try:
     from genshi.output import HTMLSerializer
@@ -20,12 +25,13 @@ from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.ticket.model import Type
 from trac.util.html import Markup, html as tag
+from trac.util.text import to_unicode
 from trac.util.translation import _, dgettext
 from trac.web.api import IRequestHandler
 from trac.web.chrome import (add_notice, add_warning,
     ITemplateProvider, add_script_data, add_script)
 
-from workflow import get_workflow_config_by_type, parse_workflow_config
+from multipleworkflow.workflow import get_workflow_config_by_type, parse_workflow_config
 
 
 def get_workflow_actions_for_error():
@@ -50,12 +56,12 @@ def get_workflow_actions_from_text(wf_txt, is_error_wf=False):
     config = SafeConfigParser()
     try:
         config.readfp(
-            io.BytesIO("[ticket-workflow]\n" + wf_txt.encode('utf-8')))
+            io.StringIO("[ticket-workflow]\n" + to_unicode(wf_txt)))
         raw_actions = [(key, config.get('ticket-workflow', key)) for key in
                        config.options('ticket-workflow')]
-    except ParsingError, err:
+    except ParsingError as err:
         error_txt = u"Parsing error: %s" % get_line_txt(
-            unicode(err).replace('\\n', '').replace('<???>', ''))
+            to_unicode(err).replace('\\n', '').replace('<???>', ''))
 
         if not is_error_wf:  # prevent recursion
             actions, tmp = get_workflow_actions_for_error()
@@ -65,8 +71,8 @@ def get_workflow_actions_from_text(wf_txt, is_error_wf=False):
 
     try:
         actions = parse_workflow_config(raw_actions)
-    except BaseException, err:
-        error_txt = unicode(err)
+    except BaseException as err:
+        error_txt = to_unicode(err)
         if not is_error_wf:  # prevent recursion
             actions, tmp = get_workflow_actions_for_error()
         else:
@@ -89,29 +95,27 @@ def create_graph_data(self, req, name=''):
     if txt:
         actions, error_txt = get_workflow_actions_from_text(txt)
         if error_txt:
-            t = error_txt
+            txt = error_txt
         else:
-            t = "New custom workflow (not saved)"
+            txt = "New custom workflow (not saved)"
         if not actions:
             # We should never end here...
             actions = get_workflow_config_by_type(self.config, 'default')
-            t = "Custom workflow is broken. Showing default workflow"
+            txt = "Custom workflow is broken. Showing default workflow"
     else:
-        t = u""
+        txt = u""
         print(name)
         if name == 'default':
             actions = get_workflow_config_by_type(self.config, 'default')
         else:
             actions = get_workflow_config_by_type(self.config, name)
 
-    states = list(set(
-        [state for action in actions.itervalues()
-         for state in action['oldstates']] + [action['newstate'] for action in
-                                              actions.itervalues()]))
-
-    action_labels = [action_info['label'] for action_name, action_info in
-                     actions.items()]
-    action_names = actions.keys()
+    states = list(
+        {state for action in actions.values()
+         for state in action['oldstates']} |
+        {action['newstate'] for action in actions.values()})
+    action_labels = [attrs['label'] for attrs in actions.values()]
+    action_names = list(actions)
 
     edges = []
     for name, action in actions.items():
@@ -131,7 +135,7 @@ def create_graph_data(self, req, name=''):
     scr_data = {'graph_%s' % graph_id: graph}
 
     res = tag(
-        tag.p(t),
+        tag.p(txt),
         tag.div('', class_='multiple-workflow-graph trac-noscript',
                 id='trac-workflow-graph-%s' % graph_id,
                 style="display:inline-block;width:%spx;height:%spx" %
@@ -186,7 +190,7 @@ class MultipleWorkflowAdminModule(Component):
             rendered = "".join(HTMLSerializer()(div.generate()))
             data = {'html': rendered.encode("utf-8"), 'graph_data': graph}
         else:
-            rendered = unicode(div)
+            rendered = to_unicode(div)
             data = {'html': rendered, 'graph_data': graph}
         write_json_response(req, data)
 

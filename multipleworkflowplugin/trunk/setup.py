@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Copyright (C) 2009-2015 ermal
-# Copyright (C) 2015-2020 Cinc
+# Copyright (C) 2015-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -12,7 +12,7 @@ from setuptools import find_packages, setup
 setup(
     name='MultipleWorkflowPlugin',
     description='Ticket workflows based on ticket type. Admin page for editing the workflows.',
-    version='1.5.2',
+    version='1.5.3',
     url='https://trac-hacks.org/wiki/MultipleWorkflowPlugin',
     license="New BSD",
     author='ermal',
