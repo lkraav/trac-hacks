@@ -16,6 +16,14 @@ from simplemultiproject.smp_model import PERM_TEMPLATE, SmpComponent, SmpMilesto
 from simplemultiproject.tests.util import revert_schema
 
 
+# For python 3. Note that basestring is only used for testing, but not in the
+# codenase
+try:
+  basestring
+except NameError:
+  basestring = str
+
+
 class TestSmpProjectAdd(unittest.TestCase):
     """Test add() method of class SmpPorject"""
 
