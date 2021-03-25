@@ -1,0 +1,32 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'prefs.html'
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>
+          # block preftitle
+          ${_("Backlog")}
+          # endblock preftitle
+        </title>
+    </head>
+    <body>
+    # block prefpanel
+        <div class="field">
+            <legend>${_("Shown Ticket Fields")}:</legend>
+            # for field in fields:
+            <label class="mp-sel-label">
+                <input class="prj-field-sel" type="checkbox" name="backlog_fields" value="${field[0]}"
+                       ${{"checked": field[0] in shown_fields}|htmlattr} />
+                ${field[1]}
+            </label>
+            # endfor
+        </div>
+    # endblock
+    </body>
+</html>
