@@ -13,7 +13,8 @@ from collections import defaultdict
 from operator import itemgetter
 from pkg_resources import get_distribution, parse_version
 
-from genshi.template.markup import MarkupTemplate
+# TODO: SimpleMultiProjectPlugin integration is broken atm
+# from genshi.template.markup import MarkupTemplate
 from trac.core import *
 from trac.db.api import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
@@ -283,7 +284,7 @@ $proj
         if req.path_info.startswith('/mpbacklog/milestone/'):
             # Account for '/' in milestone names
             path = req.path_info.split('/')
-            if path > 3:
+            if len(path) > 3:
                 milestone = "/".join(path[3:])
 
         if milestone == '(unscheduled)':
@@ -392,16 +393,11 @@ $proj
 
         if 'msg' in to_result:
             to_result['errorcode'] = 202
-            req.send_response(202)
         else:
             to_result['errorcode'] = 200
-            req.send_response(200)
 
         data = json.dumps(to_result)
-        req.send_header('Content-Type', 'application/json')
-        req.send_header('Content-Length', len(data))
-        req.end_headers()
-        req.write(data)
+        writeJSONResponse(req, data, to_result['errorcode'])
 
     def _move_after(self, req):
         ticket_id = int(req.args.get('ticket_id', 0))
@@ -438,7 +434,6 @@ $proj
                 db("""
                     UPDATE mp_backlog SET rank = %s WHERE ticket_id = %s
                     """, (new_rank, ticket_id))
-
         except:
             to_result['msg'] = 'Error trying to update rank'
 
@@ -446,17 +441,11 @@ $proj
 
         if 'msg' in to_result:
             to_result['errorcode'] = 202
-            req.send_response(202)
         else:
             to_result['errorcode'] = 200
-            req.send_response(200)
 
         data = json.dumps(to_result)
-
-        req.send_header('Content-Type', 'application/json')
-        req.send_header('Content-Length', len(data))
-        req.end_headers()
-        req.write(data)
+        writeJSONResponse(req, data, to_result['errorcode'])
 
     def _get_num_tickets(self, milestone):
         for count, in self.env.db_query("""
@@ -529,14 +518,17 @@ $proj
 
         if 'msg' in to_result:
             to_result['errorcode'] = 202
-            req.send_response(202)
         else:
             to_result['errorcode'] = 200
-            req.send_response(200)
 
         data = json.dumps(to_result)
+        writeJSONResponse(req, data, to_result['errorcode'])
 
-        req.send_header('Content-Type', 'application/json')
-        req.send_header('Content-Length', len(data))
-        req.end_headers()
-        req.write(data)
+
+def writeJSONResponse(req, data, httperror=200):
+    data = data.encode('utf-8')
+    req.send_response(httperror)
+    req.send_header('Content-Type', 'application/json; charset=utf-8')
+    req.send_header('Content-Length', len(data))
+    req.end_headers()
+    req.write(data)

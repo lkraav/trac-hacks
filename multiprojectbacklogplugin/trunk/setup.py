@@ -35,6 +35,7 @@ setup(
     install_requires=['Trac'],
     author="John Szakmeister, Cinc",
     author_email="",
+    maintainer='Cinc-th',
     description="Enables Trac to be used for managing your ticket backlog. "
                 "Works with SimpleMultiProject plugin.",
     long_description=long_description,
@@ -50,6 +51,8 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2 :: Only',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
 )
