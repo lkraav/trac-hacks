@@ -32,12 +32,14 @@ from trac.web.main import IRequestHandler
 
 from multiprojectbacklog.schema import schema_version, schema
 
+
 try:
-    from simplemultiproject.model import SmpModel
+    from simplemultiproject.model import get_projects
 except ImportError:
     have_smp = False
 else:
-    have_smp = True
+    # TODO: SimpleMultiProjectPlugin integration is broken atm
+    have_smp = False
 
 
 class MultiProjectBacklog(Component):
@@ -62,7 +64,8 @@ class MultiProjectBacklog(Component):
 
     def __init__(self):
         if have_smp:
-            self.__SmpModel = SmpModel(self.env)
+            pass
+            # self.__SmpModel = SmpModel(self.env)
 
     # IEnvironmentSetupParticipant methods
 
@@ -158,7 +161,8 @@ class MultiProjectBacklog(Component):
 $proj
 <select id="mp-projects-sel" name="mp_proj">
     <option value="" selected="'' == sel_prj or None}">$all_label</option>
-    <option py:for="prj in all_projects" value="$prj" selected="${prj == sel_prj or None}">$prj</option>
+    <option py:for="prj in all_projects" value="$prj.name"
+    selected="${prj.name == sel_prj or None}">$prj.name</option>
 </select>
 <input type="submit" value="$btn"/>
 </form>
@@ -189,11 +193,14 @@ $proj
         if have_smp and template in ('backlog.html', 'mp_backlog_jinja.html'):
             all_proj = self.env.config.getlist('ticket-custom',
                                                'project.options', sep='|')
+            all_proj = get_projects(self.env, req)
 
             if all_proj:
                 sel_proj = req.args.get('mp_proj', '')
                 data['mp_proj'] = sel_proj
-                data['ms_for_proj'] = self.get_milestone_data(req)
+                # data['ms_for_proj'] = self.get_milestone_data(req)
+                # TODO: SimpleMultiProjectPlugin integration is broken atm
+                data['ms_for_proj'] = []
                 sel = MarkupTemplate(self.projects_tmpl)
                 add_ctxtnav(req, html.div(
                     sel.generate(proj=_("Project"), all_projects=all_proj,
@@ -284,7 +291,9 @@ $proj
 
         data = {
             'title': milestone or "Unscheduled",
+            # Todo: filter by milestone her!
             'tickets': self._get_active_tickets(milestone),
+
             'form_token': req.form_token,
             'active_milestones': self._get_active_milestones(milestone),
             'custom_fields': [(cf["name"], cf["label"]) for cf in
