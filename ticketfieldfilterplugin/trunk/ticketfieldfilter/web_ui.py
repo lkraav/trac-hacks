@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 #
 # All rights reserved.
 #
@@ -8,8 +8,8 @@
 # you should have received as part of this distribution.
 
 from pkg_resources import get_distribution, parse_version
-# from genshi.filters import Transformer
 from pkg_resources import resource_filename
+from ticketfieldfilter.transformer import JTransformer
 from trac.admin.api import IAdminPanelProvider
 from trac.config import ListOption
 from trac.core import Component, implements
@@ -17,7 +17,7 @@ from trac.perm import PermissionSystem
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Type
 from trac.util.translation import _
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
+from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
 
 
@@ -69,7 +69,7 @@ class TicketFieldFilter(Component):
     Default is: {{{summary, reporter, owner, description, status}}}.
     """
 
-    implements(IAdminPanelProvider, IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
+    implements(IAdminPanelProvider, IRequestFilter, ITemplateProvider)
 
     _req_fields = ListOption('ticket-field-filter', 'required_fields',
                              ['summary', 'reporter', 'owner', 'description', 'status'],
@@ -179,9 +179,37 @@ class TicketFieldFilter(Component):
             self.tkt_fields, self.fields_readonly, self.field_perms = self.get_configuration_for_tkt_types()
             tkt = data.get('ticket')
             if tkt:
+                filter_list = []
+                try:
+                    for item in self.fields_readonly[tkt['type']]:
+                        self.log.info('  ### field: %s' % item)
+                        if item != 'type':
+                            # xpath: //label[@for="field-%s"] % item
+                            xform = JTransformer('label[for=field-%s]' % item)
+                            filter_list.append(xform.remove())
+                            # xpath: //*[@id="field-%s"] % item
+                            filter_list.append(JTransformer('#field-%s' % item).remove())
+                        else:
+                            # Label isn't changed  to Type (fixed):atm
+                            # Need to get the translated label for this instead of hard coding it
+                            #
+                            # Transformer('//label[@for="field-type"]/text()').replace('Type (Fixed):')
+
+                            # xpath: //*[@id="field-type"]/option
+                            filter_list.append(JTransformer('#field-type > option').remove())
+                            # xpath: //*[@id="field-type"]
+                            filter_list.append(JTransformer('#field-type').append('<option>%s</option>' % tkt['type']))
+                except KeyError:
+                    pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
+                          # this type.
+                js_data = {'tff_filter': filter_list}
+
                 if self.tkt_fields:
-                    add_script_data(req, {'tff_newticket': 1 if req.path_info == '/newticket' else 0})
+                    js_data.update({'tff_newticket': 1 if req.path_info == '/newticket' else 0})
                     add_script(req, 'ticketfieldfilter/js/ticketfieldfilter.js')
+
+                add_script_data(req, js_data)
+                add_script(req, 'ticketfieldfilter/js/tff_jtransform.js')
 
                 tkt_type = tkt['type']
                 try:
@@ -206,36 +234,6 @@ class TicketFieldFilter(Component):
                     pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
                           # this type.
         return template, data, content_type
-
-    ## ITemplateStreamFilter
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == "ticket.html" and data and 'ticket' in data:
-            # Remove fields from the modify area if read only
-            tkt = data['ticket']
-            if tkt:
-                try:
-                    for item in self.fields_readonly[tkt['type']]:
-                        if item != 'type':
-                            stream = stream | Transformer(
-                                    '//label[@for="field-%s"]' % item).remove()
-                            stream = stream | Transformer(
-                                    '//*[@id="field-%s"]' % item).remove()
-                        else:
-                            stream = stream | Transformer(
-                                    '//label[@for="field-type"]/text()'). \
-                                replace('Type (Fixed):')
-
-                            stream = stream | Transformer(
-                                    '//*[@id="field-type"]/option').remove()
-                            stream = stream | Transformer(
-                                    '//*[@id="field-type"]').append(tkt['type'])
-                            stream = stream | Transformer(
-                                    '//*[@id="field-type"]/text()').wrap('option')
-                except KeyError:
-                    pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
-                          # this type.
-        return stream
 
     def get_configuration_for_tkt_types(self):
         field_info = {}
@@ -278,7 +276,6 @@ class TicketFieldFilter(Component):
     ## ITemplateProvider
 
     def get_htdocs_dirs(self):
-
         return [('ticketfieldfilter', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
