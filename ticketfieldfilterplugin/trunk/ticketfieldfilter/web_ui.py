@@ -20,6 +20,16 @@ from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
 
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
 
 # Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
 # creation using trac.util.html.tag and friends
@@ -91,7 +101,7 @@ class TicketFieldFilter(Component):
 
     def render_admin_panel(self, req, cat, page, path_info):
 
-        all_fields = [[k, v] for k, v in TicketSystem(self.env).get_ticket_field_labels().iteritems()
+        all_fields = [[k, v] for k, v in iteritems(TicketSystem(self.env).get_ticket_field_labels())
                       if k not in self.required_fields]
 
         if req.method == 'POST' and page == 'ticketfieldfilter':
@@ -126,7 +136,7 @@ class TicketFieldFilter(Component):
                     if sel:
                         self.env.config.set('ticket-field-filter', '%s.permission' % tkt_type,
                                             ','.join(['%s:%s' % (k, '|'.join(v))
-                                                      for k, v in self.field_perms[tkt_type].iteritems()]))
+                                                      for k, v in iteritems(self.field_perms[tkt_type])]))
                     else:
                         self.env.config.remove('ticket-field-filter', '%s.permission' % tkt_type)
                     self.env.config.save()
@@ -239,7 +249,7 @@ class TicketFieldFilter(Component):
         field_info = {}
         ro_info = {}
         field_perms = {}
-        all_fields = [k for k, v in TicketSystem(self.env).get_ticket_field_labels().iteritems()
+        all_fields = [k for k, v in iteritems(TicketSystem(self.env).get_ticket_field_labels())
                       if k not in self.required_fields]
 
         for enum in Type.select(self.env):
