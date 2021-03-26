@@ -7,59 +7,57 @@
       xmlns:i18n="http://genshi.edgewall.org/i18n">
 <xi:include href="admin.html" />
 <head>
-    <title>Ticket Fields</title>
+    <title>${_("Ticket Fields")}</title>
 </head>
 <body>
 
-<h2>Ticket Fields Setup</h2>
+<h2>${_("Ticket Fields Setup")}</h2>
     <div id="content">
-        <p>Select ticket fields to be shown depending on ticket type.</p>
-
+        <p>${_("Select ticket fields to be shown depending on ticket type.")}</p>
         <form py:for="type in sorted(tkt_fields)" action="" id="${type}_form" method="post" class="field-form">
             <fieldset>
-                <input type="hidden" name="type" value="$type"/>
-                <legend>$type</legend>
-                <table class="listing">
-                    <thead>
-                    <tr>
-                        <th></th>
-                        <th>Ticket fields</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>Enabled fields</td>
-                        <td>
-                            <label py:for="key, val in all_fields" class="field_label">
-                                <input name="sel" value="$key" type="checkbox"
-                                       checked="${key in tkt_fields[type] or None}" />
-                                <span title="$val">$val</span>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Read only fields</td>
-                        <td>
-                            <label py:for="key, val in all_fields" class="field_label">
-                                <input name="readonly" value="$key" type="checkbox"
-                                       checked="${key in tkt_readonly[type] or None}" />
-                                <span title="$val" class="${'missing' if key not in tkt_fields[type] else None}">$val</span>
-                            </label>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </fieldset>
-            <p class="help">When a field is marked as read only, it will only be shown in the ticket header but not
-            in the <strong>Modify</strong> section. Disabled fields are not shown at all.</p>
-            <fieldset>
-                <div>
+                <input type="hidden" name="type" value="${type}"/>
+                <legend>${type}</legend>
+                <div class="field">
+                    <table class="listing">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th>${_("Ticket fields")}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>${_("Enabled fields")}</td>
+                            <td>
+                                <label py:for="key, val in all_fields" class="field_label">
+                                    <input name="sel" value="${key}" type="checkbox"
+                                           checked="${key in tkt_fields[type] or None}" />
+                                    <span title="${val}">${val}</span>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>${_("Read only fields")}</td>
+                            <td>
+                                <label py:for="key, val in all_fields" class="field_label">
+                                    <input name="readonly" value="${key}" type="checkbox"
+                                           checked="${key in tkt_readonly[type] or None}" />
+                                    <span title="${val}" class="${'missing' if key not in tkt_fields[type] else None}">${val}</span>
+                                </label>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p class="help">When a field is marked as read only, it will only be shown in the ticket header but not
+                    in the <strong>Modify</strong> section. Disabled fields are not shown at all.</p>
+                </div>
+                <div class="field">
                     <input name="permissions" value="${_('Permissions')}" id="${type}_permissions" type="submit"/>
                     <input name="save" value="${_('Save')}" id="${type}_save" type="submit"/>
                 </div>
             </fieldset>
         </form>
-
     </div>
 </body>
 </html>

@@ -7,7 +7,8 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from genshi.filters import Transformer
+from pkg_resources import get_distribution, parse_version
+# from genshi.filters import Transformer
 from pkg_resources import resource_filename
 from trac.admin.api import IAdminPanelProvider
 from trac.config import ListOption
@@ -18,6 +19,11 @@ from trac.ticket.model import Type
 from trac.util.translation import _
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, ITemplateProvider
+
+
+# Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
+# creation using trac.util.html.tag and friends
+pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
 
 
 class TicketFieldFilter(Component):
@@ -89,9 +95,7 @@ class TicketFieldFilter(Component):
                       if k not in self.required_fields]
 
         if req.method == 'POST' and page == 'ticketfieldfilter':
-            sel = req.args.get('sel', [])
-            if not type(sel) is list:
-                sel = [sel]
+            sel = req.args.getlist('sel')
             if not path_info:
                 # Main field select page
                 if req.args.get('save'):
@@ -102,9 +106,7 @@ class TicketFieldFilter(Component):
                         # Allow all fields
                         self.env.config.set('ticket-field-filter', '%s.fields' % req.args.get('type'), '+')
                     # Save readonly fields to config
-                    sel = req.args.get('readonly', [])
-                    if not type(sel) is list:
-                        sel = [sel]
+                    sel = req.args.getlist('readonly')
                     if len(sel) != len(all_fields):
                         self.env.config.set('ticket-field-filter', '%s.readonly' % req.args.get('type'), ','.join(sel))
                     else:
@@ -116,38 +118,51 @@ class TicketFieldFilter(Component):
                     req.redirect(req.href.admin(cat, 'ticketfieldfilter', req.args.get('type')))
             else:
                 # Handling of permissions
-                if sel and req.args.get('save'):
+                if req.args.get('save'):
                     tkt_type = req.args.get('type')
                     # Set new permission for the given ticket field
                     self.field_perms[tkt_type][req.args.get('field')] = sel
                     # Save all permissions for current ticket type
-                    self.env.config.set('ticket-field-filter', '%s.permission' % tkt_type,
-                                        ','.join(['%s:%s' % (k, '|'.join(v))
-                                                  for k, v in self.field_perms[tkt_type].iteritems()]))
+                    if sel:
+                        self.env.config.set('ticket-field-filter', '%s.permission' % tkt_type,
+                                            ','.join(['%s:%s' % (k, '|'.join(v))
+                                                      for k, v in self.field_perms[tkt_type].iteritems()]))
+                    else:
+                        self.env.config.remove('ticket-field-filter', '%s.permission' % tkt_type)
                     self.env.config.save()
                     req.redirect(req.href.admin(cat, 'ticketfieldfilter',
                                                 req.args.get('type')) + "#%s_form" % req.args.get('field'))
                 else:
                     req.redirect(req.href.admin(cat, 'ticketfieldfilter'))
 
+        # Update now, because we may have come from a POST redirect
+        self.tkt_fields, self.fields_readonly, self.field_perms = self.get_configuration_for_tkt_types()
         if not path_info:
-            data = {'tkt_fields': all_fields if '+' in self.tkt_fields else self.tkt_fields,
-                    'tkt_readonly': all_fields if '+' in self.fields_readonly else self.fields_readonly,
+            # Main page
+            data = {'tkt_fields': self.tkt_fields,
+                    'tkt_readonly': self.fields_readonly,
                     'all_fields': sorted(all_fields, key=lambda item: item[1])}
 
             add_stylesheet(req, 'ticketfieldfilter/css/admin.css')
             add_script(req, 'ticketfieldfilter/js/admin_ticketfieldfilter.js')
-            return 'admin_ticketfieldfilter.html', data
+            # return 'admin_ticketfieldfilter.html', data, None
+            if pre_1_3:
+                return 'admin_ticketfieldfilter.html', data
+            else:
+                return 'admin_ticketfieldfilter_jinja.html', data
         else:
             perm = PermissionSystem(self.env)
             data = {'tkt_type': path_info,
-                    'tkt_fields': all_fields if '+' in self.tkt_fields else self.tkt_fields,
+                    'tkt_fields': all_fields if '+' in self.tkt_fields[path_info] else self.tkt_fields,
                     'all_perms': sorted(perm.get_actions()),
                     'all_fields': sorted(all_fields, key=lambda item: item[1]),
                     'field_perms': self.field_perms[path_info]}
             add_stylesheet(req, 'ticketfieldfilter/css/admin.css')
             add_script(req, 'ticketfieldfilter/js/admin_ticketfieldpermissions.js')
-            return 'admin_ticketfieldpermissions.html', data
+            if pre_1_3:
+                return 'admin_ticketfieldpermissions.html', data
+            else:
+                return 'admin_ticketfieldpermissions_jinja.html', data
 
     # IRequestFilter methods
 
@@ -232,9 +247,11 @@ class TicketFieldFilter(Component):
         for enum in Type.select(self.env):
             field_info[enum.name] = self.env.config.getlist('ticket-field-filter', '%s.fields' % enum.name,
                                                             all_fields)
-            if field_info[enum.name] == '+':
+            if '+' in field_info[enum.name]:
                 field_info[enum.name] = all_fields
             ro_info[enum.name] = self.env.config.getlist('ticket-field-filter', '%s.readonly' % enum.name, [])
+            if '+' in ro_info[enum.name]:
+                ro_info[enum.name] = all_fields
             try:
                 field_perms[enum.name] = self.parse_permission_entry(self.env.config.getlist('ticket-field-filter',
                                                                                             '%s.permission' % enum.name,
