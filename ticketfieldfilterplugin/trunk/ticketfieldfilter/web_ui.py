@@ -103,6 +103,8 @@ class TicketFieldFilter(Component):
 
         all_fields = [[k, v] for k, v in iteritems(TicketSystem(self.env).get_ticket_field_labels())
                       if k not in self.required_fields]
+        # Update now, because we may have come from a POST redirect
+        self.tkt_fields, self.fields_readonly, self.field_perms = self.get_configuration_for_tkt_types()
 
         if req.method == 'POST' and page == 'ticketfieldfilter':
             sel = req.args.getlist('sel')
@@ -131,22 +133,20 @@ class TicketFieldFilter(Component):
                 if req.args.get('save'):
                     tkt_type = req.args.get('type')
                     # Set new permission for the given ticket field
-                    self.field_perms[tkt_type][req.args.get('field')] = sel
-                    # Save all permissions for current ticket type
                     if sel:
-                        self.env.config.set('ticket-field-filter', '%s.permission' % tkt_type,
-                                            ','.join(['%s:%s' % (k, '|'.join(v))
-                                                      for k, v in iteritems(self.field_perms[tkt_type])]))
+                        self.field_perms[tkt_type][req.args.get('field')] = sel
                     else:
-                        self.env.config.remove('ticket-field-filter', '%s.permission' % tkt_type)
+                        del self.field_perms[tkt_type][req.args.get('field')]
+                    # Save all permissions for current ticket type
+                    self.env.config.set('ticket-field-filter', '%s.permission' % tkt_type,
+                                        ','.join(['%s:%s' % (k, '|'.join(v))
+                                                  for k, v in iteritems(self.field_perms[tkt_type])]))
                     self.env.config.save()
                     req.redirect(req.href.admin(cat, 'ticketfieldfilter',
                                                 req.args.get('type')) + "#%s_form" % req.args.get('field'))
                 else:
                     req.redirect(req.href.admin(cat, 'ticketfieldfilter'))
 
-        # Update now, because we may have come from a POST redirect
-        self.tkt_fields, self.fields_readonly, self.field_perms = self.get_configuration_for_tkt_types()
         if not path_info:
             # Main page
             data = {'tkt_fields': self.tkt_fields,
