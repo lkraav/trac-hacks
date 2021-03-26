@@ -26,4 +26,18 @@ setup(
         MultipleWorkflowPlugin = multipleworkflow.workflow
         MultipleWorkflowAdmin = multipleworkflow.web_ui
     """,
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
+        'Framework :: Trac',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
+
 )

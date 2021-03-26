@@ -17,6 +17,18 @@ from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script
 
 
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
+
+
 def get_workflow_config_by_type(config, ticket_type):
     """return the [ticket-workflow-type] session"""
     if ticket_type == 'default':
@@ -213,7 +225,7 @@ class MultipleWorkflowPlugin(ConfigurableTicketWorkflow):
         for key, val in reset.items():
             actions['_reset'].setdefault(key, val)
 
-        for name, info in actions.iteritems():
+        for name, info in iteritems(actions):
             for val in ('<none>', '< none >'):
                 sub_val(actions[name]['oldstates'], val, None)
             if not info['newstate']:
