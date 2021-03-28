@@ -120,7 +120,7 @@ class SmpProjectAdmin(Component):
         if self.pre_1_3:
             return 'admin_smp_basics.html', data
         else:
-            return 'admin_smp_basics_jinja.html', data, {}
+            return 'admin_smp_basics_jinja.html', data
 
     def render_admin_panel(self, req, cat, page, path_info):
         req.perm.assert_permission('PROJECT_SETTINGS_VIEW')
@@ -227,7 +227,7 @@ class SmpProjectAdmin(Component):
         if self.pre_1_3:
             return 'admin_project.html', data
         else:
-            return 'admin_project_jinja.html', data, {}
+            return 'admin_project_jinja.html', data
 
     # IResourceManager methods
 

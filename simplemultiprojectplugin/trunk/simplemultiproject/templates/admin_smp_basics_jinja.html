@@ -22,7 +22,7 @@
 <body>
     # block adminpanel
     <h2>${_("Basic Settings")}</h2>
-    # if not custom_field
+    # if not custom_field:
     <div>
         <form action="" method="POST">
             ${jmacros.form_token_input()}
@@ -120,7 +120,7 @@
             <fieldset>
                 <legend>${_("Permission policies")}</legend>
                 <div class="field">
-                    # if not permission_policy
+                    # if not permission_policy:
                     <div class="system-message warning">
                         ${_("Permission policy 'SmpPermissionPolicy' is not installed.")}</div>
                     # endif

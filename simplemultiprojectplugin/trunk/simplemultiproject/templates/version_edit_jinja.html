@@ -33,18 +33,18 @@
     <body>
     # block content
     <div id="content" class="milestone">
-        # if version.exists
+        # if version.exists:
         <h1>${_("Edit Version")} ${version.name}</h1>
-        # else
+        # else:
         <h1>${_("New Version")}</h1>
         # endif
 
         <form id="edit" action="" method="post">
             ${jmacros.form_token_input()}
             <fieldset>
-                # if version.exists
+                # if version.exists:
                 <legend>${_("Modify version")}</legend>
-                # else
+                # else:
                 <legend>${_("New version")}</legend>
                 # endif
                 <div class="field">
