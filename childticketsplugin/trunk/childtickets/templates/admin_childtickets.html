@@ -94,6 +94,21 @@
 
   <py:otherwise>
     <h2>${_("Parent Types")} <span class="trac-count">(${len(ticket_types)})</span></h2>
+        <div py:if="not custom_field">
+        <form action="" method="POST">
+            <fieldset>
+                <legend>Ticket Custom Field</legend>
+                <div class="system-message warning">${_("Ticket custom field 'parent' not configured. See installation instructions.")}</div>
+                <p>Do you want to create the ticket custom field now?</p>
+                <p class="help">Without the proper ticket custom field it's not possible to link tickets to parents.</p>
+                <div py:if="'TICKET_ADMIN' in perm">
+                    <div class="buttons">
+                        <input type="submit" name="create-ticket-custom" value="${_('Create')}"/>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
     <form id="childtickets_table" method="post" action="">
       <table class="childtickets_listing" id="parenttypelist">
         <thead>

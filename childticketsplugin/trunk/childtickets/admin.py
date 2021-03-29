@@ -47,12 +47,22 @@ class ChildTicketsAdminPanel(Component):
     'summary', 'priority', 'component', 'version', 'milestone', 'keywords',
     'cc')
 
+    def ticket_custom_field_exists(self):
+        """Check if the ticket custom field 'parentt' is configured.
+
+        :returns None if not configured, otherwise the field type
+
+        We don't check for proper custom field type here.
+        """
+        return self.config.get('ticket-custom', 'parent', None)
+
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
         if 'TICKET_ADMIN' in req.perm('admin', 'childticketsplugin/types'):
+            excl_mark = '' if self.ticket_custom_field_exists() else ' (!)'
             yield ('childticketsplugin', _('Child Tickets Plugin'), 'types',
-                   _('Parent Types'))
+                   _('Parent Types') + excl_mark)
 
     def render_admin_panel(self, req, cat, page, parenttype):
 
@@ -65,6 +75,15 @@ class ChildTicketsAdminPanel(Component):
                                     default=['rrr', 'ppp'])
             y = self.config.getlist('childtickets', 'parent.%s.inherit' % t,
                                     default=['ddd', 'cweeeowner'])
+
+        if req.method == 'POST':
+            if req.args.get('create-ticket-custom'):
+                self.config.set('ticket-custom', 'parent', 'text')
+                self.config.set('ticket-custom', 'parent.label', _('Parent'))
+                self.config.set('ticket-custom', 'parent.format', 'wiki')
+                self.config.save()
+                add_notice(req, _("The ticket custom field 'parent' was added to the configuration."))
+                req.redirect(req.href.admin(cat, page))
 
         # Detail view?
         if parenttype:
@@ -126,6 +145,7 @@ class ChildTicketsAdminPanel(Component):
             }
         else:
             data = {
+                'custom_field': self.ticket_custom_field_exists(),
                 'view': 'list',
                 'base_href': req.href.admin(cat, page),
                 'ticket_types': [ParentType(self.config, p) for p in
