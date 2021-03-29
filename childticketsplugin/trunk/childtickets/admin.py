@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
-
+#
+# Copyright (C) Mark Ryan
+# Copyright (C) Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2021 Cinc
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
+from pkg_resources import get_distribution, parse_version
 from trac.admin import IAdminPanelProvider
 from trac.core import *
 from trac.util.text import exception_to_unicode
@@ -8,14 +17,9 @@ from trac.web.chrome import ITemplateProvider
 from trac.web.chrome import add_notice, add_warning, add_stylesheet
 
 
-def genshi_template_args(env, filename, data):
-    """Compatibility function for IAdminPanelProviders."""
-    from trac.web.chrome import Chrome
-    if hasattr(Chrome(env), 'jenv'):
-        return filename, data, None
-    else:
-        return filename, data
-
+# Api changes regarding Genshi started after v1.2. This not only affects templates but also fragment
+# creation using trac.util.html.tag and friends
+pre_1_3 = parse_version(get_distribution("Trac").version) < parse_version('1.3')
 
 def _save_config(config, req, log):
     """Try to save the config, and display either a success notice or a
@@ -83,21 +87,21 @@ class ChildTicketsAdminPanel(Component):
 
                 # NOTE: 'req.arg.get()' returns a string if only one of the
                 # multiple options is selected.
-                headers = req.args.get('headers') or []
+                headers = req.args.getlist('headers')
                 if not isinstance(headers, list):
                     headers = [headers]
                 self.config.set('childtickets',
                                 'parent.%s.table_headers' % parenttype,
                                 ','.join(headers))
 
-                restricted = req.args.get('restricted') or []
+                restricted = req.args.getlist('restricted')
                 if not isinstance(restricted, list):
                     restricted = [restricted]
                 self.config.set('childtickets',
                                 'parent.%s.restrict_child_type' % parenttype,
                                 ','.join(restricted))
 
-                inherited = req.args.get('inherited') or []
+                inherited = req.args.getlist('inherited')
                 if not isinstance(inherited, list):
                     inherited = [inherited]
                 self.config.set('childtickets',
@@ -131,7 +135,10 @@ class ChildTicketsAdminPanel(Component):
         # Add our own styles for the ticket lists.
         add_stylesheet(req, 'ct/css/childtickets.css')
 
-        return genshi_template_args(self.env, 'admin_childtickets.html', data)
+        if pre_1_3:
+            return 'admin_childtickets.html', data
+        else:
+            return 'admin_childtickets_jinja.html', data
 
     # ITemplateProvider methods
     def get_templates_dirs(self):
