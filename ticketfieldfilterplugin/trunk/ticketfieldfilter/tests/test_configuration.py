@@ -100,7 +100,7 @@ class TestConfiguration(unittest.TestCase):
             pass
         data = self.env.config.getlist('ticket-field-filter', 'defect.permission', [])
         res = self.plugin.parse_permission_entry(data)
-        self.assertEqual(1, len(res))
+        self.assertEqual(0, len(res))
 
     def test_render_admin_page_clear_one_field_perm(self):
         """Clear permissions of one field while leavin another alone"""

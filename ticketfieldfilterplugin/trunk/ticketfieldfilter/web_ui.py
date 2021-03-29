@@ -9,7 +9,6 @@
 
 from pkg_resources import get_distribution, parse_version
 from pkg_resources import resource_filename
-from ticketfieldfilter.transformer import JTransformer
 from trac.admin.api import IAdminPanelProvider
 from trac.config import ListOption
 from trac.core import Component, implements
@@ -189,38 +188,6 @@ class TicketFieldFilter(Component):
             self.tkt_fields, self.fields_readonly, self.field_perms = self.get_configuration_for_tkt_types()
             tkt = data.get('ticket')
             if tkt:
-                filter_list = []
-                try:
-                    for item in self.fields_readonly[tkt['type']]:
-                        self.log.info('  ### field: %s' % item)
-                        if item != 'type':
-                            # xpath: //label[@for="field-%s"] % item
-                            xform = JTransformer('label[for=field-%s]' % item)
-                            filter_list.append(xform.remove())
-                            # xpath: //*[@id="field-%s"] % item
-                            filter_list.append(JTransformer('#field-%s' % item).remove())
-                        else:
-                            # Label isn't changed  to Type (fixed):atm
-                            # Need to get the translated label for this instead of hard coding it
-                            #
-                            # Transformer('//label[@for="field-type"]/text()').replace('Type (Fixed):')
-
-                            # xpath: //*[@id="field-type"]/option
-                            filter_list.append(JTransformer('#field-type > option').remove())
-                            # xpath: //*[@id="field-type"]
-                            filter_list.append(JTransformer('#field-type').append('<option>%s</option>' % tkt['type']))
-                except KeyError:
-                    pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
-                          # this type.
-                js_data = {'tff_filter': filter_list}
-
-                if self.tkt_fields:
-                    js_data.update({'tff_newticket': 1 if req.path_info == '/newticket' else 0})
-                    add_script(req, 'ticketfieldfilter/js/ticketfieldfilter.js')
-
-                add_script_data(req, js_data)
-                add_script(req, 'ticketfieldfilter/js/tff_jtransform.js')
-
                 tkt_type = tkt['type']
                 try:
                     if '+' not in self.tkt_fields[tkt_type]:
@@ -243,6 +210,24 @@ class TicketFieldFilter(Component):
                 except KeyError:
                     pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
                           # this type.
+
+                filter_list = []
+                try:
+                    fields = self.fields_readonly[tkt_type]
+                    for field in data['fields']:
+                        if field['name'] in fields:
+                            field['editable'] = False
+                except KeyError:
+                    pass  # This may happen when an admin deleted a ticket type while we preview a ticket using
+                          # this type.
+
+                js_data = {}
+                if self.tkt_fields:
+                    js_data.update({'tff_newticket': 1 if req.path_info == '/newticket' else 0})
+                    add_script(req, 'ticketfieldfilter/js/ticketfieldfilter.js')
+
+                add_script_data(req, js_data)
+
         return template, data, content_type
 
     def get_configuration_for_tkt_types(self):
