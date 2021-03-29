@@ -11,6 +11,8 @@
 from pkg_resources import get_distribution, parse_version
 from trac.admin import IAdminPanelProvider
 from trac.core import *
+from trac.ticket.api import TicketSystem
+from trac.ticket.model import Type
 from trac.util.text import exception_to_unicode
 from trac.util.translation import _
 from trac.web.chrome import ITemplateProvider
@@ -39,14 +41,6 @@ class ChildTicketsAdminPanel(Component):
 
     implements(IAdminPanelProvider, ITemplateProvider)
 
-    # Class variables 'static'
-    HEADERS = (
-    'type', 'status', 'owner', 'summary', 'priority', 'component', 'version',
-    'resolution', 'milestone', 'parent', 'keywords', 'reporter', 'cc')
-    INHERITED = (
-    'summary', 'priority', 'component', 'version', 'milestone', 'keywords',
-    'cc')
-
     def ticket_custom_field_exists(self):
         """Check if the ticket custom field 'parentt' is configured.
 
@@ -69,13 +63,6 @@ class ChildTicketsAdminPanel(Component):
         # Only for trac admins.
         req.perm('admin', 'childticketsplugin/types').require('TICKET_ADMIN')
 
-        for t in self._types():
-            x = self.config.getlist('childtickets',
-                                    'parent.%s.table_headers' % t,
-                                    default=['rrr', 'ppp'])
-            y = self.config.getlist('childtickets', 'parent.%s.inherit' % t,
-                                    default=['ddd', 'cweeeowner'])
-
         if req.method == 'POST':
             if req.args.get('create-ticket-custom'):
                 self.config.set('ticket-custom', 'parent', 'text')
@@ -88,8 +75,6 @@ class ChildTicketsAdminPanel(Component):
         # Detail view?
         if parenttype:
             if req.method == 'POST':
-                changed = False
-
                 allow_child_tickets = \
                     req.args.get('allow_child_tickets')
                 self.config.set('childtickets',
@@ -127,10 +112,7 @@ class ChildTicketsAdminPanel(Component):
                                 'parent.%s.inherit' % parenttype,
                                 ','.join(inherited))
 
-                changed = True
-
-                if changed:
-                    _save_config(self.config, req, self.log),
+                _save_config(self.config, req, self.log),
                 req.redirect(req.href.admin(cat, page))
 
             # Convert to object.
@@ -148,8 +130,7 @@ class ChildTicketsAdminPanel(Component):
                 'custom_field': self.ticket_custom_field_exists(),
                 'view': 'list',
                 'base_href': req.href.admin(cat, page),
-                'ticket_types': [ParentType(self.config, p) for p in
-                                 self._types()],
+                'ticket_types': [ParentType(self.config, p) for p in self.ticket_types],
             }
 
         # Add our own styles for the ticket lists.
@@ -173,40 +154,37 @@ class ChildTicketsAdminPanel(Component):
     def _headers(self, ptype):
         """Returns a list of valid headers for the given parent type.
         """
-        HEADERS = dict.fromkeys(self.__class__.HEADERS, None)
-        HEADERS.update(
+        ticket_fields = [item['name'] for item in TicketSystem(self.env).get_ticket_fields()]
+        headers = dict.fromkeys(ticket_fields, None)
+        headers.update(
             dict.fromkeys(map(lambda x: x.lower(), ptype.table_headers),
                           'checked'))
-        return HEADERS
+        return headers
 
     def _inherited(self, ptype):
         """Returns a list of inherited fields.
         """
-        INHERITED = dict.fromkeys(self.__class__.INHERITED, None)
-        INHERITED.update(
+        ticket_fields = [item['name'] for item in TicketSystem(self.env).get_ticket_fields()]
+        inherited = dict.fromkeys(ticket_fields, None)
+        inherited.update(
             dict.fromkeys(map(lambda x: x.lower(), ptype.inherited_fields),
                           'checked'))
-        return INHERITED
+        return inherited
 
-    def _types(self, ptype=None):
-        """
-        Get list of valid ticket type to work with, or of a parenttype is
-        given, return a dictionary with info as to whether the parent type
-        is already selected as an avaible child type.
-        """
+    @property
+    def ticket_types(self):
+        return [item.name for item in Type.select(self.env)]
 
-        types = self.env.db_query("""
-                    SELECT name FROM enum WHERE type='ticket_type'""")
-        if not ptype:
-            # No parent type supplied, return simple list.
-            return [x for x, in types]
-        else:
-            # With parent type, return a dictionary.
-            TYPES = dict.fromkeys(x for x, in types)
-            TYPES.update(dict.fromkeys(
-                map(lambda x: x.lower(), ptype.restrict_to_child_types),
-                'checked'))
-            return TYPES
+    def _types(self, ptype):
+        """
+        Return a dictionary with info as to whether the parent type
+        is already selected as an available child type.
+        """
+        types = dict.fromkeys(x for x in self.ticket_types)
+        types.update(dict.fromkeys(
+            map(lambda x: x.lower(), ptype.restrict_to_child_types),
+            'checked'))
+        return types
 
 
 class ParentType(object):
