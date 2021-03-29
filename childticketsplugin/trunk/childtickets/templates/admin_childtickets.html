@@ -7,37 +7,35 @@
 <xi:include href="admin.html"/>
 
 <head>
-  <title>Child Tickets Plugin</title>
+  <title>${_("Parent Types")}</title>
 </head>
-
-
 <body>
 
 <py:choose test="view">
   <py:when test="'detail'">
-    <h2>Parent Type: $parenttype.name</h2>
+    <h2>${_("Parent Type:")} ${parenttype.name}</h2>
     <form id="modparenttype" method="post" action="">
 
       <table class="childtickets_listing" id="parenttype">
 
         <thead>
         <tr>
-          <th>Option</th>
-          <th>Value</th>
+          <th>${_("Option")}</th>
+          <th>${_("Value")}</th>
         </tr>
         </thead>
 
         <tbody>
         <tr>
           <!-- Allow Child Option -->
-          <td><label>Allow Child Tickets</label></td>
+          <td><label>${_("Allow Child Tickets")}</label></td>
           <td><input type="checkbox" name="allow_child_tickets" value="True"
                      checked="${parenttype.allow_child_tickets or None}"/>
           </td>
         </tr>
         <tr>
           <!-- New Child Ticket Label -->
-          <td><label>New Child Ticket Label</label></td>
+          <td><label>${_("New Child Ticket Label")}</label></td>
           <td><input type="text" name="new_child_ticket_label"
                      value="${parenttype.new_child_ticket_label}"
                      size="30" />
@@ -45,62 +43,67 @@
         </tr>
         <tr>
           <!-- Table Headers Option -->
-          <td>Table Headers</td>
+          <td>${_("Table Headers")}</td>
           <td>
-            <py:for each="header,checked in table_headers.items()">
+            <py:for each="header, checked in table_headers.items()">
               <div>
-                <input type="checkbox" name="headers" value="$header"
-                       checked="$checked"/>
-                <label for="$header">$header</label>
+                <label>
+                  <input type="checkbox" name="headers" value="$header"
+                         checked="$checked"/>
+                  ${header}
+                </label>
               </div>
             </py:for>
           </td>
         </tr>
         <tr>
           <!-- Restricted Children Option -->
-          <td>Restricted Child Types</td>
+          <td>${_("Restricted Child Types")}</td>
           <td>
-            <py:for each="ptype,checked in parent_types.items()">
+            <py:for each="ptype, checked in parent_types.items()">
               <div>
-                <input type="checkbox" name="restricted" value="$ptype"
+                <label>
+                <input type="checkbox" name="restricted" value="${ptype}"
                        checked="$checked"/>
-                <label for="$ptype">$ptype</label>
+                ${ptype}</label>
               </div>
             </py:for>
           </td>
         </tr>
         <tr>
           <!-- Inherited Fields Option -->
-          <td>Inherited Fields</td>
+          <td>${_("Inherited Fields")}</td>
           <td>
             <py:for each="field,checked in inherited_fields.items()">
               <div>
-                <input type="checkbox" name="inherited" value="$field"
+                <label>
+                <input type="checkbox" name="inherited" value="${field}"
                        checked="$checked"/>
-                <label for="$field">$field</label>
+                ${field}</label>
               </div>
             </py:for>
           </td>
         </tr>
         </tbody>
       </table>
-
-      <input type="submit" name="save" value="${_('Apply changes')}"/>
+      <div class="buttons">
+        <input type="submit" name="save" value="${_('Apply changes')}"/>
+      </div>
     </form>
   </py:when>
 
   <py:otherwise>
-    <h2>Child Tickets Plugin</h2>
+    <h2>${_("Parent Types")} <span class="trac-count">(${len(ticket_types)})</span></h2>
     <form id="childtickets_table" method="post" action="">
       <table class="childtickets_listing" id="parenttypelist">
         <thead>
         <tr>
           <th>Name</th>
-          <th>Allow Child Tickets?</th>
-          <th>New Child Ticket Label</th>
-          <th>Table Headers</th>
-          <th>Restricted Child Types</th>
-          <th>Inherited Fields</th>
+          <th>${_("Allow Child Tickets?")}</th>
+          <th>${_("New Child Ticket Label")}</th>
+          <th>${_("Table Headers")}</th>
+          <th>${_("Restricted Child Types")}</th>
+          <th>${_("Inherited Fields")}</th>
         </tr>
         </thead>
         <tbody>
@@ -120,8 +123,7 @@
       </table>
 
       <p class="help">
-        Select a parent ticket type to modify its default behaviour when/if
-        child tickets are generated.
+        ${_("Select a parent ticket type to modify its default behaviour when/if child tickets are generated.")}
       </p>
 
     </form>
