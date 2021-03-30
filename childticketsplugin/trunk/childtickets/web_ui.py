@@ -10,7 +10,7 @@
 #
 import re
 
-from jtransformer import JTransformer
+from .jtransformer import JTransformer
 from trac.cache import cached
 from trac.core import *
 from trac.resource import ResourceNotFound
@@ -19,6 +19,12 @@ from trac.ticket.model import Ticket
 from trac.util.html import html as tag
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome, ITemplateProvider
+
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 
 class TracchildticketsModule(Component):
@@ -348,17 +354,17 @@ class TracchildticketsModule(Component):
 
         chrome = Chrome(self.env)
 
-        def get_field(f):
-            if s == 'owner':
-                return chrome.authorinfo(req, ticket[f])
+        def get_value(field):
+            if field == 'owner':
+                return chrome.authorinfo(req, ticket[field])
             else:
-                return ticket[f]
+                return ticket[field]
 
         return tag.tr(
             tag.td(tag.a("#%s" % ticket.id, href=req.href.ticket(ticket.id),
                          title="Child ticket #%s" % ticket.id,
                          class_=ticket_class), class_="id"),
-            [tag.td(get_field(s), class_=s) for s in columns],
+            [tag.td(get_value(s), class_=s) for s in columns],
         )
 
     def _get_parent_id(self, ticket_id):

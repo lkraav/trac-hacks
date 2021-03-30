@@ -16,10 +16,10 @@ setup(
     keywords='trac plugins ticket dependency childtickets',
     url='https://trac-hacks.org/wiki/ChildTicketsPlugin',
     install_requires=[],
-    entry_points="""
-        [trac.plugins]
-        childtickets = childtickets
-    """,
+    entry_points={"trac.plugins": [
+        "childtickets.web_ui = childtickets.web_ui",
+        "childtickets.admin = childtickets.admin",
+    ]},
     package_data={'childtickets': ['htdocs/css/*.css',
                                    'htdocs/js/*.js',
                                    'templates/*.html']},
