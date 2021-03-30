@@ -8,17 +8,19 @@ from setuptools import find_packages, setup
 # use package name as entry_points
 setup(
     name='Tracchildtickets',
-    version='2.5.6',
+    version='2.6.0',
     packages=find_packages(),
     author='Mark Ryan',
     author_email='fatrascal@bigfoot.com@gmail.com',
     description='Provides support for pseudo child-tickets and a visual reference to these within a parent ticket.',
     keywords='trac plugins ticket dependency childtickets',
     url='https://trac-hacks.org/wiki/ChildTicketsPlugin',
-    install_requires=['genshi'],
+    install_requires=[],
     entry_points="""
         [trac.plugins]
         childtickets = childtickets
     """,
-    package_data={'childtickets': ['htdocs/css/*.css', 'templates/*.html']},
+    package_data={'childtickets': ['htdocs/css/*.css',
+                                   'htdocs/js/*.js',
+                                   'templates/*.html']},
 )

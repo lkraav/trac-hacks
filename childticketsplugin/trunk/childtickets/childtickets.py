@@ -1,22 +1,29 @@
 # -*- coding: utf-8 -*-
-# ChildTickets plugin
-
+#
+# Copyright (C) Mark Ryan
+# Copyright (C) Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2021 Cinc
+# All rights reserved.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution.
+#
 import re
 
-from genshi.filters import Transformer
+from jtransformer import JTransformer
 from trac.cache import cached
 from trac.core import *
 from trac.resource import ResourceNotFound
 from trac.ticket.api import ITicketManipulator, ITicketChangeListener
 from trac.ticket.model import Ticket
 from trac.util.html import html as tag
-from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
+from trac.web.api import IRequestFilter
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome, ITemplateProvider
 
 
 class TracchildticketsModule(Component):
 
-    implements(ITemplateProvider, ITemplateStreamFilter,
+    implements(IRequestFilter, ITemplateProvider,
                ITicketChangeListener, ITicketManipulator)
 
     @cached
@@ -29,6 +36,189 @@ class TracchildticketsModule(Component):
             if parent and re.match('#\d+', parent):
                 x.setdefault(int(parent.lstrip('#')), []).append(child)
         return x
+
+    def create_childticket_html(self, req,  ticket):
+        # Modify ticket.html with sub-ticket table, create button, etc...
+        # As follows:
+        # - If ticket has no child tickets and child tickets are NOT
+        #   allowed then skip.
+        # - If ticket has child tickets and child tickets are NOT
+        #   allowed (ie. rules changed or ticket type changed after
+        #   children were assigned), print list of tickets but do not
+        #   allow any tickets to be created.
+        # - If child tickets are allowed then print list of child tickets
+        #   or 'No Child Tickets' if non are currently assigned.
+        if ticket and ticket.exists:
+
+            # The additional section on the ticket is built up of
+            # (potentially) three parts: header, ticket table, buttons.
+            # These are all 'wrapped up' in a 'div' with the 'attachments'
+            # id (we'll just pinch this to make look and feel consistent
+            # with any future changes!)
+            snippet = tag.div()
+
+            # Are there any child tickets to display?
+            childtickets = [Ticket(self.env, n) for n in
+                            self.childtickets.get(ticket.id, [])]
+
+            # (tempish) fix for #8612 : force sorting by ticket id
+            childtickets = sorted(childtickets, key=lambda t: t.id)
+
+            # Are child tickets allowed?
+            childtickets_allowed = \
+                self.config.getbool('childtickets',
+                                    'parent.%s.allow_child_tickets'
+                                    % ticket['type'])
+
+            # If there are no childtickets and the ticket should not have
+            # any child tickets, we can simply drop out here.
+            if not childtickets_allowed and not childtickets:
+                return ''
+
+            # Our 'main' display consists of two divs.
+            buttondiv = tag.div()
+            tablediv = tag.div()
+
+            # Test if the ticket has children: If so, then list in table.
+            if childtickets:
+                # Which columns to display in child ticket listing?
+                columns = self.config.getlist('childtickets',
+                                              'parent.%s.table_headers' %
+                                              ticket['type'],
+                                              default=['summary',
+                                                       'owner'])
+
+                tablediv = tag.div(
+                    tag.table(
+                        tag.thead(
+                            tag.tr(
+                                tag.th("Ticket", class_="id"),
+                                [tag.th(s.title(), class_=s) for s in
+                                 columns])
+                        ),
+                        tag.tbody(
+                            [self._table_row(req, tkt, columns) for tkt in
+                             childtickets]),
+                        class_="listing tickets",
+                    ),
+                    tag.br(),
+                )
+
+            # Child tickets are allowed - add 'create new ticket' buttons
+            if childtickets_allowed:
+                childtickets_label = \
+                    self.config.get('childtickets',
+                                    'parent.%s.new_child_ticket_label'
+                                    % ticket['type']) \
+                    or "New Child Ticket"
+                # Can user create a new ticket?
+                # If not, just display title (ie. no 'create' button).
+                if 'TICKET_CREATE' in req.perm(ticket.resource):
+
+                    # Always pass these fields
+                    default_child_fields = (
+                        tag.input(type="hidden", name="parent",
+                                  value='#' + str(ticket.id)),
+                    )
+
+                    # Pass extra fields from inherit parameter of parent
+                    inherited_child_fields = [
+                        tag.input(type="hidden", name="%s" % field,
+                                  value=ticket[field]) for field in
+                        self.config.getlist('childtickets',
+                                            'parent.%s.inherit' % ticket[
+                                                'type'])
+                    ]
+
+                    # If child types are restricted then create a set of
+                    # buttons for the allowed types (This will override
+                    # 'default_child_type).
+                    restrict_child_types = self.config.getlist(
+                        'childtickets',
+                        'parent.%s.restrict_child_type' % ticket['type'],
+                        default=[])
+
+                    if not restrict_child_types:
+                        # trac.ini : Default 'type' of child tickets?
+                        default_child_type = self.config.get(
+                            'childtickets',
+                            'parent.%s.default_child_type'
+                            % ticket['type'],
+                            default=self.config.get('ticket',
+                                                    'default_type'))
+
+                        # ... create a default submit button
+                        if ticket['status'] == 'closed':
+                            submit_button_fields = (
+                                tag.input(type="submit",
+                                          disabled="disabled",
+                                          name="childticket",
+                                          value=childtickets_label,
+                                          title="Create a child ticket"),
+                                tag.input(type="hidden", name="type",
+                                          value=default_child_type),
+                            )
+                        else:
+                            submit_button_fields = (
+                                tag.input(type="submit",
+                                          name="childticket",
+                                          value=childtickets_label,
+                                          title="Create a child ticket"),
+                                tag.input(type="hidden", name="type",
+                                          value=default_child_type),
+                            )
+                    else:
+                        if ticket['status'] == 'closed':
+                            submit_button_fields = [
+                                tag.input(type="submit",
+                                          disabled="disabled",
+                                          name="type",
+                                          value="%s" % ticket_type,
+                                          title="Create a %s child ticket"
+                                                % ticket_type)
+                                for ticket_type in restrict_child_types]
+                        else:
+                            submit_button_fields = [
+                                tag.input(type="submit", name="type",
+                                          value="%s" % ticket_type,
+                                          title="Create a %s child ticket"
+                                                % ticket_type)
+                                for ticket_type in restrict_child_types]
+                    buttondiv = tag.form(
+                        tag.div(default_child_fields,
+                                inherited_child_fields,
+                                submit_button_fields),
+                        method="get", action=req.href.newticket(),
+                    )
+
+            snippet.append(tag.h3("Child Tickets", class_="foldable"))
+            snippet.append(
+                tag.div(tablediv, buttondiv, id="childtickets"))
+            return snippet
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+
+        if data and template == 'ticket.html':
+            # Get the ticket info.
+            ticket = data.get('ticket')
+            html = self.create_childticket_html(req, ticket)
+            if html:
+                filter_lst = []
+                # xpath: //div[@id="ticket"]
+                xform = JTransformer('div#ticket')
+                filter_lst.append(xform.after(unicode(html)))
+
+                # Add our own styles for the ticket lists.
+                add_stylesheet(req, 'ct/css/childtickets.css')
+                add_script_data(req, {'childtkt_filter': filter_lst})
+                add_script(req, 'ct/js/ct_jtransform.js')
+
+        return template, data, content_type
 
     # ITicketChangeListener methods
 
@@ -140,182 +330,6 @@ class TracchildticketsModule(Component):
 
             self.log.debug("TracchildticketsModule : parent.ticket.type: %s",
                            parent['type'])
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-
-        # Tickets will be modified to show the child tickets as a list
-        # under the 'Description' section.
-        if filename == 'ticket.html':
-
-            # Add our own styles for the ticket lists.
-            add_stylesheet(req, 'ct/css/childtickets.css')
-
-            # Get the ticket info.
-            ticket = data.get('ticket')
-
-            # Modify ticket.html with sub-ticket table, create button, etc...
-            # As follows:
-            # - If ticket has no child tickets and child tickets are NOT
-            #   allowed then skip.
-            # - If ticket has child tickets and child tickets are NOT
-            #   allowed (ie. rules changed or ticket type changed after
-            #   children were assigned), print list of tickets but do not
-            #   allow any tickets to be created.
-            # - If child tickets are allowed then print list of child tickets
-            #   or 'No Child Tickets' if non are currently assigned.
-            if ticket and ticket.exists:
-
-                # The additional section on the ticket is built up of
-                # (potentially) three parts: header, ticket table, buttons.
-                # These are all 'wrapped up' in a 'div' with the 'attachments'
-                # id (we'll just pinch this to make look and feel consistent
-                # with any future changes!)
-                filter = Transformer('//div[@id="ticket"]')
-                snippet = tag.div()
-
-                # Are there any child tickets to display?
-                childtickets = [Ticket(self.env, n) for n in
-                                self.childtickets.get(ticket.id, [])]
-
-                # (tempish) fix for #8612 : force sorting by ticket id
-                childtickets = sorted(childtickets, key=lambda t: t.id)
-
-                # Are child tickets allowed?
-                childtickets_allowed = \
-                        self.config.getbool('childtickets',
-                                            'parent.%s.allow_child_tickets'
-                                            % ticket['type'])
-
-                # If there are no childtickets and the ticket should not have
-                # any child tickets, we can simply drop out here.
-                if not childtickets_allowed and not childtickets:
-                    return stream
-
-                # Our 'main' display consists of two divs.
-                buttondiv = tag.div()
-                tablediv = tag.div()
-
-                # Test if the ticket has children: If so, then list in table.
-                if childtickets:
-                    # Which columns to display in child ticket listing?
-                    columns = self.config.getlist('childtickets',
-                                                  'parent.%s.table_headers' %
-                                                  ticket['type'],
-                                                  default=['summary',
-                                                           'owner'])
-
-                    tablediv = tag.div(
-                        tag.table(
-                            tag.thead(
-                                tag.tr(
-                                    tag.th("Ticket", class_="id"),
-                                    [tag.th(s.title(), class_=s) for s in
-                                     columns])
-                            ),
-                            tag.tbody(
-                                [self._table_row(req, tkt, columns) for tkt in
-                                 childtickets]),
-                            class_="listing tickets",
-                        ),
-                        tag.br(),
-                    )
-
-                # Child tickets are allowed - add 'create new ticket' buttons
-                if childtickets_allowed:
-                    childtickets_label = \
-                        self.config.get('childtickets',
-                                        'parent.%s.new_child_ticket_label'
-                                        % ticket['type']) \
-                        or "New Child Ticket"
-                    # Can user create a new ticket?
-                    # If not, just display title (ie. no 'create' button).
-                    if 'TICKET_CREATE' in req.perm(ticket.resource):
-
-                        # Always pass these fields
-                        default_child_fields = (
-                            tag.input(type="hidden", name="parent",
-                                      value='#' + str(ticket.id)),
-                        )
-
-                        # Pass extra fields from inherit parameter of parent
-                        inherited_child_fields = [
-                            tag.input(type="hidden", name="%s" % field,
-                                      value=ticket[field]) for field in
-                            self.config.getlist('childtickets',
-                                                'parent.%s.inherit' % ticket[
-                                                    'type'])
-                            ]
-
-                        # If child types are restricted then create a set of
-                        # buttons for the allowed types (This will override
-                        # 'default_child_type).
-                        restrict_child_types = self.config.getlist(
-                            'childtickets',
-                            'parent.%s.restrict_child_type' % ticket['type'],
-                            default=[])
-
-                        if not restrict_child_types:
-                            # trac.ini : Default 'type' of child tickets?
-                            default_child_type = self.config.get(
-                                'childtickets',
-                                'parent.%s.default_child_type'
-                                % ticket['type'],
-                                default=self.config.get('ticket',
-                                                        'default_type'))
-
-                            # ... create a default submit button
-                            if ticket['status'] == 'closed':
-                                submit_button_fields = (
-                                    tag.input(type="submit",
-                                              disabled="disabled",
-                                              name="childticket",
-                                              value=childtickets_label,
-                                              title="Create a child ticket"),
-                                    tag.input(type="hidden", name="type",
-                                              value=default_child_type),
-                                )
-                            else:
-                                submit_button_fields = (
-                                    tag.input(type="submit",
-                                              name="childticket",
-                                              value=childtickets_label,
-                                              title="Create a child ticket"),
-                                    tag.input(type="hidden", name="type",
-                                              value=default_child_type),
-                                )
-                        else:
-                            if ticket['status'] == 'closed':
-                                submit_button_fields = [
-                                    tag.input(type="submit",
-                                              disabled="disabled",
-                                              name="type",
-                                              value="%s" % ticket_type,
-                                              title="Create a %s child ticket"
-                                                     % ticket_type)
-                                    for ticket_type in restrict_child_types]
-                            else:
-                                submit_button_fields = [
-                                    tag.input(type="submit", name="type",
-                                              value="%s" % ticket_type,
-                                              title="Create a %s child ticket"
-                                              % ticket_type)
-                                    for ticket_type in restrict_child_types]
-                        buttondiv = tag.form(
-                            tag.div(default_child_fields,
-                                    inherited_child_fields,
-                                    submit_button_fields),
-                            method="get", action=req.href.newticket(),
-                        )
-
-                snippet.append(tag.h2("Child Tickets", class_="foldable"))
-                snippet.append(
-                    tag.div(tablediv, buttondiv, id="childtickets"))
-
-                return stream | filter.after(snippet)
-
-        return stream
 
     # ITemplateProvider methods
 
