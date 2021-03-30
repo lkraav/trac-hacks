@@ -14,7 +14,7 @@ from .jtransformer import JTransformer
 from trac.cache import cached
 from trac.core import *
 from trac.resource import ResourceNotFound
-from trac.ticket.api import ITicketManipulator, ITicketChangeListener
+from trac.ticket.api import ITicketManipulator, ITicketChangeListener, TicketSystem
 from trac.ticket.model import Ticket
 from trac.util.html import html as tag
 from trac.web.api import IRequestFilter
@@ -97,12 +97,13 @@ class TracchildticketsModule(Component):
                                               default=['summary',
                                                        'owner'])
 
+                field_names = TicketSystem(self.env).get_ticket_field_labels()
                 tablediv = tag.div(
                     tag.table(
                         tag.thead(
                             tag.tr(
                                 tag.th("Ticket", class_="id"),
-                                [tag.th(s.title(), class_=s) for s in
+                                [tag.th(field_names[s], class_=s) for s in
                                  columns])
                         ),
                         tag.tbody(
