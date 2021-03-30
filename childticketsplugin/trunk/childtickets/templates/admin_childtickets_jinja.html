@@ -57,7 +57,7 @@
                                 <label>
                                 <input type="checkbox" name="headers" value="${header}"
                                        ${{"checked": checked}|htmlattr} />
-                                ${header}</label>
+                                ${field_names[header]}</label>
                             </div>
                             # endfor
                         </td>
@@ -86,7 +86,7 @@
                                 <label>
                                     <input type="checkbox" name="inherited" value="${field}"
                                            ${{"checked": checked}|htmlattr} />
-                                    ${field}</label>
+                                    ${field_names[field]}</label>
                             </div>
                             # endfor
                         </td>
@@ -137,15 +137,23 @@
                     </thead>
                     <tbody>
                     # for type in ticket_types:
+                    #    set table_headers = []
+                    #    for item in type.table_headers:
+                          ${table_headers.append(field_names[item])}
+                    #    endfor
+                    #    set inherited = []
+                    #    for item in type.inherited_fields:
+                          ${inherited.append(field_names[item])}
+                    #    endfor
                         <tr class="${type.table_row_class}">
                             <td class="name"><a
                                 href="${'/'.join([base_href,type.name])}">${type.name}</a>
                             </td>
                             <td>${type.allow_child_tickets}</td>
                             <td>${type.new_child_ticket_label}</td>
-                            <td>${', '.join(type.table_headers)}</td>
+                            <td>${', '.join(table_headers)}</td>
                             <td>${', '.join(type.restrict_to_child_types)}</td>
-                            <td>${', '.join(type.inherited_fields)}</td>
+                            <td>${', '.join(inherited)}</td>
                         </tr>
                     # endfor
                 </tbody>

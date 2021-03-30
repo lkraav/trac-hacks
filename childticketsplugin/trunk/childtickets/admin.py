@@ -124,6 +124,7 @@ class ChildTicketsAdminPanel(Component):
                 'table_headers': self._headers(parenttype),
                 'parent_types': self._types(parenttype),
                 'inherited_fields': self._inherited(parenttype),
+                'field_names': TicketSystem(self.env).get_ticket_field_labels()
             }
         else:
             data = {
@@ -131,6 +132,7 @@ class ChildTicketsAdminPanel(Component):
                 'view': 'list',
                 'base_href': req.href.admin(cat, page),
                 'ticket_types': [ParentType(self.config, p) for p in self.ticket_types],
+                'field_names': TicketSystem(self.env).get_ticket_field_labels()
             }
 
         # Add our own styles for the ticket lists.
@@ -207,6 +209,12 @@ class ParentType(object):
 
     @property
     def table_headers(self):
+        return self.config.getlist('childtickets',
+                                   'parent.%s.table_headers' % self.name,
+                                   default=['summary', 'owner'])
+    @property
+    def table_labels(self):
+        labels = TicketSystem(self.env).get_ticket_field_labels()
         return self.config.getlist('childtickets',
                                    'parent.%s.table_headers' % self.name,
                                    default=['summary', 'owner'])

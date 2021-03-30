@@ -48,9 +48,9 @@
             <py:for each="header, checked in table_headers.items()">
               <div>
                 <label>
-                  <input type="checkbox" name="headers" value="$header"
+                  <input type="checkbox" name="headers" value="${header}"
                          checked="$checked"/>
-                  ${header}
+                  ${field_names[header]}
                 </label>
               </div>
             </py:for>
@@ -79,7 +79,7 @@
                 <label>
                 <input type="checkbox" name="inherited" value="${field}"
                        checked="$checked"/>
-                ${field}</label>
+                ${field_names[field]}</label>
               </div>
             </py:for>
           </td>
@@ -129,9 +129,9 @@
             </td>
             <td>${type.allow_child_tickets}</td>
             <td>${type.new_child_ticket_label}</td>
-            <td>${', '.join(type.table_headers)}</td>
+            <td>${', '.join([field_names[hdr] for hdr in type.table_headers])}</td>
             <td>${', '.join(type.restrict_to_child_types)}</td>
-            <td>${', '.join(type.inherited_fields)}</td>
+            <td>${', '.join([field_names[inh] for inh in type.inherited_fields])}</td>
           </tr>
         </py:for>
         </tbody>
