@@ -39,8 +39,11 @@ class TracchildticketsModule(Component):
         for child, parent in self.env.db_query("""
                 SELECT ticket,value FROM ticket_custom WHERE name='parent'
                 """):
-            if parent and re.match('#\d+', parent):
-                x.setdefault(int(parent.lstrip('#')), []).append(child)
+            parent = parent or ''
+            pids = parent.split()
+            for pid in pids:
+                if pid and re.match('#\d+', pid):
+                    x.setdefault(int(pid.lstrip('#')), []).append(child)
         return x
 
     def create_childticket_html(self, req,  ticket):
@@ -259,83 +262,87 @@ class TracchildticketsModule(Component):
         if not ticket.values.get('parent'):
             return
 
+        par = ticket.values.get('parent').split()
         # Is it of correct 'format'?
-        if not re.match('^#\d+', ticket.values.get('parent')):
-            yield 'parent', "The parent id must be of the form '#id' where " \
-                            "'id' is a valid ticket id."
-            return
+        for item in par:
+            if not re.match('^#\d+', item):
+                yield 'parent', "The parent id must be of the form '#id' where 'id' is a valid ticket id."
 
         # Strip the '#' to get parent id.
-        pid = int(ticket.values.get('parent').lstrip('#'))
+        pids = []
+        for item in par:
+            pids.append(int(item.lstrip('#')))
 
         # Check we're not being daft and setting own id as parent.
-        if ticket.id and pid == ticket.id:
-            yield 'parent', "The ticket has same id as parent id."
+        for item in pids:
+            if ticket.id and item == ticket.id:
+                yield 'parent', "The ticket has same id as parent id."
 
         # Recursive/Circular ticket check : Does ticket recursion goes too
         # deep (as defined by 'default.max_depth' in 'trac.ini')?
-        max_depth = self.config.getint('childtickets',
-                                       'default.max_depth', default=5)
+        max_depth = self.config.getint('childtickets', 'default.max_depth', default=5)
 
         # The 'family tree' already consists of this ticket id plus the parent
-        fam_tree = [ticket.id, pid]
-        for grandad in self._get_parent_id(pid):
-            fam_tree.append(grandad)
-            if ticket.id == grandad:
-                dependencies = ' --> '.join('#%s' % x for x in fam_tree)
-                yield 'parent', "The tickets have a circular dependency " \
-                                "upon each other : %s" % dependencies
-            if len(fam_tree) > max_depth:
-                yield 'parent', "Parent/Child relationships go too deep, " \
-                                "'max_depth' exceeded (%s) : %s" % (
-                max_depth, ' - '.join(['#%s' % x for x in fam_tree]))
-                break
+        for pid in pids:
+            fam_tree = [ticket.id, pid]
+            for grandad in self._get_parent_id(pid):
+                fam_tree.append(grandad)
+                if ticket.id == grandad:
+                    dependencies = ' --> '.join('#%s' % x for x in fam_tree)
+                    yield 'parent', "The tickets have a circular dependency " \
+                                    "upon each other : %s" % dependencies
+                if len(fam_tree) > max_depth:
+                    yield 'parent', "Parent/Child relationships go too deep, " \
+                                    "'max_depth' exceeded (%s) : %s" % (
+                    max_depth, ' - '.join(['#%s' % x for x in fam_tree]))
+                    break
 
         # Try creating parent ticket instance : it should exist.
-        try:
-            parent = Ticket(self.env, pid)
-        except ResourceNotFound:
-            yield 'parent', "The parent ticket #%d does not exist." % pid
+        for pid in pids:
+            try:
+                parent = Ticket(self.env, pid)
+            except ResourceNotFound:
+                yield 'parent', "The parent ticket #%d does not exist." % pid
 
-        else:
-            # NOTE: The following checks are checks on the parent ticket
-            # being defined in the 'parent' box rather than on the child
-            # ticket actually being created. It is therefore possible to
-            # 'legally' create this child ticket but then for the restrictions
-            # or type of the parent ticket to change - I have NOT restricted
-            # the possibility to modify parent type after children have been
-            # assigned, however, further modifications to the children
-            # themselves would then throw up some errors and force the users
-            # to re-set the child type.)
+            else:
+                # NOTE: The following checks are checks on the parent ticket
+                # being defined in the 'parent' box rather than on the child
+                # ticket actually being created. It is therefore possible to
+                # 'legally' create this child ticket but then for the restrictions
+                # or type of the parent ticket to change - I have NOT restricted
+                # the possibility to modify parent type after children have been
+                # assigned, however, further modifications to the children
+                # themselves would then throw up some errors and force the users
+                # to re-set the child type.)
 
-            # Does the parent ticket 'type' even allow child tickets?
-            if not self.config.getbool('childtickets',
-                                       'parent.%s.allow_child_tickets' %
-                                               parent['type']):
-                yield 'parent', "The parent ticket (#%s) has type %s which " \
-                                "does not allow child tickets." \
-                                % (pid, parent['type'])
+                # Does the parent ticket 'type' even allow child tickets?
+                if not self.config.getbool('childtickets',
+                                           'parent.%s.allow_child_tickets' %
+                                                   parent['type']):
+                    yield 'parent', "The parent ticket (#%s) has type %s which " \
+                                    "does not allow child tickets." \
+                                    % (pid, parent['type'])
 
-            # It is possible the parent restricts the allowed type of children
-            allowedtypes = self.config.getlist('childtickets',
-                                               'parent.%s.restrict_child_type'
-                                               % parent['type'], default=[])
-            if allowedtypes and ticket['type'] not in allowedtypes:
-                yield 'parent', "The parent ticket (#%s) has type %s which " \
-                                "does not allow child type '%s'. Must be " \
-                                "one of : %s." \
-                                % (pid, parent['type'], ticket['type'],
-                                   ','.join(allowedtypes))
+                # It is possible the parent restricts the allowed type of children
+                allowedtypes = self.config.getlist('childtickets',
+                                                   'parent.%s.restrict_child_type'
+                                                   % parent['type'], default=[])
+                if allowedtypes and ticket['type'] not in allowedtypes:
+                    yield 'parent', "The parent ticket (#%s) has type %s which " \
+                                    "does not allow child type '%s'. Must be " \
+                                    "one of : %s." \
+                                    % (pid, parent['type'], ticket['type'],
+                                       ','.join(allowedtypes))
 
-            # If the parent is 'closed' then we should not be allowed to
-            # create a new child ticket against that parent.
-            if parent['status'] == 'closed':
-                yield 'parent', "The parent ticket (#%s) is not an active " \
-                                "ticket (status: %s)." \
-                                % (pid, parent['status'])
+                # If the parent is 'closed' then we should not be allowed to
+                # create a new child ticket against that parent.
+                if parent['status'] == 'closed':
+                    yield 'parent', "The parent ticket (#%s) is not an active " \
+                                    "ticket (status: %s)." \
+                                    % (pid, parent['status'])
 
-            self.log.debug("TracchildticketsModule : parent.ticket.type: %s",
-                           parent['type'])
+                self.log.debug("TracchildticketsModule : parent.ticket.type: %s",
+                               parent['type'])
 
     # ITemplateProvider methods
 
