@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 # name that is used in packages is the one that is used in the trac.ini file.
 # use package name as entry_points
 setup(
-    name='Tracchildtickets',
+    name='TracChildTickets',
     version='2.6.0',
     packages=find_packages(),
     author='Mark Ryan',
