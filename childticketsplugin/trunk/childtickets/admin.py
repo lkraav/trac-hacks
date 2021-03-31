@@ -55,7 +55,7 @@ class ChildTicketsAdminPanel(Component):
     def get_admin_panels(self, req):
         if 'TICKET_ADMIN' in req.perm('admin', 'childticketsplugin/types'):
             excl_mark = '' if self.ticket_custom_field_exists() else ' (!)'
-            yield ('childticketsplugin', _('Child Tickets Plugin'), 'types',
+            yield ('childticketsplugin', _('Child Tickets'), 'types',
                    _('Parent Types') + excl_mark)
 
     def render_admin_panel(self, req, cat, page, parenttype):
@@ -92,22 +92,16 @@ class ChildTicketsAdminPanel(Component):
                 # NOTE: 'req.arg.get()' returns a string if only one of the
                 # multiple options is selected.
                 headers = req.args.getlist('headers')
-                if not isinstance(headers, list):
-                    headers = [headers]
                 self.config.set('childtickets',
                                 'parent.%s.table_headers' % parenttype,
                                 ','.join(headers))
 
                 restricted = req.args.getlist('restricted')
-                if not isinstance(restricted, list):
-                    restricted = [restricted]
                 self.config.set('childtickets',
                                 'parent.%s.restrict_child_type' % parenttype,
                                 ','.join(restricted))
 
                 inherited = req.args.getlist('inherited')
-                if not isinstance(inherited, list):
-                    inherited = [inherited]
                 self.config.set('childtickets',
                                 'parent.%s.inherit' % parenttype,
                                 ','.join(inherited))
@@ -157,7 +151,9 @@ class ChildTicketsAdminPanel(Component):
         """Returns a list of valid headers for the given parent type.
         """
         ticket_fields = [item['name'] for item in TicketSystem(self.env).get_ticket_fields()]
-        headers = dict.fromkeys(ticket_fields, None)
+        # Description is always shown so don't allow user to select/deselect it
+        headers = [item for item in ticket_fields if item != 'description']
+        headers = dict.fromkeys(headers, None)
         headers.update(
             dict.fromkeys(map(lambda x: x.lower(), ptype.table_headers),
                           'checked'))
@@ -209,12 +205,6 @@ class ParentType(object):
 
     @property
     def table_headers(self):
-        return self.config.getlist('childtickets',
-                                   'parent.%s.table_headers' % self.name,
-                                   default=['summary', 'owner'])
-    @property
-    def table_labels(self):
-        labels = TicketSystem(self.env).get_ticket_field_labels()
         return self.config.getlist('childtickets',
                                    'parent.%s.table_headers' % self.name,
                                    default=['summary', 'owner'])
