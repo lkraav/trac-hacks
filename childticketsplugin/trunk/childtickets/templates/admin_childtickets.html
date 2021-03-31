@@ -34,14 +34,6 @@
           </td>
         </tr>
         <tr>
-          <!-- New Child Ticket Label -->
-          <td><label>${_("New Child Ticket Label")}</label></td>
-          <td><input type="text" name="new_child_ticket_label"
-                     value="${parenttype.new_child_ticket_label}"
-                     size="30" />
-          </td>
-        </tr>
-        <tr>
           <!-- Table Headers Option -->
           <td>${_("Table Headers")}</td>
           <td>
@@ -128,7 +120,6 @@
                 href="${'/'.join([base_href,type.name])}">${type.name}</a>
             </td>
             <td>${type.allow_child_tickets}</td>
-            <td>${type.new_child_ticket_label}</td>
             <td>${', '.join([field_names[hdr] for hdr in type.table_headers])}</td>
             <td>${', '.join(type.restrict_to_child_types)}</td>
             <td>${', '.join([field_names[inh] for inh in type.inherited_fields])}</td>

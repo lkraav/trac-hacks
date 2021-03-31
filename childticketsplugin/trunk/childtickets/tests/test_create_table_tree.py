@@ -44,7 +44,12 @@ class TestCreateTableTree(unittest.TestCase):
         req = MockRequest(self.env)
         for num in range(1, 11):
             ticket = Ticket(self.env, num)
-            self.plugin.create_childticket_tree_html(req, ticket)
+            res = self.plugin.create_childticket_tree_html(req, ticket)
+            self.assertEqual(2, len(res))
+        # New ticket
+        ticket = Ticket(self.env)
+        res = self.plugin.create_childticket_tree_html(req, ticket)
+        self.assertEqual(2, len(res))
 
 
 if __name__ == '__main__':

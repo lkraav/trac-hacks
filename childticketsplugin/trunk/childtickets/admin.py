@@ -52,7 +52,6 @@ class ChildTicketsAdminPanel(Component):
     [childtickets]
     parent.defect.allow_child_tickets = True
     parent.defect.inherit = description,milestone,summary,project,version
-    parent.defect.new_child_ticket_label = New Child Ticket
     parent.defect.restrict_child_type = defect,enhancement
     parent.defect.table_headers = status,project,summary
     }}}
@@ -144,15 +143,6 @@ class ChildTicketsAdminPanel(Component):
                                 % parenttype,
                                 allow_child_tickets)
 
-                new_child_ticket_label = \
-                    req.args.get('new_child_ticket_label')
-                self.config.set('childtickets',
-                                'parent.%s.new_child_ticket_label'
-                                % parenttype,
-                                new_child_ticket_label)
-
-                # NOTE: 'req.arg.get()' returns a string if only one of the
-                # multiple options is selected.
                 headers = req.args.getlist('headers')
                 self.config.set('childtickets',
                                 'parent.%s.table_headers' % parenttype,
@@ -257,13 +247,6 @@ class ParentType(object):
         return self.config.getbool('childtickets',
                                    'parent.%s.allow_child_tickets' % self.name,
                                    default=False)
-
-    @property
-    def new_child_ticket_label(self):
-        return self.config.get('childtickets',
-                              'parent.%s.new_child_ticket_label'
-                              % self.name,
-                              default="New Child Ticket")
 
     @property
     def table_headers(self):
