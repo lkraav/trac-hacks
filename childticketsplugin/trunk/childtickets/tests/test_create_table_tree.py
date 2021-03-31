@@ -36,6 +36,7 @@ class TestCreateTableTree(unittest.TestCase):
                                    enable=["trac.*", "childtickets.*"])
         self.plugin = ChildTicketsModule(self.env)
         self.env.config.set("ticket-custom", "parent", "text")
+        self.env.config.set("ticket-custom", "parent.format", "wiki")
         # Note that the ticket custom field 'foo' is not defined
         self.env.config.set('childtickets', 'parent.defect.table_headers', 'status,parent,summary,foo')
         create_ticket_tree(self.env)

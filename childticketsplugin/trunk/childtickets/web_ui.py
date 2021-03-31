@@ -21,6 +21,7 @@ from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, Chrome, ITemplateProvider, web_context
+from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 
 try:
@@ -94,10 +95,9 @@ class ChildTicketsModule(Component):
                 For each level of indentation (0, 1, 2, ...) the table will be indented by a
                 percentage defined as INDENT_PERCENT (usually 3..5%).
                 """
-                from trac.wiki.formatter import format_to_html
                 def recursion_warning():
                     return tag.table(
-                        tag.tbody(self._table_row(req, tkt, treecolumns),
+                        tag.tbody(self._table_row(req, tkt, treecolumns, field_format),
                                   tag.tr(
                                       tag.td(
                                           _("Recursion detected! Check if you have a loop in your ticket tree."),
@@ -127,7 +127,7 @@ class ChildTicketsModule(Component):
                                [tag.th(field_names[col], class_=col) for col in treecolumns]
                                )
                     ),
-                    tag.tbody(self._table_row(req, tkt, treecolumns),
+                    tag.tbody(self._table_row(req, tkt, treecolumns, field_format),
                               tag.tr(
                                   tag.td(desc, class_="description", colspan="%s" % str(1 + len(treecolumns))),
                                   class_="hilightrow",
@@ -179,7 +179,8 @@ class ChildTicketsModule(Component):
                 return '', ''
 
             field_names = TicketSystem(self.env).get_ticket_field_labels()
-
+            # We need this to decide if we should wikify a field in the child table
+            field_format = {item['name']: item.get('format', None) for item in TicketSystem(self.env).get_ticket_fields()}
             # The additional section on the ticket is built up of (potentially) three parts: header, ticket table, buttons. These
             # are all 'wrapped up' in a 'div' with the 'attachments' id (we'll just pinch this to make look and feel consistent with any
             # future changes!)
@@ -425,7 +426,13 @@ class ChildTicketsModule(Component):
         from pkg_resources import resource_filename
         return [('ct', resource_filename(__name__, 'htdocs'))]
 
-    def _table_row(self, req, ticket, columns):
+    def _table_row(self, req, ticket, columns, field_format):
+        """
+        @param req: Request object
+        @param ticket: Ticket object with the data
+        @param columns: ticket fields to be shown
+        @param field_format: dict with key: name of field, val: type of field
+        """
         # Is the ticket closed?
         ticket_class = ''
         if ticket['status'] == 'closed':
@@ -436,6 +443,8 @@ class ChildTicketsModule(Component):
         def get_value(field):
             if field == 'owner':
                 return chrome.authorinfo(req, ticket[field])
+            elif field_format[field] == 'wiki':
+                return format_to_oneliner(self.env, web_context(req), ticket[field])
             else:
                 return ticket[field]
 
