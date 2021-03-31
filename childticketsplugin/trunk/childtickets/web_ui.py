@@ -31,7 +31,7 @@ except NameError:
 INDENT_PERCENT = 3
 
 
-class TracchildticketsModule(Component):
+class ChildTicketsModule(Component):
 
     implements(IRequestFilter, ITemplateProvider,
                ITicketChangeListener, ITicketManipulator)

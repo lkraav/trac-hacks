@@ -6,7 +6,7 @@
 #
 import unittest
 
-from childtickets.web_ui import TracchildticketsModule
+from childtickets.web_ui import ChildTicketsModule
 from trac.test import EnvironmentStub, MockRequest
 from trac.ticket.model import Ticket
 
@@ -34,7 +34,7 @@ class TestCreateTableTree(unittest.TestCase):
     def setUp(self):
         self.env = EnvironmentStub(default_data=True,
                                    enable=["trac.*", "childtickets.*"])
-        self.plugin = TracchildticketsModule(self.env)
+        self.plugin = ChildTicketsModule(self.env)
         self.env.config.set("ticket-custom", "parent", "text")
         create_ticket_tree(self.env)
 
