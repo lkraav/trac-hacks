@@ -175,7 +175,7 @@ class ChildTicketsModule(Component):
             # If there are no childtickets and the ticket should not
             # have any child tickets, we can simply drop out here.
             if not childtickets_allowed and not childtickets and not parents:
-                return ''
+                return '', ''
 
             field_names = TicketSystem(self.env).get_ticket_field_labels()
 
@@ -268,6 +268,8 @@ class ChildTicketsModule(Component):
                 snippet.append(tag.div(buttonform))
 
             return snippet, parsnippet
+        else:
+            return '', ''
 
     # IRequestFilter methods
 
@@ -280,16 +282,17 @@ class ChildTicketsModule(Component):
             # Get the ticket info.
             ticket = data.get('ticket')
             html, parent_html = self.create_childticket_tree_html(req, ticket)
+
+            filter_lst = []
             if html:
-                filter_lst = []
                 # xpath: //div[@id="ticket"]
                 xform = JTransformer('div#ticket')
                 filter_lst.append(xform.after(unicode(html)))
-
+            if parent_html:
                 # xpath: //div[@id="ticket"]
                 xform = JTransformer('div#ticket')
                 filter_lst.append(xform.after(unicode(parent_html)))
-
+            if html or parent_html:
                 # Add our own styles for the ticket lists.
                 add_stylesheet(req, 'ct/css/childtickets.css')
                 add_script_data(req, {'childtkt_filter': filter_lst})
