@@ -108,7 +108,8 @@ class ChildTicketsModule(Component):
                         class_="listing tickets",
                         style="margin-left: 10%; width : 80%",
                     )
-
+                # Admin may have removed a custom field still in the list of table headers
+                treecolumns = [col for col in treecolumns if col in field_names]
                 desc = format_to_html(self.env, web_context(req), tkt['description'])
 
                 if indent == self.recursiondepth - 1:
