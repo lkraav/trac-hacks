@@ -32,14 +32,15 @@ INDENT_PERCENT = 3
 
 
 class ChildTicketsModule(Component):
+    """Component which inserts the child ticket data into the ticket page"""
 
     implements(IRequestFilter, ITemplateProvider,
                ITicketChangeListener, ITicketManipulator)
 
     max_view_depth = IntOption('childtickets', 'max_view_depth', default=3,
                                doc="Maximum depth of child ticket tree shown on the ticket page.")
-    indentationdepth = IntOption('childtickets', 'warn_recursion', default=10,
-                                 doc="Depth of tree at which we assume that there is a loop in our "
+    recursiondepth = IntOption('childtickets', 'recursion_warn', default=7,
+                               doc="Depth of tree at which we assume that there is a loop in our "
                                      "ticket tree.")
 
     @cached
@@ -110,7 +111,7 @@ class ChildTicketsModule(Component):
 
                 desc = format_to_html(self.env, web_context(req), tkt['description'])
 
-                if indent == self.indentationdepth - 1:
+                if indent == self.recursiondepth - 1:
                     return recursion_warning()
 
                 if tkt['status'] == 'closed':
@@ -346,8 +347,8 @@ class ChildTicketsModule(Component):
                 yield 'parent', "The ticket has same id as parent id."
 
         # Recursive/Circular ticket check : Does ticket recursion goes too
-        # deep (as defined by 'default.max_depth' in 'trac.ini')?
-        max_depth = self.config.getint('childtickets', 'default.max_depth', default=5)
+        # deep (as defined by 'recursion_warn' in 'trac.ini')?
+        max_depth = self.recursiondepth
 
         # The 'family tree' already consists of this ticket id plus the parent
         for pid in pids:
@@ -468,7 +469,7 @@ class ChildTicketsModule(Component):
         if ticket.id in self.childtickets:
             indent += 1
             # Stop recursion when indentation exceeds the specified value
-            if indent > self.indentationdepth:
+            if indent > self.recursiondepth:
                 return
             for child in self.childtickets[ticket.id]:
                 if indent > self.max_view_depth:

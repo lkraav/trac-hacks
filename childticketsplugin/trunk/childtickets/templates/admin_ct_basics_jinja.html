@@ -1,0 +1,81 @@
+{#
+# Copyright (C) 2020 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+          # block admintitle
+          ${_("Basic Settings")}
+          # endblock admintitle
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
+    </head>
+    <body>
+        # block adminpanel
+
+        <h2>${_("Basic Settings")}</h2>
+        <div>
+            # if not custom_field:
+            <form action="" method="POST">
+                ${jmacros.form_token_input()}
+                <fieldset>
+                    <legend>${_("Ticket custom field")}</legend>
+                    <div class="system-message warning">${_("Ticket custom field 'parent' not configured. See installation instructions.")}</div>
+                    <p>${_("Do you want to create the ticket custom field now?")}</p>
+                    <p class="help">${_("Without the proper ticket custom field it's not possible to link tickets to parents.")}</p>
+                    # if 'TICKET_ADMIN' in perm:
+                    <div class="buttons">
+                        <input type="submit" name="create-ticket-custom" value="${_('Create')}"/>
+                    </div>
+                    # endif
+                </fieldset>
+            </form>
+            # endif
+
+            ## Max number of levels in child tree
+            <form  action="" method="POST">
+                ${jmacros.form_token_input()}
+                <fieldset>
+                    <legend>Maximum Levels for Tree</legend>
+                    <div class="field">
+                        <input type="text" name="max-view-depth-val" value="${max_view_depth_val}"/>
+                    </div>
+                    <p class="help">This specifies the number of levels when showing a child ticket tree. If the tree
+                    goes deeper it is cut off and a message is shown instead.</p>
+                    # if 'TICKET_ADMIN' in perm:
+                    <div class="buttons">
+                        <input type="submit" name="max-view-depth" value="${_('Save')}"/>
+                    </div>
+                    # endif
+                </fieldset>
+            </form>
+
+            ## Recursion warning
+            <form  action="" method="POST">
+                ${jmacros.form_token_input()}
+                <fieldset>
+                    <legend>Recursion Threshold</legend>
+                    <div class="field">
+                        <input type="text" name="recursion-warn-val" value="${recursion_warn}"/>
+                    </div>
+                    <p class="help">This specifies the number of levels in the tree before a recursion warning is shown.</p>
+                    # if 'TICKET_ADMIN' in perm:
+                    <div class="buttons">
+                        <input type="submit" name="recursion-warn" value="${_('Save')}"/>
+                    </div>
+                    # endif
+                </fieldset>
+            </form>
+
+        </div>
+    # endblock
+    </body>
+</html>

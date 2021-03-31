@@ -1,0 +1,61 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+<xi:include href="admin.html"/>
+
+<head>
+  <title>${_("Basic Settings")}</title>
+</head>
+
+<body>
+    <h2>${_("Basic Settings")}</h2>
+    <!--! Create ticket custom field -->
+    <div>
+        <form  py:if="not custom_field" action="" method="POST">
+            <fieldset>
+                <legend>Ticket Custom Field</legend>
+                <div class="system-message warning">${_("Ticket custom field 'parent' not configured. See installation instructions.")}</div>
+                <p>Do you want to create the ticket custom field now?</p>
+                <p class="help">Without the proper ticket custom field it's not possible to link tickets to parents.</p>
+                <div py:if="'TICKET_ADMIN' in perm" class="buttons">
+                    <input type="submit" name="create-ticket-custom" value="${_('Create')}"/>
+                </div>
+            </fieldset>
+        </form>
+
+        <!--! Max number of levels in child tree -->
+        <form  action="" method="POST">
+            <fieldset>
+                <legend>Maximum Levels for Tree</legend>
+                <div class="field">
+                    <input type="text" name="max-view-depth-val" value="${max_view_depth_val}"/>
+                </div>
+                <p class="help">This specifies the number of levels when showing a child ticket tree. If the tree
+                goes deeper it is cut off and a message is shown instead.</p>
+                <div py:if="'TICKET_ADMIN' in perm" class="buttons">
+                        <input type="submit" name="max-view-depth" value="${_('Save')}"/>
+                </div>
+            </fieldset>
+        </form>
+
+        <!--! Max number of levels for recursion warning -->
+        <form  action="" method="POST">
+            <fieldset>
+                <legend>Recursion Threshold</legend>
+                <div class="field">
+                    <input type="text" name="recursion-warn-val" value="${recursion_warn}"/>
+                </div>
+                <p class="help">This specifies the number of levels in the tree before a recursion warning is shown.</p>
+                <div py:if="'TICKET_ADMIN' in perm" class="buttons">
+                        <input type="submit" name="recursion-warn" value="${_('Save')}"/>
+                </div>
+            </fieldset>
+        </form>
+
+    </div>
+</body>
+
+</html>

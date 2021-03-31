@@ -38,6 +38,29 @@ def _save_config(config, req, log):
 
 
 class ChildTicketsAdminPanel(Component):
+    """Configure which ticket types allow children, inherited fields for children and more.
+
+    All the settings may be controlled from the admin pages. They are saved
+    in ''trac.ini'' as shown below.
+
+    The following global settings are available:
+    [[TracIni(childtickets)]]
+
+    You may specify features for each ticket type. In this example the configuration
+    is for tickets of type {{{defect}}}:
+    {{{#!ini
+    [childtickets]
+    parent.defect.allow_child_tickets = True
+    parent.defect.inherit = description,milestone,summary,project,version
+    parent.defect.new_child_ticket_label = New Child Ticket
+    parent.defect.restrict_child_type = defect,enhancement
+    parent.defect.table_headers = status,project,summary
+    }}}
+     parent.<type>.allow_child_tickets = True|False:: if child tickets are allowed for this parent ticket type
+     parent.<type>.inherit = fieldname 1, fieldname 2, ...:: specify the ticket fields which should be copied to the child
+     parent.<type>.restrict_child_type = type 1, type 2, ...:: allow these types ase new child ticket types
+     parent.<type>.table_headers = fieldname 1, fieldname 2, ...:: the table headers to be shown for child tickets
+    """
 
     implements(IAdminPanelProvider, ITemplateProvider)
 
@@ -54,11 +77,50 @@ class ChildTicketsAdminPanel(Component):
 
     def get_admin_panels(self, req):
         if 'TICKET_ADMIN' in req.perm('admin', 'childticketsplugin/types'):
-            excl_mark = '' if self.ticket_custom_field_exists() else ' (!)'
             yield ('childticketsplugin', _('Child Tickets'), 'types',
-                   _('Parent Types') + excl_mark)
+                   _('Parent Types'))
+        if 'TICKET_ADMIN' in req.perm('admin', 'childticketsplugin/basics'):
+            excl_mark = '' if self.ticket_custom_field_exists() else ' (!)'
+            yield ('childticketsplugin', _('Child Tickets'), 'basics',
+                   _('Basic Settings') + excl_mark)
+
+    def _render_admin_basics(self, req, cat, page, parenttype):
+        # Only for trac admins.
+        req.perm('admin', 'childticketsplugin/basics').require('TICKET_ADMIN')
+
+        data = {
+            'custom_field': self.ticket_custom_field_exists(),
+            'max_view_depth_val': self.config.getint('childtickets', 'max_view_depth', default=3),
+            'recursion_warn': self.config.getint('childtickets', 'recursion_warn', default=7)
+        }
+
+        if req.method == 'POST':
+            if req.args.get('create-ticket-custom'):
+                self.config.set('ticket-custom', 'parent', 'text')
+                self.config.set('ticket-custom', 'parent.label', _('Parent'))
+                self.config.set('ticket-custom', 'parent.format', 'wiki')
+                self.config.save()
+                add_notice(req, _("The ticket custom field 'parent' was added to the configuration."))
+            elif req.args.get('max-view-depth'):
+                self.config.set('childtickets', 'max_view_depth', req.args.get('max-view-depth-val', 3))
+                self.config.save()
+                add_notice(req, _('Your changes have been saved.'))
+            elif req.args.get('recursion-warn'):
+                self.config.set('childtickets', 'recursion_warn', req.args.get('recursion-warn-val', 7))
+                self.config.save()
+                add_notice(req, _('Your changes have been saved.'))
+
+            req.redirect(req.href.admin(cat, page))
+
+        if pre_1_3:
+            return 'admin_ct_basics.html', data
+        else:
+            return 'admin_ct_basics_jinja.html', data
 
     def render_admin_panel(self, req, cat, page, parenttype):
+
+        if page == 'basics':
+            return self._render_admin_basics(req, cat, page, parenttype)
 
         # Only for trac admins.
         req.perm('admin', 'childticketsplugin/types').require('TICKET_ADMIN')
