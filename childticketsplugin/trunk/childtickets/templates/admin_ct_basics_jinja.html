@@ -30,6 +30,12 @@
                     <legend>${_("Ticket custom field")}</legend>
                     <div class="system-message warning">${_("Ticket custom field 'parent' not configured. See installation instructions.")}</div>
                     <p>${_("Do you want to create the ticket custom field now?")}</p>
+                    <div class="field">
+                        <label>
+                            ${_("Label for field: ")}
+                            <input type="text" name="custom-field-label-val" value="${custom_field_label}"/>
+                        </label>
+                    </div>
                     <p class="help">${_("Without the proper ticket custom field it's not possible to link tickets to parents.")}</p>
                     # if 'TICKET_ADMIN' in perm:
                     <div class="buttons">

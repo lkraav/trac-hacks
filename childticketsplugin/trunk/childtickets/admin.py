@@ -89,6 +89,7 @@ class ChildTicketsAdminPanel(Component):
 
         data = {
             'custom_field': self.ticket_custom_field_exists(),
+            'custom_field_label': _('Parent'),
             'max_view_depth_val': self.config.getint('childtickets', 'max_view_depth', default=3),
             'recursion_warn': self.config.getint('childtickets', 'recursion_warn', default=7)
         }
@@ -96,7 +97,7 @@ class ChildTicketsAdminPanel(Component):
         if req.method == 'POST':
             if req.args.get('create-ticket-custom'):
                 self.config.set('ticket-custom', 'parent', 'text')
-                self.config.set('ticket-custom', 'parent.label', _('Parent'))
+                self.config.set('ticket-custom', 'parent.label', req.args.get('custom-field-label-val', _('Parent')))
                 self.config.set('ticket-custom', 'parent.format', 'wiki')
                 self.config.save()
                 add_notice(req, _("The ticket custom field 'parent' was added to the configuration."))
@@ -127,7 +128,7 @@ class ChildTicketsAdminPanel(Component):
         if req.method == 'POST':
             if req.args.get('create-ticket-custom'):
                 self.config.set('ticket-custom', 'parent', 'text')
-                self.config.set('ticket-custom', 'parent.label', _('Parent'))
+                self.config.set('ticket-custom', 'parent.label', req.args.get('custom-field-label-val', _('Parent')))
                 self.config.set('ticket-custom', 'parent.format', 'wiki')
                 self.config.save()
                 add_notice(req, _("The ticket custom field 'parent' was added to the configuration."))
@@ -175,6 +176,7 @@ class ChildTicketsAdminPanel(Component):
         else:
             data = {
                 'custom_field': self.ticket_custom_field_exists(),
+                'custom_field_label': _('Parent'),
                 'view': 'list',
                 'base_href': req.href.admin(cat, page),
                 'ticket_types': [ParentType(self.config, p) for p in self.ticket_types],
