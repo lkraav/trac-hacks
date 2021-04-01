@@ -134,6 +134,7 @@ class ChildTicketsAdminPanel(Component):
                 add_notice(req, _("The ticket custom field 'parent' was added to the configuration."))
                 req.redirect(req.href.admin(cat, page))
 
+        field_names = TicketSystem(self.env).get_ticket_field_labels()
         # Detail view?
         if parenttype:
             if req.method == 'POST':
@@ -163,7 +164,7 @@ class ChildTicketsAdminPanel(Component):
                 req.redirect(req.href.admin(cat, page))
 
             # Convert to object.
-            parenttype = ParentType(self.config, parenttype)
+            parenttype = ParentType(self.config, parenttype, field_names)
 
             data = {
                 'view': 'detail',
@@ -179,7 +180,7 @@ class ChildTicketsAdminPanel(Component):
                 'custom_field_label': _('Parent'),
                 'view': 'list',
                 'base_href': req.href.admin(cat, page),
-                'ticket_types': [ParentType(self.config, p) for p in self.ticket_types],
+                'ticket_types': [ParentType(self.config, p, field_names) for p in self.ticket_types],
                 'field_names': TicketSystem(self.env).get_ticket_field_labels()
             }
 
@@ -240,9 +241,13 @@ class ChildTicketsAdminPanel(Component):
 
 
 class ParentType(object):
-    def __init__(self, config, name):
+    def __init__(self, config, name, field_names):
+        """
+        @param field_names: dict with {name: label} for each ticket field
+        """
         self.name = name
         self.config = config
+        self.field_names = field_names
 
     @property
     def allow_child_tickets(self):
@@ -252,9 +257,11 @@ class ParentType(object):
 
     @property
     def table_headers(self):
-        return self.config.getlist('childtickets',
+        hdrs = self.config.getlist('childtickets',
                                    'parent.%s.table_headers' % self.name,
                                    default=['summary', 'owner'])
+
+        return [col for col in hdrs if col in self.field_names]
 
     @property
     def restrict_to_child_types(self):
