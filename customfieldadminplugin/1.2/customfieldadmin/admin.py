@@ -7,8 +7,7 @@ License: BSD
 (c) 2005-2012 ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 (c) 2007-2009 ::: www.Optaros.com (.....)
 """
-
-from pkg_resources import resource_filename
+from pkg_resources import get_distribution, parse_version, resource_filename
 
 from trac.admin.api import IAdminPanelProvider
 from trac.config import Option
@@ -127,7 +126,7 @@ class CustomFieldAdminPage(Component):
                          "This may affect appearance when viewing tickets."))
 
         if hasattr(Chrome(self.env), 'jenv'):
-            return 'customfieldadmin.html', cf_admin, None
+            return 'customfieldadmin_jinja.html', cf_admin, {'domain': 'customfieldadmin'}
         else:
             return 'customfieldadmin.html', cf_admin
 
