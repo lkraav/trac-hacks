@@ -38,16 +38,16 @@ class CustomFieldAdminPage(Component):
 
         def _customfield_from_req(self, req):
             cfield = {
-                'name': req.args.get('name','').encode('utf-8'),
-                'label': req.args.get('label','').encode('utf-8'),
-                'type': req.args.get('type','').encode('utf-8'),
-                'value': req.args.get('value','').encode('utf-8'),
+                'name': req.args.get('name',''),
+                'label': req.args.get('label',''),
+                'type': req.args.get('type',''),
+                'value': req.args.get('value',''),
                 'options': [x.strip().encode('utf-8') for x in \
                             req.args.get('options','').split("\n")],
-                'cols': req.args.get('cols','').encode('utf-8'),
-                'rows': req.args.get('rows','').encode('utf-8'),
-                'order': req.args.get('order', '').encode('utf-8'),
-                'format': req.args.get('format', '').encode('utf-8')
+                'cols': req.args.get('cols',''),
+                'rows': req.args.get('rows',''),
+                'order': req.args.get('order', ''),
+                'format': req.args.get('format', '')
             }
             return cfield
 

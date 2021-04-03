@@ -20,12 +20,20 @@ if cmdclass:
     }
 
 setup(name='TracCustomFieldAdmin',
-      version='0.3.0',
+      version='0.4.0',
       packages=['customfieldadmin'],
       author='CodeResort.com & Optaros.com',
       description='Admin panel for managing Trac ticket custom fields.',
       url='https://trac-hacks.org/wiki/CustomFieldAdminPlugin',
       license='BSD',
+      classifiers=['Framework :: Trac',
+                   'Intended Audience :: System Administrators',
+                   'License :: OSI Approved :: BSD License',
+                   'Operating System :: OS Independent',
+                   'Programming Language :: Python :: 2',
+                   'Programming Language :: Python :: 2.7',
+                   'Programming Language :: Python :: 3',
+                   ],
       entry_points={'trac.plugins': [
             'customfieldadmin.api = customfieldadmin.api',
             'customfieldadmin.admin = customfieldadmin.admin']},
