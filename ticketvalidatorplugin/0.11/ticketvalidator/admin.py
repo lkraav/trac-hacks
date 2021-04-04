@@ -99,8 +99,8 @@ class TicketValidatorAdminPanelProvider(Component):
 
         rules.append({'': ''})
 
-        if hasattr(Chrome(self.env), 'jenv'):
-            return 'validator_admin.html', {'rules': rules}, None
+        if hasattr(Chrome, 'jenv'):
+            return 'validator_admin_jinja.html', {'rules': rules}
         else:
             return 'validator_admin.html', {'rules': rules}
 

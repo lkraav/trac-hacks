@@ -1,0 +1,88 @@
+{#
+ Copyright (C) 2008 Max Stewart <max.e.stewart@gmail.com>
+ Copyright (C) 2021 Cinc
+
+ All rights reserved.
+
+ This software is licensed as described in the file COPYING, which
+ you should have received as part of this distribution.
+
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>
+    # block admintitle
+    ${_("Validation Rules")}
+    # endblock
+  </title>
+  # block head
+  ${ super() }
+  # endblock head
+</head>
+<body>
+  # block adminpanel
+  <h2>${_("Manage Validation Rules")}</h2>
+  <div id="content">
+  <form class="mod" id="modbasic" method="post" action="">
+    ${jmacros.form_token_input()}
+    <fieldset>
+      <legend>${_("Validator Rules:")}</legend>
+      <table>
+        <thead>
+          <tr>
+            <th>${_("Status Changes to")}</th>
+            <th>${_("Field(s) Required")}</th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        # for rule in rules:
+        <tr>
+          <td>
+            <input type="text" value="${rule.name}"
+                   name="name_${rule.name}" />
+          </td>
+          <td>
+            <input type="text" value="${rule.fields}"
+                   name="fields_${rule.name}" />
+          </td>
+          <td>
+            <input type="submit" value="-" name="remove_${rule.name}" />
+          </td>
+          <td>
+            <input type="submit" value="+" name="add_${rule.name}" />
+          </td>
+        </tr>
+        # endfor
+        </tbody>
+      </table>
+
+      <p class="hint">
+        # trans
+        <strong>Status Change To</strong> -- The 'status' of the ticket
+        when the specified ticket properties, field(s) are to be required.
+        # endtrans
+      </p>
+
+      <p class="hint">
+        # trans
+        <strong>Field(s) Required</strong> -- Can be a comma separated list
+        of required ticket properties or field(s), or a single required ticket
+        property or field.
+        # endtrans
+      </p>
+
+    </fieldset>
+
+    <div class="buttons">
+      <input type="submit" value="${_('Apply changes')}" name="apply" />
+    </div>
+  </form>
+  </div>
+  # endblock adminpanel
+</body>
+
+</html>
