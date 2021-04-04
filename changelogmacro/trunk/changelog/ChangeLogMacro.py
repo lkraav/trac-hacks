@@ -9,10 +9,15 @@
 #
 
 import re
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    # Python 3
+    from io import StringIO
 
 from trac.util.datefmt import format_datetime
 from trac.util.html import Markup, html
+from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchNode, RepositoryManager
 from trac.web.chrome import web_context
@@ -128,7 +133,7 @@ class ChangeLogMacro(WikiMacroBase):
             limit = int(limit)
         try:
             node = repo.get_node(path, rev)
-        except NoSuchNode, e:
+        except NoSuchNode as e:
             return system_message(_("ChangeLog macro failed"), e)
         out = StringIO()
         out.write('</p>')  # close surrounding paragraph
@@ -153,7 +158,7 @@ class ChangeLogMacro(WikiMacroBase):
             message = _remove_p(format_to_html(
                 self.env, context, change.message, escape_newlines=True))
             out.write('\n<dd>\n%s\n</dd>' % message)
-        out.write(html.small(html.a(_("(more)"), href=log_href)))
+        out.write(to_unicode(html.small(html.a(_("(more)"), href=log_href))))
         out.write('\n</dl>\n</div>')
         out.write('\n<p>')  # re-open surrounding paragraph
         return out.getvalue()
