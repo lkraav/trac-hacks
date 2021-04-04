@@ -8,10 +8,15 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
-
-import urllib2
+try:
+    from urllib2 import urlopen, URLError
+    from StringIO import StringIO
+except ImportError:
+    from urllib.request import urlopen
+    from urllib.error import URLError
+    from io import StringIO
 import re
-from StringIO import StringIO
+
 
 from genshi.filters.html import HTMLSanitizer
 from genshi.input import HTMLParser, ParseError
@@ -31,6 +36,12 @@ from trac.wiki.api import WikiSystem, parse_args
 from trac.wiki.formatter import WikiParser, system_message
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
+
+
+try:
+    basestring
+except NameError:
+    basetring = str
 
 
 class IncludeMacro(WikiMacroBase):
@@ -80,11 +91,11 @@ class IncludeMacro(WikiMacroBase):
                     formatter.req.path_info)
                 return ''
             try:
-                urlf = urllib2.urlopen(source)
+                urlf = urlopen(source)
                 out = urlf.read()
-            except urllib2.URLError, e:
+            except URLError as e:
                 return system_message("Error while retrieving file", str(e))
-            except TracError, e:
+            except TracError as e:
                 return system_message("Error while previewing", str(e))
             ctxt = web_context(formatter.req)
         elif source_format == 'wiki':
@@ -118,7 +129,7 @@ class IncludeMacro(WikiMacroBase):
                 msg = _('"%(version)s" is not a valid wiki page version.',
                         version=page_version)
                 return system_message(msg)
-            except TracError, e:
+            except TracError as e:
                 return system_message(e)
             if 'WIKI_VIEW' not in formatter.perm(page.resource):
                 return ''
@@ -256,7 +267,7 @@ class IncludeMacro(WikiMacroBase):
         path, rev = _split_path(source_obj)
         try:
             node = repos.get_node(path, rev)
-        except (NoSuchChangeset, NoSuchNode), e:
+        except (NoSuchChangeset, NoSuchNode) as e:
             return system_message(e), None, None, None
         content = node.get_content()
         out = ''
