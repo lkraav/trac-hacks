@@ -14,8 +14,8 @@ import re
 
 from trac.core import *
 from trac.resource import get_resource_url
-from trac.util.compat import sorted
 from trac.util.html import Markup, html as tag
+from trac.util.text import to_unicode
 from trac.wiki.api import WikiSystem, parse_args
 from trac.wiki.formatter import OutlineFormatter, system_message
 from trac.wiki.macros import WikiMacroBase
@@ -151,7 +151,7 @@ class TOCMacro(WikiMacroBase):
                'macro_no_float' in formatter.properties:
             return ''
 
-        current_page = unicode(resource.id)
+        current_page = to_unicode(resource.id)
 
         # Split the args
         args, kw = parse_args(args)

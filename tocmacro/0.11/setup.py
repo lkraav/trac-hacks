@@ -16,16 +16,28 @@ from setuptools import setup
 
 setup(
     name='TracTocMacro',
-    version='11.0.0.7',
+    version='12.0.0',
     packages=['tractoc'],
     author="Alec Thomas",
-    maintainer="Christian Boos",
-    maintainer_email="cboosr@neuf.fr",
+    maintainer="",
+    maintainer_email="",
     description="A macro to create tables of contents.",
     long_description="""A macro to create a table of contents for either a
                         single page, or a collection of pages.""",
     license="BSD 3-Clause",
     keywords="trac plugin table of content macro",
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
+        'Framework :: Trac',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
     url="https://trac-hacks.org/wiki/TocMacro",
     install_requires=['Trac'],
     entry_points={
