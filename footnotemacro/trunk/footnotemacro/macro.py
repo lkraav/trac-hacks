@@ -8,20 +8,20 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
+from pkg_resources import resource_filename
 
 from trac.core import *
+from trac.util.html import tag
 from trac.web.chrome import add_stylesheet, add_script, ITemplateProvider
 from trac.wiki.formatter import format_to_oneliner
 from trac.wiki.macros import WikiMacroBase
 from trac.util.text import shorten_line
 
-from genshi.builder import tag
-from pkg_resources import resource_filename
-
 
 class FootNoteMacro(WikiMacroBase):
-    """Collates and generates foot-notes. Call the macro with the
-    foot-note content as the only argument:
+    """Collates and generates foot-notes. Call the macro...
+
+    ...with the foot-note content as the only argument:
     {{{
        [[FootNote(This is a footnote)]]
     }}}
@@ -78,7 +78,7 @@ class FootNoteMacro(WikiMacroBase):
                 output_id = None
 
                 # Try to collate with an existing footnote
-                for i in xrange(len(context._footnotes)):
+                for i in range(len(context._footnotes)):
                     if context._footnotes[i][0] == content:
                         output_id = i + 1
                         break

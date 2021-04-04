@@ -14,7 +14,7 @@ from setuptools import setup
 
 setup(
     name='TracFootNoteMacro',
-    version='1.6',
+    version='1.6.1',
     packages=['footnotemacro'],
     package_data={'footnotemacro': ['htdocs/*.css',
                                     'htdocs/*.js']},
@@ -27,7 +27,16 @@ setup(
     keywords='trac plugin',
     url='https://trac-hacks.org/wiki/FootNoteMacro',
     classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
         'Framework :: Trac',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
     install_requires=['Trac'],
     entry_points={
