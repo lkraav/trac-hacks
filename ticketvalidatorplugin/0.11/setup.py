@@ -12,11 +12,24 @@ from setuptools import setup, find_packages
 
 setup(
     name='TicketValidator',
-    version='0.2',
+    version='0.3.0',
     description='Ticket Validation',
     author='Max Stewart',
     author_email='max.e.stewart@gmail.com',
     license='3-Clause BSD',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
+        'Framework :: Trac',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
     url='https://trac-hacks.org/wiki/TicketValidatorPlugin',
 
     zip_safe=False,
