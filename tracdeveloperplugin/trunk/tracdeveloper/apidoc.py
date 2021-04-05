@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2021 Cinc
 # Copyright (C) 2015-2017 Ryan Ollos
 # Copyright (C) 2012-2013 Olemis Lang
 # Copyright (C) 2008-2009 Noah Kantrowitz
@@ -18,7 +19,7 @@ import sys
 from trac.core import *
 from trac.mimeview import Mimeview
 from trac.web.api import HTTPNotFound, IRequestHandler
-from trac.web.chrome import web_context
+from trac.web.chrome import Chrome, web_context
 
 from tracdeveloper.util import linebreaks
 
@@ -57,7 +58,10 @@ class APIDocumentation(Component):
             'doc': formatter(req, inspect.getdoc(obj)),
             'methods': self._get_methods(req, formatter, obj)
         }
-        return 'developer/apidoc.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'developer/apidoc_jinja.html', data
+        else:
+            return 'developer/apidoc.html', data, None
 
     # Internal methods
     def _get_formatter(self, module):
@@ -70,7 +74,7 @@ class APIDocumentation(Component):
             mimeview = Mimeview(self.env)
             context = web_context(req)
             return mimeview.render(context, mimetype, text)
-        return formatter
+        return self._format_default
 
     def _format_default(self, req, text):
         return linebreaks(text)
