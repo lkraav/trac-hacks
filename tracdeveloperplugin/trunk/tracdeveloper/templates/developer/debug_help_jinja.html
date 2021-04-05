@@ -1,0 +1,59 @@
+{#
+  Copyright (C) 2021 Cinc
+  Copyright (C) 2015-2017 Ryan Ollos
+  Copyright (C) 2012-2013 Olemis Lang
+  Copyright (C) 2008-2009 Noah Kantrowitz
+  Copyright (C) 2008 Christoper Lenz
+  Copyright (C) 2007-2008 Alec Thomas
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block title
+      Debugger Help
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
+    # endblock head
+  </head>
+  <body>
+  # block content
+    <div id="content" class="debug">
+      <h1>Debugger Help</h1>
+
+      <p>To use the debugger, add the query string parameter
+      <code>debug=true</code> to the URL of the resource that interests you.
+      Note that the actual value of the parameter does not matter, so you could
+      also use <code>1</code> or <code>yes</code> there.</p>
+
+      <h2>Examples</h2>
+
+      <p>For example, if you'd like to debug the processing of the resourse at:</p>
+      <div class="code">
+        <pre>http://localhost:8080/wiki/WikiStart?action=history</pre>
+      </div>
+      <p>you simply make that:</p>
+      <div class="code">
+        <pre>http://localhost:8080/wiki/WikiStart?action=history&amp;debug=true</pre>
+      </div>
+
+      <h2>Bookmarklet</h2>
+
+      <p>For easier access, you can also install the following bookmarklet:</p>
+      <ul>
+        <li><a href="javascript:if(window.location.search){window.location.search+='&amp;debug=true'}else{window.location.search='?debug=true'}">Trac Debugger</a></li>
+      </ul>
+      <p>Drag this link to your bookmarks bar, or right-click it and choose
+      “Add bookmark/favorite”.</p>
+
+    </div>
+    # endblock content
+  </body>
+</html>

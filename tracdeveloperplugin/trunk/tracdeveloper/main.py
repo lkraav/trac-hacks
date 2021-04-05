@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2021 Cinc
 # Copyright (C) 2015-2017 Ryan Ollos
 # Copyright (C) 2012-2013 Olemis Lang
 # Copyright (C) 2008-2009 Noah Kantrowitz
@@ -49,7 +50,10 @@ class DeveloperPlugin(Component):
 
     def process_request(self, req):
         req.perm.require('TRAC_DEVELOP')
-        return 'developer/index.html', {}, None
+        if hasattr(Chrome, 'jenv'):
+            return 'developer/index_jinja.html', {}
+        else:
+            return 'developer/index.html', {}, None
 
     # ITemplateProvider methods
 
@@ -75,7 +79,7 @@ class DeveloperPlugin(Component):
         if req.method == 'POST':
             key = 'developer.js.enable_debug'
             req.session[key] = req.args.get('enable_debug', '0')
-        if hasattr(Chrome(self.env), 'jenv'):
-            return 'developer/prefs_developer.html', {}, None
+        if hasattr(Chrome, 'jenv'):
+            return 'developer/prefs_developer_jinja.html', {}
         else:
             return 'developer/prefs_developer.html', {}

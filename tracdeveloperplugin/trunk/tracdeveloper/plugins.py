@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2021 Cinc
 # Copyright (C) 2015-2017 Ryan Ollos
 # Copyright (C) 2012-2013 Olemis Lang
 # Copyright (C) 2008-2009 Noah Kantrowitz
@@ -16,7 +17,7 @@ import re
 
 from trac.core import *
 from trac.web import IRequestHandler
-from trac.web.chrome import add_script, add_stylesheet
+from trac.web.chrome import add_script, add_stylesheet, Chrome
 
 __all__ = ['PluginRegistry']
 
@@ -54,10 +55,14 @@ class PluginRegistry(Component):
         add_script(req, 'developer/js/plugins.js')
         add_stylesheet(req, 'developer/css/apidoc.css')
         add_stylesheet(req, 'developer/css/plugins.css')
-        return 'developer/plugins.html', {
-            'components': components,
-            'interfaces': interfaces
-        }, None
+
+        data = {'components': components,
+                'interfaces': interfaces
+                }
+        if hasattr(Chrome, 'jenv'):
+            return 'developer/plugins_jinja.html', data
+        else:
+            return 'developer/plugins.html', data, None
 
     # Internal methods
 

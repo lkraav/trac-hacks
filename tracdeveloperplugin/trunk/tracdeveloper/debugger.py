@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2021 Cinc
 # Copyright (C) 2015-2017 Ryan Ollos
 # Copyright (C) 2012-2013 Olemis Lang
 # Copyright (C) 2008-2009 Noah Kantrowitz
@@ -88,7 +89,11 @@ class TemplateDebugger(Component):
         if not header or header.lower() != 'xmlhttprequest':
             # Not an XHR request from the debugger, so send a help page
             add_stylesheet(req, 'common/css/code.css')
-            return 'developer/debug_help.html', {}, None
+
+            if hasattr(Chrome, 'jenv'):
+                return 'developer/debug_help_jinja.html', {}
+            else:
+                return 'developer/debug_help.html', {}, None
 
         path = req.args['path']
         token = req.args['token']

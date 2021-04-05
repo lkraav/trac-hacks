@@ -1,0 +1,112 @@
+{#
+  Copyright (C) 2021 Cinc
+  Copyright (C) 2015-2017 Ryan Ollos
+  Copyright (C) 2012-2013 Olemis Lang
+  Copyright (C) 2008-2009 Noah Kantrowitz
+  Copyright (C) 2008 Christoper Lenz
+  Copyright (C) 2007-2008 Alec Thomas
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block title
+      Plugin Registry
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
+    <script type="text/javascript">/*<![CDATA[*/
+      jQuery(function ($) {
+        $(".listing p.docstring", this).click(function() {
+          $(this).showDocs("${href.developer('doc')}/" + this.title);
+        });
+      });
+    /*]]>*/</script>
+    # endblock head
+  </head>
+  <body>
+  # block content
+    #   macro qname(name, classname=None)
+    #     set name_parts = name.split('.')
+    <a href="#${'_'.join(name_parts)}" class="${classname}">
+      ${'.'.join(name_parts[0:-1])}.<em>${name_parts[-1]}</em>
+    </a>
+    #   endmacro
+    <div id="content" class="plugins">
+      <h1>Plugin Registry</h1>
+      <div class="listing" id="interfaces">
+        <h2>Interfaces</h2>
+        <ul>
+          # for _, interface in sorted(interfaces.items()):
+          <li class="interface">
+            <h3 id="${interface.name.replace('.', '_')}">${qname(interface.name)}</h3>
+            <div class="info">
+              <p class="docstring" title="${interface.type}">
+                ${shorten_line(interface.doc) or '(doc)'}
+              </p>
+              # if interface.implemented_by:
+              <div class="implemented_by">
+                <h4>Implemented by:</h4>
+                <ul>
+                  # for name in sorted(interface.implemented_by):
+                  <li>
+                    ${qname(name, classname='xref')}
+                  </li>
+                  # endfor
+                </ul>
+              </div>
+              # endif
+            </div>
+          </li>
+          # endfor
+        </ul>
+      </div>
+      <div class="listing" id="components">
+        <h2>Components</h2>
+        <ul>
+          # for _, component in sorted(components.items()):
+          <li class="component">
+            <h3 id="${component.name.replace('.', '_')}">${qname(component.name)}</h3>
+            <div class="info">
+              <p class="docstring" title="${component.type}">
+                ${shorten_line(component.doc) or "(doc)"}
+              </p>
+              #if component.extension_points:
+              <div class="extensionpoints">
+                <h4>Provides the extension points:</h4>
+                <ul>
+                  # for xtnpt in sorted(component.extension_points):
+                  <li>
+                    ${qname(xtnpt.interface.name, classname='xref')}
+                  </li>
+                  # endfor
+                </ul>
+              </div>
+              # endif
+              # if component.implements:
+              <div class="implements">
+                <h4>Implements the extension points:</h4>
+                <ul>
+                  # for name in sorted(component.implements):
+                  <li>
+                    ${qname(name, classname='xref')}
+                  </li>
+                  # endfor
+                </ul>
+              </div>
+              # endif
+            </div>
+          </li>
+          # endfor
+        </ul>
+      </div>
+    </div>
+    # endblock content
+  </body>
+</html>
