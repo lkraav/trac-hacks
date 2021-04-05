@@ -13,7 +13,7 @@ from types import FrameType, ModuleType
 from trac.core import *
 from trac.util.html import Markup
 from trac.web.api import IRequestHandler, HTTPNotFound, HTTPForbidden
-from trac.web.chrome import add_stylesheet, add_script
+from trac.web.chrome import Chrome, add_stylesheet, add_script
 
 # from paste import fileapp
 # from paste import urlparser
@@ -166,7 +166,11 @@ class Dozer(Component):
         data['history'] = self.history
         add_script(req, 'dozer/excanvas.compiled.js')
         add_script(req, 'dozer/jspark.js')
-        return 'graphs.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'graphs_jinja.html', data
+        else:
+            return 'graphs.html', data, None
+
     index.exposed = True
 
     # def chart(self, req):
@@ -210,7 +214,11 @@ class Dozer(Component):
         data['output'] = Markup('\n'.join(rows))
         data['typename'] = typename
         data['objid'] = str(objid or '')
-        return 'trace.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'trace_jinja.html', data
+        else:
+            return 'trace.html', data, None
+
     trace.exposed = True
 
     def trace_all(self, req, typename):
@@ -304,7 +312,11 @@ class Dozer(Component):
         # res = Response()
         #         res.body = template(req, "tree.html", **params)
         #         return res
-        return 'tree.html', params, None
+        if hasattr(Chrome, 'jenv'):
+            return 'tree_jinja.html', params
+        else:
+            return 'tree.html', params, None
+
     tree.exposed = True
 
 
@@ -333,7 +345,7 @@ class ReferrerTree(reftree.Tree):
 
             # Exclude all functions and classes from this module or reftree.
             mod = getattr(ref, "__module__", "")
-            if "dozer" in mod or "reftree" in mod or mod == '__main__':
+            if not mod or "dozer" in mod or "reftree" in mod or mod == '__main__':
                 continue
 
             # Exclude all parents in our ignore list.
