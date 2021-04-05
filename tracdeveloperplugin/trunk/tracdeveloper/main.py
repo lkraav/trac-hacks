@@ -60,6 +60,7 @@ class DeveloperPlugin(Component):
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
         return [resource_filename('tracdeveloper', 'templates'),
+                resource_filename('tracdeveloper', 'templates/developer'),
                 resource_filename('tracdeveloper.dozer', 'templates')]
 
     def get_htdocs_dirs(self):

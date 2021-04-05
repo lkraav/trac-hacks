@@ -1,0 +1,62 @@
+{#
+  Copyright (C) 2021 Cinc
+  Copyright (C) 2015-2017 Ryan Ollos
+  Copyright (C) 2012-2013 Olemis Lang
+  Copyright (C) 2008-2009 Noah Kantrowitz
+  Copyright (C) 2008 Christoper Lenz
+  Copyright (C) 2007-2008 Alec Thomas
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block title
+      Debugger
+      ${ super() }
+      # endblock
+    </title>
+    # block head
+    ${ super() }
+    <script type="text/javascript">/*<![CDATA[*/
+      jQuery(function ($) {
+        $("#context").initTree("${href.developer('debug')}", function(detail) {
+          $("span.type", detail).click(function() {
+            $(this).showDocs("${href.developer('doc')}/" + this.title);
+          });
+        });
+        if (!$("#context input:checked").length) {
+          $("#context dt, #context dd").not(".highlight").hide();
+        }
+        $("#context span.type", this).click(function() {
+          $(this).showDocs("${href.developer('doc')}/" + this.title);
+        });
+        $("#context :checkbox").click(function() {
+          $("#context dt, #context dd").not(".highlight").toggle()
+        });
+      });
+    /*]]>*/</script>
+    # endblock head
+  </head>
+
+  <body>
+  # block content
+    <div id="content" class="debug">
+      <h1>Debugger</h1>
+      <input type="hidden" id="token" name="token" value="${token}" />
+
+      <div id="context" class="vars">
+        <label><input type="checkbox" /> Show chrome data</label>
+        # with
+        #   set node = context
+        #   include "debug_node_jinja.html"
+        # endwith
+      </div>
+
+    </div>
+  # endblock content
+  </body>
+</html>

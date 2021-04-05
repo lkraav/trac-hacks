@@ -18,8 +18,8 @@ from types import BuiltinFunctionType, FunctionType, GeneratorType, MethodType
 from UserDict import DictMixin
 
 from trac.core import *
-from trac.util.html import html as tag
-from trac.util.text import shorten_line
+from trac.util.html import html as tag, Markup
+from trac.util.text import shorten_line, to_unicode
 from trac.web import HTTPBadRequest, HTTPNotFound, IRequestFilter, \
                      IRequestHandler
 from trac.web.chrome import add_script, add_stylesheet, Chrome
@@ -73,7 +73,10 @@ class TemplateDebugger(Component):
         add_stylesheet(req, 'common/css/code.css')
         add_stylesheet(req, 'developer/css/apidoc.css')
         add_stylesheet(req, 'developer/css/debugger.css')
-        return 'developer/debug.html', new_data, 'text/html'
+        if hasattr(Chrome, 'jenv'):
+            return 'developer/debug_jinja.html', new_data, {}
+        else:
+            return 'developer/debug.html', new_data, 'text/html'
 
     # IRequestHandler methods
 
@@ -105,7 +108,10 @@ class TemplateDebugger(Component):
             raise HTTPNotFound("Not found '%s'" % path)
         node = data.lookup(path)
         data = {'node': node, 'drillable': self._is_drillable(req)}
-        return 'developer/debug_node.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'developer/debug_node_jinja.html', data
+        else:
+            return 'developer/debug_node.html', data, None
 
     # Internal methods
 
@@ -132,11 +138,15 @@ class ObjectTree(object):
     def __iter__(self):
         return iter(self.toplevel)
 
+    def __len__(self):
+        return len(self.tree)
+
     def _add(self, name, value, path):
-        child = ObjectNode(self, name, value, path)
-        self.tree[path] = child
-        self.idmap[id(value)] = child
-        return child
+        if path not in self.tree:
+            child = ObjectNode(self, name, value, path)
+            self.tree[path] = child
+            self.idmap[id(value)] = child
+        return self.tree[path]
 
     def expand(self, node):
         if node.is_collection:
@@ -185,6 +195,10 @@ class ObjectNode(object):
     def __iter__(self):
         return self.root.expand(self)
 
+    def __len__(self):
+        lst = list(self.root.expand(self))
+        return len(lst)
+
     def __repr__(self):
         return '<%s %r %r %r>' % (type(self).__name__, self.name, self.value,
                                   self.path)
@@ -231,8 +245,14 @@ class ObjectNode(object):
             if isinstance(self.value, basestring):
                 value = self.value
                 if not isinstance(self.value, unicode):
-                    value = unicode(self.value, 'utf-8', 'replace')
-                return tag.q(shorten_line(value, 60)).generate()
+                    value = to_unicode(self.value, 'utf-8')
+                if hasattr(Chrome,'jenv'):
+                    # This convoluted stuff is to display html text properly
+                    # See [chrome]->[footer] for an example
+                    txt = to_unicode(Markup.escape(shorten_line(value, 60)))
+                    return Markup(tag.q(txt))
+                else:
+                    return tag.q(shorten_line(value, 60)).generate()
             else:
                 return shorten_line(repr(self.value), 60)
         elif self.is_collection:
