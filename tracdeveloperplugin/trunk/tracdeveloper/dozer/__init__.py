@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2021 Cinc
+# Copyright (C) 2015-2017 Ryan Ollos
+# Copyright (C) 2008-2009 Noah Kantrowitz
+#
 import cgi
 import gc
 import os
@@ -8,10 +14,10 @@ from types import FrameType, ModuleType
 
 #
 # import Image
-# import ImageDraw
 
 from trac.core import *
-from trac.util.html import Markup
+from trac.util.html import Markup, escape
+from trac.util.text import to_unicode
 from trac.web.api import IRequestHandler, HTTPNotFound, HTTPForbidden
 from trac.web.chrome import Chrome, add_stylesheet, add_script
 
@@ -22,11 +28,23 @@ from trac.web.chrome import Chrome, add_stylesheet, add_script
 
 from tracdeveloper.dozer import reftree
 
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
+
+
 localDir = os.path.join(os.getcwd(), os.path.dirname(__file__))
 
 
 def get_repr(obj, limit=250):
-    return cgi.escape(reftree.get_repr(obj, limit))
+    return to_unicode(escape(reftree.get_repr(obj, limit)))
 
 
 class _(object):
@@ -114,7 +132,7 @@ class Dozer(Component):
             else:
                 typecounts[objtype] = 1
 
-        for objtype, count in typecounts.iteritems():
+        for objtype, count in iteritems(typecounts):
             typename = objtype.__module__ + "." + objtype.__name__
             if typename not in self.history:
                 self.history[typename] = [0] * self.samples
@@ -123,14 +141,14 @@ class Dozer(Component):
         samples = self.samples + 1
 
         # Add dummy entries for any types which no longer exist
-        for typename, hist in self.history.iteritems():
+        for typename, hist in iteritems(self.history):
             diff = samples - len(hist)
             if diff > 0:
                 hist.extend([0] * diff)
 
         # Truncate history to self.maxhistory
         if samples > self.maxhistory:
-            for typename, hist in self.history.iteritems():
+            for typename, hist in iteritems(self.history):
                 hist.pop(0)
         else:
             self.samples = samples
@@ -163,12 +181,13 @@ class Dozer(Component):
         #res.body = template(req, "graphs.html", output="\n".join(rows))
         #return res
         #data['output'] = Markup('\n'.join(rows))
-        data['history'] = self.history
         add_script(req, 'dozer/excanvas.compiled.js')
         add_script(req, 'dozer/jspark.js')
         if hasattr(Chrome, 'jenv'):
+            data['history'] = [item for item in sorted(iteritems(self.history))]
             return 'graphs_jinja.html', data
         else:
+            data['history'] = self.history
             return 'graphs.html', data, None
 
     index.exposed = True
@@ -387,7 +406,7 @@ class ReferrerTree(reftree.Tree):
     def get_refkey(self, obj, referent):
         """Return the dict key or attribute name of obj which refers to referent."""
         if isinstance(obj, dict):
-            for k, v in obj.iteritems():
+            for k, v in iteritems(obj):
                 if v is referent:
                     return " (via its %r key)" % k
 

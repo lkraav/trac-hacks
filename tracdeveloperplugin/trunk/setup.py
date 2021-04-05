@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2021 Cinc
 # Copyright (C) 2015-2017 Ryan Ollos
 # Copyright (C) 2012-2013 Olemis Lang
 # Copyright (C) 2008-2009 Noah Kantrowitz
@@ -16,14 +17,27 @@ from setuptools import setup
 
 setup(
     name='TracDeveloper',
-    version='0.4.0',
+    version='0.5.0',
     packages=['tracdeveloper', 'tracdeveloper.dozer'],
     author='Alec Thomas',
-    maintainer='Olemis Lang',
-    maintainer_email='olemis+trac@gmail.com',
+    maintainer='',
+    maintainer_email='',
     description='Adds some features to Trac that are useful for developers',
     url='https://trac-hacks.org/wiki/TracDeveloperPlugin',
     license='BSD',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
+        'Framework :: Trac',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
     entry_points = {
         'trac.plugins': [
             'developer = tracdeveloper.main',

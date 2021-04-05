@@ -28,5 +28,5 @@ class JavascriptDeveloperModule(Component):
             req.args['filename'] = 'js/jquery-1.2.6.js'
         return handler
 
-    def post_process_request(self, req, template, content_type):
-        return template, content_type
+    def post_process_request(self, req, template, data, content_type):
+        return template, data, content_type

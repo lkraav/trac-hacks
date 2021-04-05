@@ -54,7 +54,8 @@
     <h1><a href="${req.href.developer('dozer')}">Dozer</a>: Types</h1>
 
     <div id="output">
-      # for typename, hist in sorted(history.iteritems()):
+      ## for typename, hist in sorted(history.iteritems()):
+      # for typename, hist in history:
       # set maxhist = hist|max
       # if maxhist >= req.args.get('floor', 0)
       ##   ${','.join([str(n) for n in hist])}

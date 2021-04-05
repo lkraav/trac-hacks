@@ -47,7 +47,7 @@ class APIDocumentation(Component):
         try:
             module = sys.modules[modname]
             obj = getattr(module, attrname)
-        except (KeyError, AttributeError), e:
+        except (KeyError, AttributeError) as e:
             raise HTTPNotFound(e)
 
         formatter = self._get_formatter(module)

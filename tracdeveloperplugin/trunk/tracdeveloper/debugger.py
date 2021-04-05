@@ -15,14 +15,26 @@
 from datetime import datetime, timedelta
 import re
 from types import BuiltinFunctionType, FunctionType, GeneratorType, MethodType
-from UserDict import DictMixin
-
 from trac.core import *
 from trac.util.html import html as tag, Markup
 from trac.util.text import shorten_line, to_unicode
 from trac.web import HTTPBadRequest, HTTPNotFound, IRequestFilter, \
                      IRequestHandler
 from trac.web.chrome import add_script, add_stylesheet, Chrome
+
+try:
+    from UserDict import DictMixin
+    SCALAR_TYPES = (bool, int, long, float, basestring)
+    COLLECTION_TYPES = (dict, DictMixin, list, tuple, set, frozenset)
+    is_py3 = False
+    dict_types = (dict, DictMixin)
+except ImportError:
+    SCALAR_TYPES = (bool, int, float, str)
+    COLLECTION_TYPES = (dict, list, tuple, set, frozenset)
+    basestring = str
+    unicode = str
+    is_py3 = True
+    dict_types = (dict,)
 
 __all__ = ['TemplateDebugger']
 
@@ -150,7 +162,7 @@ class ObjectTree(object):
 
     def expand(self, node):
         if node.is_collection:
-            if isinstance(node.value, (dict, DictMixin)):
+            if isinstance(node.value, dict_types):
                 for name, value in sorted(node.value.items()):
                     yield self._add("['%s']" % name, value,
                                     '%s.%s' % (node.path, name))
@@ -167,7 +179,7 @@ class ObjectTree(object):
                     continue
                 try:
                     value = getattr(node.value, name)
-                except Exception, e:
+                except Exception as e:
                     value = str(e)
                 if type(value) in (FunctionType, GeneratorType, MethodType):
                     continue
@@ -180,8 +192,6 @@ class ObjectTree(object):
 class ObjectNode(object):
     """Represents a single named node in the object graph."""
 
-    COLLECTION_TYPES = (dict, DictMixin, list, tuple, set, frozenset)
-    SCALAR_TYPES = (bool, int, long, float, basestring)
     FUNCTION_TYPES = (BuiltinFunctionType, FunctionType, GeneratorType,
                       MethodType)
 
@@ -211,8 +221,12 @@ class ObjectNode(object):
         try:
             if self.value is None or self.is_function:
                 return False
-            if isinstance(self.value, (bool, int, long, float)):
-                return False
+            if is_py3:
+                if isinstance(self.value, (bool, int, float)):
+                    return False
+            else:
+                if isinstance(self.value, (bool, int, long, float)):
+                    return False
             if isinstance(self.value, basestring):
                 return len(self.value) > 60
             if self.is_collection:
@@ -223,7 +237,7 @@ class ObjectNode(object):
     is_expandable = property(is_expandable)
 
     def is_collection(self):
-        return isinstance(self.value, self.COLLECTION_TYPES)
+        return isinstance(self.value, COLLECTION_TYPES)
     is_collection = property(is_collection)
 
     def is_function(self):
@@ -233,7 +247,7 @@ class ObjectNode(object):
     def is_scalar(self):
         if self.value is None:
             return True
-        return isinstance(self.value, self.SCALAR_TYPES)
+        return isinstance(self.value, SCALAR_TYPES)
     is_scalar = property(is_scalar)
 
     def is_string(self):
@@ -256,7 +270,7 @@ class ObjectNode(object):
             else:
                 return shorten_line(repr(self.value), 60)
         elif self.is_collection:
-            if isinstance(self.value, (dict, DictMixin)):
+            if isinstance(self.value, dict_types):
                 return u'{…}'
             elif isinstance(self.value, list):
                 return u'[…]'

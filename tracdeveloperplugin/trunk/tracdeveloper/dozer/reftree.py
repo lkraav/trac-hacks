@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2021 Cinc
 # Copyright (C) 2015-2017 Ryan Ollos
 # Copyright (C) 2012-2013 Olemis Lang
 # Copyright (C) 2008-2009 Noah Kantrowitz
@@ -15,6 +16,17 @@ import gc
 import sys
 
 from types import FrameType
+
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
 
 
 class Tree(object):
@@ -57,22 +69,27 @@ class Tree(object):
         """Walk the object tree, pretty-printing each branch."""
         self.ignore_caller()
         for depth, refid, rep in self.walk(maxresults, maxdepth):
-            print ("%9d" % refid), (" " * depth * 2), rep
+            print("%s %s %s" % (("%9d" % refid), (" " * depth * 2), rep))
 
 
 def _repr_container(obj):
     return "%s of len %s: %r" % (type(obj).__name__, len(obj), obj)
+
+
 repr_dict = _repr_container
 repr_set = _repr_container
 repr_list = _repr_container
 repr_tuple = _repr_container
 
+
 def repr_str(obj):
     return "%s of len %s: %r" % (type(obj).__name__, len(obj), obj)
 repr_unicode = repr_str
 
+
 def repr_frame(obj):
     return "frame from %s line %s" % (obj.f_code.co_filename, obj.f_lineno)
+
 
 def get_repr(obj, limit=250):
     typename = getattr(type(obj), "__name__", None)
@@ -187,9 +204,9 @@ class CircularReferents(Tree):
         """Walk the object tree, pretty-printing each branch."""
         self.ignore_caller()
         for trail in self.walk(maxresults, maxdepth):
-            print trail
+            print(trail)
         if self.stops:
-            print "%s paths stopped because max depth reached" % self.stops
+            print("%s paths stopped because max depth reached" % self.stops)
 
 
 def count_objects():
@@ -197,7 +214,7 @@ def count_objects():
     for obj in gc.get_objects():
         objtype = type(obj)
         d[objtype] = d.get(objtype, 0) + 1
-    d = [(v, k) for k, v in d.iteritems()]
+    d = [(v, k) for k, v in iteritems(d)]
     d.sort()
     return d
 
