@@ -10,7 +10,10 @@
 #
 
 import pkg_resources
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from datetime import datetime
 
 from trac.util.datefmt import format_date, from_utimestamp, utc
