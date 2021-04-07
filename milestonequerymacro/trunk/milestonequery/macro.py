@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import StringIO
-
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from trac.util.html import Markup
 from trac.wiki.formatter import Formatter
 from trac.wiki.macros import WikiMacroBase, parse_args
@@ -35,14 +37,14 @@ class MilestoneQueryMacro(WikiMacroBase):
         else:
             ordering = "DESC"
 
-        out = StringIO.StringIO()
+        out = StringIO()
         with self.env.db_query as db:
             for name, in db("""
                     SELECT name FROM milestone
                     WHERE name %s %s ORDER BY name %s
                     """ % (db.like(), completed, ordering), (pattern,)):
                 wikitext = """
-                    == [milestone:%(milestonename)s %(milestonename)s]
+                    == [milestone:"%(milestonename)s"]
                     [[TicketQuery(milestone=%(milestonename)s,order=id,desc=0,format=table,col=summary|owner|ticket_status|type|status)]]
                     """ % {'milestonename': name}
                 Formatter(self.env, formatter.context).format(wikitext, out)
