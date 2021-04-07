@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2013 Jean-Philippe Save
+# Copyright (c) 2021 Cinc
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +27,8 @@ from trac import __version__ as trac_version
 from trac.env import IEnvironmentSetupParticipant
 from trac.config import ListOption
 from trac.core import implements, Component
-from trac.util import Markup
-from trac.web import IRequestHandler
+from trac.util.html import Markup
+from trac.web.api import IRequestHandler
 from trac.web.chrome import add_script, add_stylesheet, Chrome, \
     INavigationContributor, ITemplateProvider
 from trac.ticket.query import *
@@ -261,7 +262,10 @@ class TicketsboardPage(Component):
             data['filter_user_switch_url_msg'] = 'Show all tickets'
 
         # Return the wanted page to print with the variables to substitute
-        return ('%s.html' % PAGE_NAME, data, None)
+        if hasattr(Chrome, 'jenv'):
+            return 'ticketsboard_jinja.html', data, {}
+        else:
+            return ('%s.html' % PAGE_NAME, data, None)
 
     # ITemplateProvider methods
 

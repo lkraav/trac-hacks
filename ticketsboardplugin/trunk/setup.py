@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2013 Jean-Philippe Save
+# Copyright (c) 2021 Cinc
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,17 +38,14 @@ def read_file(file_name):
     with open(file_path) as fo:
         return fo.read()
 
-min_python = (2, 6)
+min_python = (2, 7)
 if sys.version_info < min_python:
-    print "Ticketsboard requires Python %d.%d or later" % min_python
-    sys.exit(1)
-if sys.version_info >= (3,):
-    print "Ticketsboard doesn't support Python 3"
+    print("Ticketsboard requires Python %d.%d or later" % min_python)
     sys.exit(1)
 
 
 PACKAGE = 'ticketsboardplugin'
-VERSION = '1.2.3'
+VERSION = '1.3.0'
 
 setup(
       name=PACKAGE,

@@ -1,0 +1,98 @@
+{#
+# Copyright (c) 2013 Jean-Philippe Save
+# Copyright (c) 2021 Cinc
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block title
+      ${_("Ticketsboard")}
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
+    # endblock
+  </head>
+  <body>
+  # block content
+  <div class="content">
+    <h1>${_("Whiteboard vision of ongoing tickets")}</h1>
+    <ul class="filter_user">
+      <a href="${filter_user_switch_url}">${filter_user_switch_url_msg}</a>
+    </ul>
+    # if error_msg:
+      <div id="warning" class="system-message">
+        <strong>Cannot apply changes</strong>
+        <pre>${error_msg}</pre>
+      </div>
+    # endif
+    {# When user pushed the ticketsboard submit button the action is to reload
+    the page, thus, process_request trac function could access to the several
+    input forms #}
+    <form id="ticketsboard_form" action="${filter_user_current_url}" method="post">
+      ${jmacros.form_token_input()}
+      <div class="page_forms">
+        <input type="submit" id="ticketsboard_submit" name="ticketsboard_submit" value="Save Changes"/>
+        <input type="hidden" id="ticketsboard_changes" name="ticketsboard_changes" value=""/>
+        <input type="hidden" name="user" value="${filter_user_current}"/>
+      </div>
+    </form>
+    <form id="tickets_form">
+      <div class="ticketsboard">
+        <table>
+          <tr>
+            # for status in status_list:
+              <th>${status}</th>
+            # endfor
+          </tr>
+          <tr>
+            # for status in status_list:
+              <td>
+                <ul id="${status}" class="column_tickets">
+                  # for t in tickets[status]:
+                    <li id="ticket_box_${t['id']}" class="ticket_box ${t['type']}">
+                      <h3><a href="ticket/${t['id']}">#${t['id']}: ${t['summary']}</a></h3>
+                      <dl>
+                        <dt>Owner</dt>
+                        <dd><input type="text" id="owner_${t['id']}" value="${t['owner']}"/></dd>
+                        <dt>Reviewer</dt>
+                        <dd><input type="text" id="reviewer_${t['id']}" value="${t['reviewer']}"/></dd>
+                        # for field in add_fields:
+                          <dt>${field}</dt>
+                          <dd>${t[field]}&nbsp;</dd>
+                        # endfor
+                      </dl>
+                    </li>
+                  # endfor
+                </ul>
+              </td>
+            # endfor
+          </tr>
+        </table>
+      </div>
+    </form>
+    </div>
+  # endblock content
+  </body>
+</html>
