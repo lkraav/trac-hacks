@@ -1,24 +1,53 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright 2007-2008 Optaros, Inc
+# Copyright 2021 Cinc
 #
 
 import re
 
 from trac.core import *
 from trac.config import BoolOption
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
-from trac.web.chrome import add_script, ITemplateProvider
+from trac.web.api import IRequestFilter
+from trac.web.chrome import add_script, add_script_data, ITemplateProvider, web_context
 from trac.util.html import html
+from trac.util.text import to_unicode
 from trac.util.translation import _
-from trac.wiki.formatter import wiki_to_html
+from trac.wiki.formatter import format_to_html
 
-from genshi import HTML
-from genshi.filters.transform import Transformer
+
+class JTransformer(object):
+    """Class modelled after the Genshi Transformer class. Instead of an xpath it uses a
+       selector usable by jQuery.
+       You may use cssify (https://github.com/santiycr/cssify) to convert a xpath to a selector."""
+
+    def __init__(self, xpath):
+        self.css = xpath  # xpath must be a css selector for jQuery
+
+    def after(self, html):
+        return {'pos': 'after', 'css': self.css, 'html': html}
+
+    def before(self, html):
+        return {'pos': 'before', 'css': self.css, 'html': html}
+
+    def empty(self):
+        return {'pos': 'empty', 'css': self.css, 'html': ''}
+
+    def prepend(self, html):
+        return {'pos': 'prepend', 'css': self.css, 'html': html}
+
+    def append(self, html):
+        return {'pos': 'append', 'css': self.css, 'html': html}
+
+    def remove(self):
+        return {'pos': 'remove', 'css': self.css, 'html': ''}
+
+    def replace(self, html):
+        return {'pos': 'replace', 'css': self.css, 'html': html}
 
 
 class WikiSectionEditModule(Component):
-    implements(IRequestFilter, ITemplateStreamFilter, ITemplateProvider)
+    implements(IRequestFilter, ITemplateProvider)
 
     preview_whole_page = BoolOption(
         'section-edit', 'preview_whole_page', True,
@@ -57,48 +86,71 @@ class WikiSectionEditModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        if 'action' not in req.args and \
-                'WIKI_MODIFY' in req.perm:
-            add_script(req, 'tracsectionedit/js/tracsectionedit.js')
+        if template and data:
+            if template == 'wiki_view.html':
+                page = data.get('page')
+                if page and 'WIKI_MODIFY' in req.perm(page.resource):
+                    add_script(req, 'tracsectionedit/js/tracsectionedit.js')
+            elif template == 'wiki_edit.html' and \
+                    'section' in req.args and \
+                    'merge' not in req.args:
+
+                if 'section_text' in req.args:
+                    section_pre, section_text, section_post = \
+                        req.args.get('section_pre'), \
+                        req.args.get('section_text'), \
+                        req.args.get('section_post')
+                else:
+                    section_pre, section_text, section_post = \
+                        self._split_page_text(data['page'].text,
+                                              req.args['section'])
+                    section_text = ''.join(section_text)
+
+                section_element = html.input(
+                    type='hidden', name='section', id='section',
+                    value=req.args.get('section'))
+                pre_element = html.input(
+                    type='hidden', name='section_pre', id='section_pre',
+                    value=''.join(section_pre))
+                post_element = html.input(
+                    type='hidden', name='section_post', id='section_post',
+                    value=''.join(section_post))
+
+                section_html = html(section_element, pre_element, post_element)
+
+                filter_lst = []
+                # Safe page data for reassembling later
+                # xform: '//textarea[@name="text"]'
+                xform = JTransformer('textarea[name=text]')
+                filter_lst.append(xform.before(to_unicode(section_html)))
+                # Empty the textfield control
+                filter_lst.append(xform.empty())
+                # Put current section text into textfield control
+                filter_lst.append(xform.append(to_unicode(section_text)))
+
+                # Change title
+                # xform: '//div[@id="content"]//h1'
+                xform = JTransformer('div#content > h1')
+                filter_lst.append(xform.append(": Section %s - %s" %
+                                               (req.args['section'],
+                                                section_text[:section_text.find('\n')].strip(" = \r\n")
+                                                )))
+                # Handle preview
+                if not self.preview_whole_page:
+                    # xform: '//div[@class="wikipage"]'
+                    xform = JTransformer('div.wikipage')
+                    # Empty the textfield control
+                    filter_lst.append(xform.empty())
+                    # Add section text
+                    page = data.get('page')
+                    filter_lst.append(xform.append(format_to_html(self.env,
+                                                                  web_context(req, page.resource),
+                                                                  section_text)))
+
+                add_script_data(req, {'tracsectionedit_filter': filter_lst})
+                add_script(req, 'tracsectionedit/js/tracsectionedit_transform.js')
+
         return template, data, content_type
-
-    # ITemplateStreamFilter methods
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'wiki_edit.html' and \
-                'section' in req.args and \
-                'merge' not in req.args:
-            if 'section_text' in req.args:
-                section_pre, section_text, section_post = \
-                    req.args.get('section_pre'), \
-                    req.args.get('section_text'), \
-                    req.args.get('section_post')
-            else:
-                section_pre, section_text, section_post = \
-                    self._split_page_text(data['page'].text,
-                                          req.args['section'])
-                section_text = ''.join(section_text)
-
-            section_element = html.input(
-                type='hidden', name='section', id='section',
-                value=req.args.get('section'))
-            pre_element = html.input(
-                type='hidden', name='section_pre', id='section_pre',
-                value=''.join(section_pre))
-            post_element = html.input(
-                type='hidden', name='section_post', id='section_post',
-                value=''.join(section_post))
-
-            section_html = html(section_element, pre_element, post_element)
-            stream = stream | Transformer(
-                '//textarea[@name="text"]').empty().append(section_text).before(section_html)
-
-            stream = stream | Transformer('//div[@id="content"]//h1').append("/%s (section %s)" % (
-                section_text[:section_text.find('\n')].strip(" = \r\n"), req.args['section']))
-
-            if not self.preview_whole_page:
-                stream = stream | Transformer(
-                    '//div[@class="wikipage"]').empty().append(HTML(wiki_to_html(section_text, self.env, req)))
-        return stream
 
     # internals
     def _split_page_text(self, page_text, section):
