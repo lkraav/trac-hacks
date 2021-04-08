@@ -1,8 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2008, Stephen Hansen
 # Copyright (c) 2011, Steffen Hoffmann
+# Copyright (c) 2021 Cinc
 #
 # All rights reserved.
 #
@@ -29,30 +28,3 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# ----------------------------------------------------------------------------
-
-from setuptools import setup
-
-setup(
-    name='TracBreadCrumbsNav',
-    version='0.5.0',
-    author='Stephen Hansen',
-    author_email='shansen@advpubtech.com',
-    maintainer='Steffen Hoffmann',
-    maintainer_email='hoff.st@web.de',
-    description="Shows the last several places that you have been.",
-    license="""
-    Copyright (c) 2008, Stephen Hansen,
-    Copyright (c) 2011, Steffen Hoffmann,
-    Copyright (c) 2021 Cinc.
-    All rights reserved. Released under the 3-clause BSD license.
-    """,
-    url="https://trac-hacks.org/wiki/BreadCrumbsNavPlugin",
-    packages=['breadcrumbsnav'],
-    package_data={'breadcrumbsnav': ['htdocs/css/*.css',
-                                     'htdocs/js/*.js']},
-    install_requires=['Trac'],
-    entry_points={
-        'trac.plugins': ['breadcrumbsnav = breadcrumbsnav.breadcrumbs']
-    }
-)

@@ -3,24 +3,23 @@
 import cPickle
 import re
 
-from genshi.filters.transform import Transformer
-
-from trac.core import Component, TracError, implements
+from .jtransform import JTransformer
+from trac.core import Component, implements
 from trac.config import IntOption, ListOption, Option
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import Resource, get_resource_shortname, \
     get_resource_summary, resource_exists
 from trac.util.html import html as tag
+from trac.util.text import to_unicode
 from trac.web import IRequestFilter
-from trac.web.api import ITemplateStreamFilter
-from trac.web.chrome import ITemplateProvider, add_stylesheet
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data, add_stylesheet
 
 
 class BreadCrumbsSystem(Component):
     """Provider of bread cumbs navigation bar right below Trac metanav."""
 
     implements(IEnvironmentSetupParticipant, IRequestFilter,
-               ITemplateProvider, ITemplateStreamFilter)
+               ITemplateProvider)
 
     ignore_pattern = Option('breadcrumbs', 'ignore_pattern', None,
                             doc="""Resource names that match this pattern will not be added to
@@ -106,6 +105,14 @@ class BreadCrumbsSystem(Component):
                     crumbs = crumbs[0:self.max_crumbs + 1]
 
                 sess['breadcrumbs_list'] = cPickle.dumps(crumbs)
+
+                # xform: '//div[@id="metanav"]/ul'
+                xform = JTransformer('div#metanav > ul')
+                filter_list = [xform.after(self.get_breadcrumbs_html(req))]
+
+                add_stylesheet(req, 'breadcrumbs/css/breadcrumbs.css')
+                add_script_data(req, {'breadcrumbs_filter': filter_list})
+                add_script(req, 'breadcrumbs/js/breadcrumbs.js')
         except:
             self.log.exception("Breadcrumb failed :(")
 
@@ -131,14 +138,11 @@ class BreadCrumbsSystem(Component):
     def get_templates_dirs(self):
         return []
 
-    # ITemplateStreamFilter method
-
-    def filter_stream(self, req, method, filename, stream, data):
+    def get_breadcrumbs_html(self, req):
         crumbs = self._get_crumbs(req.session)
         if not crumbs:
-            return stream
+            return ''
 
-        add_stylesheet(req, 'breadcrumbs/css/breadcrumbs.css')
         ul = []
 
         path = req.path_info
@@ -179,4 +183,4 @@ class BreadCrumbsSystem(Component):
         else:
             insert = ''
 
-        return stream | Transformer('//div[@id="metanav"]/ul').after(insert)
+        return to_unicode(insert)
