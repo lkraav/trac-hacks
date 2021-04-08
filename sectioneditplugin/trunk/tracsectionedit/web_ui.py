@@ -142,7 +142,7 @@ class WikiSectionEditModule(Component):
                         xform = JTransformer('div.trac-content')
                     else:
                         # xform: '//div[@class="wikipage"]'
-                        xform = JTransformer('div.eikipage')
+                        xform = JTransformer('div.wikipage')
 
                     # Empty the textfield control
                     filter_lst.append(xform.empty())
