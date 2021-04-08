@@ -9,7 +9,7 @@ import re
 from trac.core import *
 from trac.config import BoolOption
 from trac.web.api import IRequestFilter
-from trac.web.chrome import add_script, add_script_data, ITemplateProvider, web_context
+from trac.web.chrome import add_script, add_script_data, Chrome, ITemplateProvider, web_context
 from trac.util.html import html
 from trac.util.text import to_unicode
 from trac.util.translation import _
@@ -137,8 +137,13 @@ class WikiSectionEditModule(Component):
                                                 )))
                 # Handle preview
                 if not self.preview_whole_page:
-                    # xform: '//div[@class="wikipage"]'
-                    xform = JTransformer('div.wikipage')
+
+                    if hasattr(Chrome, 'jenv'):
+                        xform = JTransformer('div.trac-content')
+                    else:
+                        # xform: '//div[@class="wikipage"]'
+                        xform = JTransformer('div.eikipage')
+
                     # Empty the textfield control
                     filter_lst.append(xform.empty())
                     # Add section text
