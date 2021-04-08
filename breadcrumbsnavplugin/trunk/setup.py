@@ -47,6 +47,18 @@ setup(
     Copyright (c) 2021 Cinc.
     All rights reserved. Released under the 3-clause BSD license.
     """,
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
+        'Framework :: Trac',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
     url="https://trac-hacks.org/wiki/BreadCrumbsNavPlugin",
     packages=['breadcrumbsnav'],
     package_data={'breadcrumbsnav': ['htdocs/css/*.css',
