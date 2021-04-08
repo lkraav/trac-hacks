@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import cPickle
+try:
+    from cPickle import dumps, loads
+except ImportError:
+    from pickle import dumps, loads
 import re
 
+from base64 import b64decode, b64encode
 from .jtransform import JTransformer
 from trac.core import Component, implements
 from trac.config import IntOption, ListOption, Option
@@ -103,8 +107,9 @@ class BreadCrumbsSystem(Component):
                     # Keep one over max for providing max length even
                     # when hiding current in first position while viewing it.
                     crumbs = crumbs[0:self.max_crumbs + 1]
-
-                sess['breadcrumbs_list'] = cPickle.dumps(crumbs)
+                # session data must be a string. So we convert the bytes from
+                # pickling to base64 bytes and finally create an ascii string.
+                sess['breadcrumbs_list'] = b64encode(dumps(crumbs)).decode('ascii')
 
                 # xform: '//div[@id="metanav"]/ul'
                 xform = JTransformer('div#metanav > ul')
@@ -123,8 +128,8 @@ class BreadCrumbsSystem(Component):
         if 'breadcrumbs_list' in sess:
             raw = sess['breadcrumbs_list']
             try:
-                crumbs = cPickle.loads(raw.encode('ascii', 'ignore'))
-            except:
+                crumbs = loads(b64decode(raw.encode('ascii')))
+            except Exception as e:
                 del sess['breadcrumbs_list']
 
         return crumbs
