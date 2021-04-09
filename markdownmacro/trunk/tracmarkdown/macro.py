@@ -25,7 +25,7 @@
 """
 
 import re
-from StringIO import StringIO
+from io import StringIO
 
 from trac.config import IntOption
 from trac.core import Component, implements

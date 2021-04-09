@@ -15,7 +15,7 @@ from setuptools import setup
 setup(
     name='TracMarkdownMacro',
     packages=['tracmarkdown'],
-    version='0.11.9',
+    version='0.11.10',
 
     author='Douglas Clifton',
     author_email='dwclifton@gmail.com',
@@ -30,6 +30,17 @@ setup(
     license='BSD 3-Clause',
 
     entry_points={'trac.plugins': ['tracmarkdown.macro = tracmarkdown.macro']},
-    classifiers=['Framework :: Trac'],
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
+        'Framework :: Trac',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
     install_requires=['Trac', 'Markdown < 3.2'],
 )
