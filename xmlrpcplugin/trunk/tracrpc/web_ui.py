@@ -23,8 +23,8 @@ from trac.util.translation import _
 from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
-                            add_stylesheet, add_script, add_ctxtnav
-from trac.wiki.formatter import wiki_to_oneliner
+                            add_stylesheet, add_script, add_ctxtnav, web_context
+from trac.wiki.formatter import format_to_oneliner
 
 from tracrpc.api import XMLRPCSystem, IRPCProtocol, ProtocolException, \
                           RPCError, ServiceException
@@ -88,25 +88,25 @@ class RPCWeb(Component):
         self.log.debug("Rendering docs")
 
         # Dump RPC documentation
-        req.perm.require('XML_RPC') # Need at least XML_RPC
+        req.perm.require('XML_RPC')  # Need at least XML_RPC
         namespaces = {}
+        ctxt = web_context(req)
         for method in XMLRPCSystem(self.env).all_methods(req):
             namespace = method.namespace.replace('.', '_')
             if namespace not in namespaces:
                 namespaces[namespace] = {
-                    'description' : wiki_to_oneliner(
-                                    method.namespace_description,
-                                    self.env, req=req),
-                    'methods' : [],
-                    'namespace' : method.namespace,
+                    'description': format_to_oneliner(self.env, ctxt,
+                                    method.namespace_description),
+                    'methods': [],
+                    'namespace': method.namespace,
                     }
             try:
                 namespaces[namespace]['methods'].append(
                         (method.signature,
-                        wiki_to_oneliner(
-                            method.description, self.env, req=req),
+                        format_to_oneliner(self.env, ctxt,
+                            method.description),
                         method.permission))
-            except Exception, e:
+            except Exception as e:
                 from tracrpc.util import StringIO
                 import traceback
                 out = StringIO()

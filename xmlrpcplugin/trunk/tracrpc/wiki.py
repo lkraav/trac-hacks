@@ -11,11 +11,12 @@ from datetime import datetime
 
 from trac.attachment import Attachment
 from trac.core import *
-from trac.mimeview import Context
 from trac.resource import Resource, ResourceNotFound
+from trac.util.text import to_unicode
+from trac.web.chrome import web_context
 from trac.wiki.api import WikiSystem, IWikiPageManipulator
 from trac.wiki.model import WikiPage
-from trac.wiki.formatter import wiki_to_html, format_to_html
+from trac.wiki.formatter import format_to_html
 
 from tracrpc.api import IXMLRPCHandler, expose_rpc, Binary
 from tracrpc.util import StringIO, to_utimestamp, from_utimestamp
@@ -115,7 +116,7 @@ class WikiRPC(Component):
         fields = {'text': page.text}
         for manipulator in self.manipulators:
             manipulator.prepare_wiki_page(req, page, fields)
-        context = Context.from_request(req, page.resource, absurls=True)
+        context = web_context(req, page.resource, absurls=True)
         html = format_to_html(self.env, context, fields['text'])
         return '<html><body>%s</body></html>' % html.encode('utf-8')
 
@@ -225,4 +226,5 @@ class WikiRPC(Component):
 
     def wikiToHtml(self, req, text):
         """ Render arbitrary Wiki text as HTML. """
-        return unicode(wiki_to_html(text, self.env, req, absurls=1))
+        context = web_context(req, absurls=1)
+        return(to_unicode(format_to_html(self.env, context, text)))
