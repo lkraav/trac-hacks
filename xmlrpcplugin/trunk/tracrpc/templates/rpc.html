@@ -12,9 +12,10 @@
   <body>
     <div id="content" class="wiki">
       <div class="wikipage searchable">
-        <h1>Remote Procedure Call (RPC)</h1>
+        <div id="wikipage" class="trac-content borderless">
+        <h1 class="section">Remote Procedure Call (RPC)</h1>
         <p><strong>Installed API version :</strong> ${rpc.version} </p>
-        <h2 id="Protocols">Protocol reference:</h2>
+        <h2 id="Protocols" class="section">Protocol reference:</h2>
         <p>Below you will find a detailed description of all the RPC
           protocols installed in this environment. This includes
           supported content types as well as target URLs for
@@ -26,7 +27,7 @@
           for most major languages and platforms - use a tested, standard library
           for consistent results.</p>
         <dl py:for="protocol in rpc.protocols">
-          <h3 id="${protocol[0]}">${protocol[0]}</h3>
+          <h3 id="${protocol[0]}" class="section">${protocol[0]}</h3>
           <dd>
             <p>For ${protocol[0]} protocol, use any one of:</p>
             <ul>
@@ -52,11 +53,11 @@
           </dd>
         </dl>
 
-        <h2 id="Methods">RPC exported functions</h2>
+        <h2 id="Methods" class="section">RPC exported functions</h2>
 
         <div id="searchable">
           <dl py:for="key in sorted(rpc.functions)" py:with="namespace = rpc.functions[key]">
-            <h3 id="${'rpc.' + to_unicode(namespace.namespace)}">
+            <h3 id="${'rpc.' + to_unicode(namespace.namespace)}" class="section">
               ${namespace.namespace} - ${namespace.description}
             </h3>
             <dd>
@@ -78,6 +79,7 @@
               </table>
             </dd>
           </dl>
+        </div>
         </div>
       </div>
     </div>

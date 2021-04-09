@@ -23,7 +23,7 @@ from trac.util.translation import _
 from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
-                            add_stylesheet, add_script, add_ctxtnav, web_context
+                            add_stylesheet, add_script, add_ctxtnav, Chrome, web_context
 from trac.wiki.formatter import format_to_oneliner
 
 from tracrpc.api import XMLRPCSystem, IRPCProtocol, ProtocolException, \
@@ -116,21 +116,39 @@ class RPCWeb(Component):
         add_stylesheet(req, 'common/css/wiki.css')
         add_stylesheet(req, 'tracrpc/rpc.css')
         add_script(req, 'tracrpc/rpc.js')
-        return ('rpc.html',
-                {'rpc': {'functions': namespaces,
+        data = {'rpc': {'functions': namespaces,
                          'protocols': [p.rpc_info() + (list(p.rpc_match()),) \
                                   for p in self.protocols],
                          'version': __import__('tracrpc', ['__version__']).__version__
-                        },
-                 'expand_docs': self._expand_docs
-                 },
-                None)
+                        }
+                 }
+        if hasattr(Chrome, 'jenv'):
+            from itertools import groupby
+            from functools import partial
+
+            def _group_by(dat):
+                return groupby(dat, lambda (_, x) : x)
+
+            data['group_by'] = _group_by
+            chrome = Chrome(self.env)
+            dat = chrome.populate_data(req)
+            dat.update(data)
+            data['expand_docs'] = partial(self._expand_docs_jinja, chrome, dat)
+            return 'rpc_jinja.html', data
+        else:
+            data['expand_docs'] = self._expand_docs
+            return 'rpc.html', data, None
+
+    def _expand_docs_jinja(self, chrome, data, docs):
+        template = chrome.jenv.from_string(docs)
+        txt = chrome.render_template_string(template, data, True)
+        return txt
 
     def _expand_docs(self, docs, ctx):
         try :
             tmpl = TextTemplate(docs)
             return tmpl.generate(**dict(ctx.items())).render()
-        except (TemplateSyntaxError, BadDirectiveError), exc:
+        except (TemplateSyntaxError, BadDirectiveError) as exc:
             self.log.exception("Syntax error rendering protocol documentation")
             return "'''Syntax error:''' [[BR]] %s" % (str(exc),)
         except Exception:

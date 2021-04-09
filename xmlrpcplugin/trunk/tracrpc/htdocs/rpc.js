@@ -1,7 +1,7 @@
 (function($) {
     $(document).ready(function () {
         // Create a Table of Contents (TOC)
-        $('#content .wikipage')
+        $('#wikipage')
             .prepend('<div id="rpc-toc" class="wiki-toc"><h4>Contents</h4><ul /></div>');
         function toc_entry(_this, item) {
             return $('<li><a href="#' + _this.id + '" title="'
