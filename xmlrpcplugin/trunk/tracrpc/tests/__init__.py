@@ -24,17 +24,17 @@ try:
         def init(self):
             self.trac_src = os.path.realpath(os.path.join( 
                     __import__('trac', []).__file__, '..' , '..'))
-            print "\nFound Trac source: %s" % self.trac_src
+            print("\nFound Trac source: %s" % self.trac_src)
             SvnFunctionalTestEnvironment.init(self)
             self.url = "%s:%s" % (self.url, self.port)
 
         def post_create(self, env):
-            print "Enabling RPC plugin and permissions..."
+            print("Enabling RPC plugin and permissions...")
             env.config.set('components', 'tracrpc.*', 'enabled')
             env.config.save()
             self.getLogger = lambda : env.log
             self._tracadmin('permission', 'add', 'anonymous', 'XML_RPC')
-            print "Created test environment: %s" % self.dirname
+            print("Created test environment: %s" % self.dirname)
             parts = urllib2.urlparse.urlsplit(self.url)
             # Regular URIs
             self.url_anon = '%s://%s/rpc' % (parts[0], parts[1])
@@ -45,7 +45,7 @@ try:
             self.url_admin = '%s://admin:admin@%s/login/xmlrpc' % \
                                 (parts[0], parts[1])
             SvnFunctionalTestEnvironment.post_create(self, env)
-            print "Starting web server: %s" % self.url
+            print("Starting web server: %s" % self.url)
             self.restart()
 
         def _tracadmin(self, *args, **kwargs):
@@ -79,11 +79,11 @@ try:
         suite.addTest(tracrpc.tests.search.test_suite())
         return suite
 
-except Exception, e:
+except Exception as e:
     import sys, traceback
     traceback.print_exc(file=sys.stdout)
-    print "Trac test infrastructure not available."
-    print "Install Trac as 'python setup.py develop' (run Trac from source).\n"
+    print("Trac test infrastructure not available.")
+    print("Install Trac as 'python setup.py develop' (run Trac from source).\n")
     test_suite = unittest.TestSuite() # return empty suite
     
     TracRpcTestCase = unittest.TestCase
@@ -103,11 +103,11 @@ else :
             """Enhanced assertions to detect exceptions."""
             try:
                 callableObj(*args, **kwargs)
-            except excClass, e:
+            except excClass as e:
                 return e
             except self.failureException :
                 raise
-            except Exception, e :
+            except Exception as e :
                 if hasattr(excClass, '__name__'): excName = excClass.__name__
                 else: excName = str(excClass)
 

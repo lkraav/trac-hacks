@@ -33,6 +33,7 @@ from tracrpc.util import StringIO, to_utimestamp, from_utimestamp
 
 __all__ = ['TicketRPC']
 
+
 class TicketRPC(Component):
     """ An interface to Trac's ticketing system. """
 
@@ -184,7 +185,7 @@ class TicketRPC(Component):
                 try:
                     tn = TicketNotifyEmail(self.env)
                     tn.notify(t, newticket=True)
-                except Exception, e:
+                except Exception as e:
                     self.log.exception("Failure sending notification on creation "
                                        "of ticket #%s: %s", t.id, e)
             else:
@@ -280,7 +281,7 @@ class TicketRPC(Component):
                 try:
                     tn = TicketNotifyEmail(self.env)
                     tn.notify(t, newticket=False, modtime=when)
-                except Exception, e:
+                except Exception as e:
                     self.log.exception("Failure sending notification on change of "
                                        "ticket #%s: %s", t.id, e)
             else:
@@ -348,6 +349,7 @@ class TicketRPC(Component):
         """ Return a list of all ticket fields fields. """
         return TicketSystem(self.env).get_ticket_fields()
 
+
 class StatusRPC(Component):
     """ An interface to Trac ticket status objects.
     Note: Status is defined by workflow, and all methods except `getAll()`
@@ -389,6 +391,7 @@ class StatusRPC(Component):
         """ Deprecated no-op method. Do not use. """
         # FIXME: Remove
         return 0
+
 
 def ticketModelFactory(cls, cls_attributes):
     """ Return a class which exports an interface to trac.ticket.model.<cls>. """
@@ -446,6 +449,7 @@ def ticketModelFactory(cls, cls_attributes):
     TicketModelImpl.__name__ = '%sRPC' % cls.__name__
     return TicketModelImpl
 
+
 def ticketEnumFactory(cls):
     """ Return a class which exports an interface to one of the Trac ticket abstract enum types. """
     class AbstractEnumImpl(Component):
@@ -499,6 +503,7 @@ def ticketEnumFactory(cls):
     AbstractEnumImpl.__doc__ = """ Interface to ticket %s. """ % cls.__name__.lower()
     AbstractEnumImpl.__name__ = '%sRPC' % cls.__name__
     return AbstractEnumImpl
+
 
 ticketModelFactory(model.Component, {'name': '', 'owner': '', 'description': ''})
 ticketModelFactory(model.Version, {'name': '', 'time': 0, 'description': ''})

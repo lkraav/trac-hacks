@@ -31,7 +31,7 @@ class ProtocolProviderTestCase(TracRpcTestCase):
         try:
             resp = urllib2.urlopen(req)
             self.fail("Expected urllib2.HTTPError")
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             self.assertEquals(e.code, 415)
             self.assertEquals(e.msg, "Unsupported Media Type")
             self.assertEquals(e.fp.read(),
@@ -53,7 +53,7 @@ class ProtocolProviderTestCase(TracRpcTestCase):
         try:
             resp = urllib2.urlopen(req)
             self.fail("Expected urllib2.HTTPError")
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             self.assertEquals(e.code, 415)
         # Make a new plugin
         provider = os.path.join(rpc_testenv.tracdir, 'plugins', 'DummyProvider.py')
@@ -124,7 +124,7 @@ class ProtocolProviderTestCase(TracRpcTestCase):
                 req = urllib2.Request(rpc_testenv.url_anon,
                         headers={'Content-Type': 'application/x-tracrpc-test'})
                 resp = urllib2.urlopen(req)
-            except urllib2.HTTPError, e:
+            except urllib2.HTTPError as e:
                 self.assertEquals(500, e.code)
                 self.assertEquals("No good.", e.fp.read())
                 self.assertTrue(e.hdrs['Content-Type'].startswith('text/plain'))

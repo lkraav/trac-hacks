@@ -40,7 +40,7 @@ class RpcTicketTestCase(TracRpcTestCase):
         try:
             tid = self.admin.ticket.create("", "the description", {})
             self.fail("Exception not raised creating ticket with empty summary")
-        except xmlrpclib.Fault, e:
+        except xmlrpclib.Fault as e:
             self.assertIn("Tickets must contain a summary.", unicode(e))
 
     def test_getActions(self):
@@ -278,7 +278,7 @@ class RpcTicketTestCase(TracRpcTestCase):
             self.admin.ticket.update(3344, "a comment", {})
             self.fail("Allowed to update non-existing ticket???")
             self.admin.ticket.delete(3234)
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("Ticket 3344 does not exist." in str(e))
 
     def test_update_basic(self):
@@ -308,14 +308,14 @@ class RpcTicketTestCase(TracRpcTestCase):
         try:
             self.admin.ticket.update(tid, "comment1",
                     {'_ts': str(to_utimestamp(then))})
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("Ticket has been updated since last get" in str(e))
         # Update with 'action' to test new-style update.
         try:
             self.admin.ticket.update(tid, "comment1",
                     {'_ts': str(to_utimestamp(then)),
                      'action': 'leave'})
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("modified by someone else" in str(e))
         self.admin.ticket.delete(tid)
 
@@ -355,7 +355,7 @@ class RpcTicketTestCase(TracRpcTestCase):
             self.admin.ticket.update(tid, "comment1",
                 {'action': 'reassign',
                  'action_reassign_reassign_owner': 'user'})
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("invalid action" in str(e))
         self.admin.ticket.delete(tid)
 
@@ -364,7 +364,7 @@ class RpcTicketTestCase(TracRpcTestCase):
         try:
             self.admin.ticket.update(tid, "comment1",
                     {'does_not_exist': 'eiwrjoer'})
-        except Exception, e:
+        except Exception as e:
             self.assertTrue("no such column" in str(e))
         self.admin.ticket.delete(tid)
 

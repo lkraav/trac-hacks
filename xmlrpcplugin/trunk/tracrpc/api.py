@@ -19,6 +19,7 @@ __all__ = ['expose_rpc', 'IRPCProtocol', 'IXMLRPCHandler', 'AbstractRPCHandler',
             'Method', 'XMLRPCSystem', 'Binary', 'RPCError', 'MethodNotFound',
             'ProtocolException', 'ServiceException']
 
+
 class Binary(xmlrpclib.Binary):
     """ RPC Binary type. Currently == xmlrpclib.Binary. """
     pass
@@ -29,32 +30,39 @@ class Binary(xmlrpclib.Binary):
 class RPCError(TracError):
     """ Error class for general RPC-related errors. """
 
+
 class MethodNotFound(RPCError):
     """ Error to raise when requested method is not found. """
+
 
 class _CompositeRpcError(RPCError):
     def __init__(self, details, title=None, show_traceback=False):
         if isinstance(details, Exception):
           self._exc = details
           message = unicode(details)
-        else :
+        else:
           self._exc = None
           message = details
         RPCError.__init__(self, message, title, show_traceback)
+
     def __unicode__(self):
         return u"%s details : %s" % (self.__class__.__name__, self.message)
+
 
 class ProtocolException(_CompositeRpcError):
     """Protocol could not handle RPC request. Usually this means
     that the request has some sort of syntactic error, a library
     needed to parse the RPC call is not available, or similar errors."""
 
+
 class ServiceException(_CompositeRpcError):
     """The called method threw an exception. Helpful to identify bugs ;o)"""
 
+
 RPC_TYPES = {int: 'int', bool: 'boolean', str: 'string', float: 'double',
              datetime: 'DateTime', Binary: 'Binary',
-             list: 'array', dict: 'struct', None : 'int'}
+             list: 'array', dict: 'struct', None: 'int'}
+
 
 def expose_rpc(permission, return_type, *arg_types):
     """ Decorator for exposing a method as an RPC call with the given
@@ -139,6 +147,7 @@ class IRPCProtocol(Interface):
         e       : exception object describing the failure
         """
 
+
 class IXMLRPCHandler(Interface):
 
     def xmlrpc_namespace():
@@ -160,6 +169,7 @@ class IXMLRPCHandler(Interface):
         method. Each signature is a tuple consisting of the return type
         followed by argument types.
         """
+
 
 class AbstractRPCHandler(Component):
     implements(IXMLRPCHandler)
@@ -287,7 +297,7 @@ class XMLRPCSystem(Component):
         """ Get an RPC signature by full name. """
         for provider in self.method_handlers:
             for candidate in provider.xmlrpc_methods():
-                #self.env.log.debug(candidate)
+                # self.env.log.debug(candidate)
                 p = Method(provider, *candidate)
                 if p.name == method:
                     return p
@@ -310,7 +320,7 @@ class XMLRPCSystem(Component):
         for signature in signatures:
             try:
                 yield self.get_method(signature['methodName'])(req, signature['params'])
-            except Exception, e:
+            except Exception as e:
                 yield e
 
     def listMethods(self, req):

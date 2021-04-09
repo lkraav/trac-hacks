@@ -56,7 +56,7 @@ class JsonModuleAvailabilityTestCase(TracRpcTestCase):
                     "What, no JsonRpcProtocol?")
 
 if not json:
-    print "SKIP: json not available. Cannot run JsonTestCase."
+    print("SKIP: json not available. Cannot run JsonTestCase.")
     class JsonTestCase(TracRpcTestCase):
         pass
 else:

@@ -10,6 +10,7 @@ import urllib2
 
 from tracrpc.tests import rpc_testenv, TracRpcTestCase
 
+
 class DocumentationTestCase(TracRpcTestCase):
 
     def setUp(self):
@@ -75,13 +76,13 @@ class DocumentationTestCase(TracRpcTestCase):
     # Custom assertions
     def assert_rpcdocs_ok(self, opener, req):
         """Determine if RPC docs are ok"""
-        try :
+        try:
             resp = opener.open(req)
-        except urllib2.HTTPError, e :
+        except urllib2.HTTPError as e:
             self.fail("Request to '%s' failed (%s) %s" % (e.geturl(),
                                                           e.code,
                                                           e.fp.read()))
-        else :
+        else:
             self.assertEquals(200, resp.code)
             body = resp.read()
             self.assertTrue('<h3 id="XML-RPC">XML-RPC</h3>' in body)
@@ -89,19 +90,19 @@ class DocumentationTestCase(TracRpcTestCase):
 
     def assert_unsupported_media_type(self, opener, req):
         """Ensure HTTP 415 is returned back to the client"""
-        try :
+        try:
             opener.open(req)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             self.assertEquals(415, e.code)
             expected = "No protocol matching Content-Type '%s' at path '%s'." % \
                                 (req.headers.get('Content-Type', 'text/plain'),
                                   '/login/rpc')
             got = e.fp.read()
             self.assertEquals(expected, got)
-        except Exception, e:
+        except Exception as e:
             self.fail('Expected HTTP error but %s raised instead' % \
                                               (e.__class__.__name__,))
-        else :
+        else:
             self.fail('Expected HTTP error (415) but nothing raised')
 
     def assert_form_protect(self, opener, req):
@@ -111,8 +112,10 @@ class DocumentationTestCase(TracRpcTestCase):
         self.assertTrue("Missing or invalid form token. "
                                 "Do you have cookies enabled?" in msg)
 
+
 def test_suite():
     return unittest.makeSuite(DocumentationTestCase)
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

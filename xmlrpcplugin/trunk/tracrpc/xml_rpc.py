@@ -31,10 +31,10 @@ from tracrpc.util import empty, prepare_docs
 
 __all__ = ['XmlRpcProtocol']
 
-REPLACEMENT_CHAR = u'\uFFFD' # Unicode replacement character
-
+REPLACEMENT_CHAR = u'\uFFFD'  # Unicode replacement character
 _illegal_unichrs = [(0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F), (0x7F, 0x84),
                     (0x86, 0x9F), (0xFDD0, 0xFDDF), (0xFFFE, 0xFFFF)]
+
 if sys.maxunicode >= 0x10000:  # not narrow build
     _illegal_unichrs.extend([(0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF),
                              (0x3FFFE, 0x3FFFF), (0x4FFFE, 0x4FFFF),
@@ -50,14 +50,17 @@ _illegal_ranges = ["%s-%s" % (unichr(low), unichr(high))
 
 _illegal_xml_chars_RE = re.compile(u'[%s]' % u''.join(_illegal_ranges))
 
+
 def to_xmlrpc_datetime(dt):
     """ Convert a datetime.datetime object to a xmlrpclib DateTime object """
     return xmlrpclib.DateTime(dt.utctimetuple())
+
 
 def from_xmlrpc_datetime(data):
     """Return datetime (in utc) from XMLRPC datetime string (is always utc)"""
     t = list(time.strptime(data.value, "%Y%m%dT%H:%M:%S")[0:6])
     return apply(datetime.datetime, t, {'tzinfo': utc})
+
 
 class XmlRpcProtocol(Component):
     r"""
@@ -103,24 +106,24 @@ class XmlRpcProtocol(Component):
     def rpc_match(self):
         # Legacy path xmlrpc provided for backwards compatibility:
         # Using this order to get better docs
-        yield ('rpc', 'application/xml')
-        yield ('xmlrpc', 'application/xml')
-        yield ('rpc', 'text/xml')
-        yield ('xmlrpc', 'text/xml')
+        yield 'rpc', 'application/xml'
+        yield 'xmlrpc', 'application/xml'
+        yield 'rpc', 'text/xml'
+        yield 'xmlrpc', 'text/xml'
 
     def parse_rpc_request(self, req, content_type):
         """ Parse XML-RPC requests."""
         try:
             args, method = xmlrpclib.loads(
                         req.read(int(req.get_header('Content-Length'))))
-        except Exception, e:
+        except Exception as e:
             self.log.debug("RPC(xml) parse error: %s", to_unicode(e))
             raise ProtocolException(xmlrpclib.Fault(-32700, to_unicode(e)))
         else :
             self.log.debug("RPC(xml) call by '%s', method '%s' with args: %s",
                            req.authname, method, repr(args))
             args = self._normalize_xml_input(args)
-            return {'method' : method, 'params' : args}
+            return {'method': method, 'params': args}
 
     def send_rpc_result(self, req, result):
         """Send the result of the XML-RPC call back to the client."""
@@ -146,9 +149,9 @@ class XmlRpcProtocol(Component):
         elif isinstance(e, ResourceNotFound):
             fault = xmlrpclib.Fault(404, to_unicode(e))
 
-        if fault is not None :
+        if fault is not None:
             self._send_response(req, xmlrpclib.dumps(fault), rpcreq['mimetype'])
-        else :
+        else:
             self.log.error(e)
             import traceback
             from tracrpc.util import StringIO

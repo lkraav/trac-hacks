@@ -151,7 +151,7 @@ if json:
         def rpc_match(self):
             yield('rpc', 'application/json')
             # Legacy path - provided for backwards compatibility:
-            yield ('jsonrpc', 'application/json')
+            yield 'jsonrpc', 'application/json'
 
         def parse_rpc_request(self, req, content_type):
             """ Parse JSON-RPC requests"""
@@ -161,7 +161,7 @@ if json:
 
             try:
                 data = json.load(req, cls=TracRpcJSONDecoder)
-            except Exception, e:
+            except Exception as e:
                 self.log.warning("RPC(json) decode error: %s",
                                  exception_to_unicode(e))
                 raise JsonProtocolException(e, -32700)
@@ -176,11 +176,11 @@ if json:
                     # Prepare for multicall
                     self.log.debug("RPC(json) Multicall request %s", data)
                     params = data.get('params', [])
-                    for signature in params :
+                    for signature in params:
                         signature['methodName'] = signature.get('method', '')
                     data['params'] = [params]
                 return data
-            except Exception, e:
+            except Exception as e:
                 # Abort with exception - no data can be read
                 self.log.warning("RPC(json) decode error: %s",
                                  exception_to_unicode(e))
@@ -206,10 +206,10 @@ if json:
                 try: # JSON encoding
                     self.log.debug("RPC(json) result: %r", response)
                     response = json.dumps(response, cls=TracRpcJSONEncoder)
-                except Exception, e:
+                except Exception as e:
                     response = json.dumps(self._json_error(e, r_id=r_id),
                                             cls=TracRpcJSONEncoder)
-            except Exception, e:
+            except Exception as e:
                 self.log.error("RPC(json) error %s",
                                exception_to_unicode(e, traceback=True))
                 response = json.dumps(self._json_error(e, r_id=r_id),
@@ -240,7 +240,7 @@ if json:
             """ Create JSON-RPC response dictionary. """
             if not isinstance(result, Exception):
                 return {'result': result, 'error': None, 'id': r_id}
-            else :
+            else:
                 return self._json_error(result, r_id=r_id)
 
         def _json_error(self, e, c=None, r_id=None):

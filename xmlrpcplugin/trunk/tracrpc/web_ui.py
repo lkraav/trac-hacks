@@ -183,7 +183,7 @@ class RPCWeb(Component):
                 result = (XMLRPCSystem(self.env).get_method(method_name)(req, args))[0]
                 if isinstance(result, GeneratorType):
                     result = list(result)
-            except (TracError, PermissionError, ResourceNotFound), e:
+            except (TracError, PermissionError, ResourceNotFound) as e:
                 raise
             except Exception:
                 e, tb = sys.exc_info()[-2:]
@@ -196,7 +196,7 @@ class RPCWeb(Component):
                 protocol.send_rpc_result(req, result)
         except RequestDone :
             raise
-        except (TracError, PermissionError, ResourceNotFound), e:
+        except (TracError, PermissionError, ResourceNotFound) as e:
             if type(e) is not ServiceException:
                 self.log.warning("RPC(%s) [%s] %s", proto_id, req.remote_addr,
                                  exception_to_unicode(e))
@@ -204,10 +204,10 @@ class RPCWeb(Component):
                 protocol.send_rpc_error(req, e)
             except RequestDone :
                 raise
-            except Exception, e :
+            except Exception as e :
                 self.log.exception("RPC(%s) Unhandled protocol error", proto_id)
                 self._send_unknown_error(req, e)
-        except Exception, e :
+        except Exception as e :
             self.log.exception("RPC(%s) Unhandled protocol error", proto_id)
             self._send_unknown_error(req, e)
 

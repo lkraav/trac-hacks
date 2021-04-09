@@ -41,6 +41,7 @@ try:
 except ImportError:
     empty = None
 
+
 def accepts_mimetype(req, mimetype):
     if isinstance(mimetype, basestring):
       mimetype = (mimetype,)
@@ -51,6 +52,7 @@ def accepts_mimetype(req, mimetype):
     else :
         accept = accept.split(',')
         return any(x.strip().startswith(y) for x in accept for y in mimetype)
+
 
 def prepare_docs(text, indent=4):
     r"""Remove leading whitespace"""
