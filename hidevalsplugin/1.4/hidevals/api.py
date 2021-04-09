@@ -8,7 +8,7 @@ from trac.db.api import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 from trac.perm import IPermissionRequestor, PermissionSystem
 
-import db_default
+import hidevals.db_default as db_default
 
 
 class HideValsSystem(Component):

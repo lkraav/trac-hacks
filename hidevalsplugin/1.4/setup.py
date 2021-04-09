@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='TracHideVals',
-    version='3.0',
+    version='3.1',
     author='Noah Kantrowitz, Iker Jimenez',
     author_email='noah@coderanger.net, iker.jimenez@gmail.com',
     description='Hide ticket option values from certain users.',
@@ -13,7 +13,16 @@ setup(
     keywords='trac plugin',
     url='https://trac-hacks.org/wiki/HideValsPlugin',
     classifiers=[
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
         'Framework :: Trac',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
     install_requires=['Trac'],
     packages=['hidevals'],

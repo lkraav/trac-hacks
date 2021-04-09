@@ -7,7 +7,7 @@ from trac.core import Component, implements
 from trac.ticket.api import TicketSystem
 from trac.web.chrome import ITemplateProvider
 
-from api import HideValsSystem
+from .api import HideValsSystem
 
 
 class HideValsAdminModule(Component):

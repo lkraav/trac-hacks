@@ -5,7 +5,23 @@
 from trac.core import Component, implements
 from trac.web.api import IRequestFilter
 
-from api import HideValsSystem
+from .api import HideValsSystem
+
+
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def itervalues(d):
+        return iter(d.values())
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def itervalues(d):
+        return d.itervalues()
+    def iteritems(d):
+        return d.iteritems()
 
 
 class HideValsFilter(Component):
@@ -25,6 +41,7 @@ class HideValsFilter(Component):
                                               '/query')) or \
                 (template, data, content_type) == (None, None, None):
             # TRAC_ADMIN would have the filterer permissions by inheritance
+            self.log.debug('Not filtering fields.')
             return template, data, content_type
         else:
             visible_fields = HideValsSystem(self.env).visible_fields(req)
@@ -87,8 +104,8 @@ class HideValsFilter(Component):
                     setattr(ticket, field['name'], None)
                 data['fields_map'] = dict((field['name'], i)
                                           for i, field in enumerate(fields))
-            elif req.path_info.startswith('/query'):
-                for field in fields.itervalues():
+            elif req.path_info.startswith('/query') and False:  # FIXME: Query handling is broken right now
+                for field in itervalues(fields):
                     if (field.get('options') or field.get('optgroups')) and \
                             field['name'] not in dont_filter:
                         if field['name'] in visible_fields:
