@@ -25,7 +25,7 @@ class SubComponentsModule(Component):
                 if req.args.get('renamechildren') != 'on':
                     return handler  # Let trac handle this update
                 # First process the parent component.
-                parent_component_name = req.path_info[25:]
+                parent_component_name = req.path_info[25:]  # strip '/admin/ticket/components/' from the beginning
                 parent_component = model.Component(self.env,
                                                    parent_component_name)
                 parent_component.name = req.args.get('name')
@@ -130,7 +130,10 @@ class SubComponentsModule(Component):
     def _get_component_children(self, name):
         components = model.Component.select(self.env)
         result = []
+        # We need the slash otherwise the parent is also found if the parent name was extended,
+        # e.g. Root -> RootFoo.
+        # See #13996
         for component in components:
-            if component.name.startswith(name) and component.name != name:
+            if component.name.startswith(name + '/') and component.name != name:
                 result.append(component)
         return result
