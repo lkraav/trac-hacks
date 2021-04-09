@@ -1,26 +1,22 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright 2009, Niels Sascha Reedijk <niels.reedijk@gmail.com>
-# All rights reserved. Distributed under the terms of the MIT License.
-#
+ #
+ # Copyright 2009-2019, Niels Sascha Reedijk <niels.reedijk@gmail.com>
+ # All rights reserved. Distributed under the terms of the MIT License.
+ #
 
 from pkg_resources import resource_filename
-from genshi.filters.transform import Transformer
 
 from trac.core import *
 from trac.ticket import model
-from trac.util.html import tag
 from trac.util.text import unicode_quote_plus
 from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateProvider, ITemplateStreamFilter, \
-                            add_notice, add_script
+from trac.web.chrome import ITemplateProvider, add_notice, add_script, add_script_data
 from trac.util.translation import _
 
 
 class SubComponentsModule(Component):
     """Implements subcomponents in Trac's interface."""
 
-    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
+    implements(IRequestFilter, ITemplateProvider)
 
     # IRequestFilter methods
     def pre_process_request(self, req, handler):
@@ -54,15 +50,14 @@ class SubComponentsModule(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        # The /query paths are handled in filter_stream()
         if req.path_info.startswith('/ticket/') or \
-                req.path_info.startswith('/newticket'):
+           req.path_info.startswith('/newticket') or \
+           req.path_info.startswith('/query'):
             add_script(req, 'subcomponents/componentselect.js')
 
         if template == 'query.html':
             # Allow users to query for parent components and include all subs
-            data['modes']['select'].insert(0, {'name': "begins with",
-                                               'value': "^"})
+            data['modes']['select'].insert(0, {'name': "begins with", 'value': "^"})
 
         if template == 'milestone_view.html':
             # Group components in the milestone view by base component.
@@ -72,10 +67,10 @@ class SubComponentsModule(Component):
                 for component in data['groups']:
                     componentname = component['name'].split('/')[0]
                     if componentname not in newcomponents:
+                        # This component is not yet in the new list of components, add it.
                         newcomponents.append(componentname)
-                        # Fix URLs to the querys (we use unicode_quote_plus
-                        # to replace the '/' with something URL safe
-                        # (like the hrefs are)
+                        # Fix URLs to the querys (we use unicode_quote_plus to replace the '/'
+                        # with something URL safe (like the hrefs are)
                         new_hrefs = []
                         for interval_href in component['interval_hrefs']:
                             new_hrefs.append(interval_href.replace(
@@ -92,8 +87,7 @@ class SubComponentsModule(Component):
 
                         newgroups.append(component)
                     else:
-                        # This is a subcomponent. Add the stats to the main
-                        # component.
+                        # This is a subcomponent. Add the stats to the main component.
                         # Note that above two lists are created. Whenever an
                         # item is added to one, an analogous one is added to
                         # the other. This code uses that logic.
@@ -102,9 +96,9 @@ class SubComponentsModule(Component):
                         mergedstats = corecomponent['stats']
                         newstats = component['stats']
 
-                        # Bear with me as we go to this mess that is the
-                        # group stats (or of course this hack, depending
-                        # on who's viewpoint). First merge the totals.
+                        # Bear with me as we go to this mess that is the group stats
+                        # (or of course this hack, depending on who's viewpoint).
+                        # First merge the totals
                         mergedstats.count += newstats.count
 
                         # The stats are divided in intervals, merge these.
@@ -115,6 +109,12 @@ class SubComponentsModule(Component):
 
                 # Now store the new milestone component groups
                 data['groups'] = newgroups
+
+        if template == "admin_components.html" and data['view'] == 'detail':
+            if len(self._get_component_children(data['component'].name)) > 0:
+                add_script(req, 'subcomponents/componentselect.js')
+                add_script_data(req, {"rename_children": True})
+
         return template, data, content_type
 
     # ITemplateProvider methods
@@ -125,26 +125,6 @@ class SubComponentsModule(Component):
     def get_templates_dirs(self):
         return []
 
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'admin_components.html':
-            # If we are at detail editing of a component, and it has
-            # children, then add a checkbox to rename those.
-            if data['view'] == 'detail':
-                if len(self._get_component_children(
-                        data['component'].name)) > 0:
-                    stream |= Transformer('//div[@class=\'field\'][1]').after(
-                        self._build_renamechildren_field())
-        elif req.path_info.startswith('/query'):
-            # We need to load our script after the initializeFilters() call
-            # done by Trac
-            html = tag.script(type='text/javascript', charset='utf-8',
-                              src=req.href.chrome(
-                                  'subcomponents/componentselect.js'))
-            stream |= Transformer('//head').append(html)
-        return stream
-
     # Other functions
 
     def _get_component_children(self, name):
@@ -154,12 +134,3 @@ class SubComponentsModule(Component):
             if component.name.startswith(name) and component.name != name:
                 result.append(component)
         return result
-
-    def _build_renamechildren_field(self):
-        return tag.div(tag.label(tag.input(_("Also rename children"),
-                                           type='checkbox',
-                                           id='renamechildren',
-                                           name='renamechildren',
-                                           checked='checked')
-                                 ),
-                       class_='field')
