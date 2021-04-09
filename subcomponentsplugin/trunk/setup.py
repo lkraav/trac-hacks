@@ -9,7 +9,7 @@ from setuptools import setup
 
 setup(
     name='TracSubcomponents',
-    version='1.3.2',
+    version='1.3.3',
     packages=['subcomponents'],
     package_data={'subcomponents': [
         'htdocs/*.js',
@@ -34,9 +34,10 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
-
     install_requires=['Trac>=1.0dev', ],
 
     entry_points={

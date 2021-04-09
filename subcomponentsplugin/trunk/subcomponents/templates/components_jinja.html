@@ -1,0 +1,74 @@
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block title
+      ${_("Components")}
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
+    # endblock
+  </head>
+  <body>
+  # block content
+    <div id="content">
+    <h1>${_("Components")}</h1>
+    <form id="query" method="get" action="">
+      <p class="option">
+        <input type="checkbox" id="hide_description" name="hide_description"
+               ${{"checked": hide_description}|htmlattr} />
+        <label for="hide_description">${_("Hide description")}</label>
+      </p>
+      <p class="option">
+        <input type="checkbox" id="no_milestone" name="no_milestone" ${{"checked": no_milestone}|htmlattr} />
+        <label for="no_milestone">${_("Only tickets without milestone")}</label>
+      </p>
+      <div class="buttons">
+        <input type="submit" value="Update"/>
+      </div>
+    </form>
+                   
+    <table class="listing subcomponents">
+      <tr>
+        <th>${_("Name")}</th>
+        <th colspan="2">${_("Tickets")}</th>
+        # if not hide_description:
+        <th>${_("Description")}</th>
+        # endif
+      </tr>
+
+      # for component in components:
+      <tr class="${loop.cycle('odd', 'even')}">
+        <td>
+          <a style="margin: 0 0 0 ${component.subcomponent_level * 1}em"
+             href="${href('query', component = component.name, status = ['assigned', 'new', 'accepted', 'reopened'])}">
+            <em>${component.subname}</em>
+          </a>
+        </td>
+        <td class="ticketcount">
+            # if no_milestone:
+              ${component.active_tickets_without_milestone}
+            # else:
+              ${component.active_tickets}
+            # endif
+        </td>
+        <td class="ticketadd">
+          <a href="${href('newticket', component = component.name)}">
+            add ticket
+          </a>
+        </td>
+        # if not hide_description:
+        <td class="meta">
+          ${component.description}
+        </td>
+        # endif
+      </tr>
+      # endfor
+    </table>
+    </div>
+  # endblock content
+  </body>
+</html>

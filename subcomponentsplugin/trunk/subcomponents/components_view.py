@@ -7,7 +7,7 @@ from trac.web.chrome import INavigationContributor, ITemplateProvider, \
                             add_stylesheet
 from trac.perm import IPermissionRequestor
 from trac.web.api import IRequestHandler
-from trac.web.chrome import web_context
+from trac.web.chrome import Chrome, web_context
 from trac.wiki import format_to_html
 
 
@@ -75,8 +75,10 @@ class ComponentsViewModule(Component):
             'hide_description': 'hide_description' in req.args
         }
         add_stylesheet(req, 'subcomponents/subcomponents.css')
-
-        return 'components.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'components_jinja.html', data
+        else:
+            return 'components.html', data, None
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
