@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2012 Michael Henke <michael.henke@she.net>
+# Copyright 2021 Cinc
+#
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -72,8 +74,8 @@ class PrivateReports(Component):
 
     def get_admin_panels(self, req):
         if 'TRAC_ADMIN' in req.perm:
-            yield ('ticket', 'Ticket System',
-                   'privatereports', 'Private Reports')
+            yield ('ticket', _("Ticket-System"),
+                   'privatereports', _("Private Reports"))
 
     def render_admin_panel(self, req, cat, page, path_info):
         reports = list(Report.select(self.env))
@@ -99,11 +101,11 @@ class PrivateReports(Component):
             'report_permissions': report_permissions,
             'show_report': report_id,
         }
-        template = 'admin_privatereports.html'
+
         if hasattr(Chrome(self.env), 'jenv'):
-            return template, data, None
+            return 'admin_privatereports_jinja.html', data
         else:
-            return template, data
+            return 'admin_privatereports.html', data
 
     # IEnvironmentSetupParticipant methods
 

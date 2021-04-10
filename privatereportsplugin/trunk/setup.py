@@ -13,7 +13,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracPrivateReports',
-    version='1.2.0',
+    version='1.3.0',
     packages=find_packages(),
     author='Michael Henke',
     author_email='michael.henke@she.net',
@@ -23,7 +23,17 @@ setup(
     keywords='trac plugin security report group user',
     url='https://trac-hacks.org/wiki/PrivateReportsPlugin',
     classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Plugins',
+        'Environment :: Web Environment',
         'Framework :: Trac',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
     zip_safe=True,
     package_data={'privatereports': ['templates/*.html']},

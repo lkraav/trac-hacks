@@ -1,0 +1,83 @@
+{#
+# Copyright (C) 2010-2012 Michael Henke <michael.henke@she.net>
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+        # block admintitle
+        ${_("Private Reports")}
+        # endblock admintitle
+    </title>
+      # block head
+    ${ super() }
+    # endblock head
+  </head>
+  <body>
+  # block adminpanel
+    <h2>${_("Private Reports")}</h2>
+    <form action="" method="post">
+        ${jmacros.form_token_input()}
+        <fieldset>
+            <legend>
+                <label>
+                    ${_("Reports")}
+                </label>
+            </legend>
+            <div class="field">
+                <label>
+                    <select name="report_id">
+                        # for report in reports:
+                        <option value='${report.id}' ${{'selected': report.id == show_report}|htmlattr}>
+                        ${report.title}
+                        </option>
+                        # endfor
+                    </select>
+                    <input type="submit" name="show" value="${_('Show')}" />
+                </label>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>
+                <label>
+                    ${_("Permissions")}
+                </label>
+            </legend>
+            <div class="field">
+                # if report_permissions:
+                <label>
+                    <select name="report_permissions" multiple="multiple" size="5">
+                        # for report_permission in report_permissions:
+                        <option value='${report_permission}'>${report_permission}</option>
+                        # endfor
+                    </select>
+                    <input type="submit" name="remove" value="${_('Remove')}" />
+                </label>
+                # else:
+                <span style="font-style: italic">${_("No permissions defined for this report")}</span>
+                # endif
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>
+                <label>
+                    ${_("New Permission")}
+                </label>
+            </legend>
+            <div class="field">
+                <label>
+                    <input type="text" name="newpermission" value="" />
+                    <input type="submit" name="add" value="${_('Add')}" />
+                </label>
+            </div>
+        </fieldset>
+    </form>
+  # endblock adminpanel
+  </body>
+</html>
