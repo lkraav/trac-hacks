@@ -124,6 +124,7 @@ class RPCWeb(Component):
                  }
         if hasattr(Chrome, 'jenv'):
             from functools import partial
+            data['groupby_key'] = lambda (_, x): x
             chrome = Chrome(self.env)
             dat = chrome.populate_data(req)
             dat.update(data)
