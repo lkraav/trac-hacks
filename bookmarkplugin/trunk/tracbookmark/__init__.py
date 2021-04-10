@@ -25,6 +25,7 @@ from trac.resource import (
     get_resource_url)
 from trac.util import get_reporter_id
 from trac.util.html import html
+from trac.util.text import to_unicode
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import (
     ITemplateProvider, add_ctxtnav, add_notice, add_script, add_stylesheet)
@@ -35,6 +36,11 @@ from trac.versioncontrol.api import RepositoryManager
 import tracbookmark.compat
 
 pkg_resources.require('Trac >= 1.0')
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 
 class BookmarkSystem(Component):
@@ -166,7 +172,7 @@ class BookmarkSystem(Component):
             menu = self._get_bookmarks_menu(req)
             content = html(html.a('Bookmarks', href=req.href.bookmark()),
                            menu)
-            req.send(unicode(content).encode('utf-8'))
+            req.send(to_unicode(content).encode('utf-8'))
 
         bookmarks = [self._format_name(req, url)
                      for url, name, username in self.get_bookmarks(req)]
@@ -328,6 +334,13 @@ class BookmarkSystem(Component):
             href = req.href.bookmark('add', resource)
         anchor = html.a(u'\u200b', id='bookmark_this', class_=class_,
                         title=title, href=href, data_list=req.href.bookmark())
+
+        # With Trac 1.2  the attribute 'data_list' was automatically converted to
+        # 'data-list' when creating the element.
+        # Trac 1.4 doesn't do that anymore.
+        if isinstance(anchor.attrib, dict):
+            anchor.attrib['data-list'] = anchor.attrib['data_list']
+            del anchor.attrib['data_list']
         req.chrome.setdefault('ctxtnav', []).insert(0, anchor)
 
         add_script(req, 'bookmark/js/tracbookmark.js')
