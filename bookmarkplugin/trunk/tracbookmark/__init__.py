@@ -27,7 +27,7 @@ from trac.util import get_reporter_id
 from trac.util.html import html
 from trac.util.text import to_unicode
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import (
+from trac.web.chrome import (Chrome,
     ITemplateProvider, add_ctxtnav, add_notice, add_script, add_stylesheet)
 from trac.web.api import arg_list_to_args, parse_arg_list
 from trac.resource import resource_exists
@@ -176,7 +176,11 @@ class BookmarkSystem(Component):
 
         bookmarks = [self._format_name(req, url)
                      for url, name, username in self.get_bookmarks(req)]
-        return 'bookmark_list.html', {'bookmarks': bookmarks}, None
+        data = {'bookmarks': bookmarks}
+        if hasattr(Chrome, 'jenv'):
+            return 'bookmark_list_jinja.html', data
+        else:
+            return 'bookmark_list.html', data, None
 
     # IRequestFilter methods
 
