@@ -123,13 +123,7 @@ class RPCWeb(Component):
                         }
                  }
         if hasattr(Chrome, 'jenv'):
-            from itertools import groupby
             from functools import partial
-
-            def _group_by(dat):
-                return groupby(dat, lambda (_, x) : x)
-
-            data['group_by'] = _group_by
             chrome = Chrome(self.env)
             dat = chrome.populate_data(req)
             dat.update(data)
