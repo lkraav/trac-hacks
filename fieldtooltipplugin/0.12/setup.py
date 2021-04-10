@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='TracFieldTooltip',
-    version='0.8.5',
+    version='0.8.6',
     license='Modified BSD',
     author='MATOBA Akihiro',
     author_email='matobaa+trac-hacks@gmail.com',
@@ -27,6 +27,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Programming Language :: JavaScript',
         'License :: OSI Approved :: BSD License',
     ],

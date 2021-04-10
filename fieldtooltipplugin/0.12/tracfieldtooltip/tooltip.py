@@ -159,6 +159,7 @@ class Tooltip(Component):
     def process_request(self, req):
         def to_html(dom):
             return format_to_html(self.env, web_context(req), dom, False)
+
         def build_etag(pages):
             h = hashlib.sha1()
             for name in sorted(pages):
@@ -167,7 +168,8 @@ class Tooltip(Component):
                 h.update(to_utf8(pages[name]))
                 h.update(b'\0')
             return '"%s"' % binascii.hexlify(h.digest())
-        payload = json.load(req)
+
+        payload = json.loads(req.read())
         if 'method' not in payload or not payload['method'] == 'wiki.getPage':
             req.send_response(501)  # Method Not Implemented
             req.end_headers()
@@ -186,7 +188,7 @@ class Tooltip(Component):
         req.send_header(b'Content-Length', len(content))
         req.send_header(b'ETag', etag)
         req.end_headers()
-        req.write(content)
+        req.write(content.encode('utf-8'))
 
     # IWikiChangeListener methods
     def wiki_page_added(self, page):
