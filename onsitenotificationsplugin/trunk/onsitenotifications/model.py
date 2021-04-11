@@ -3,6 +3,18 @@
 from trac.db import Table, Column, Index
 
 
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
+
+
 SCHEMA = [
     Table('onsitenotification', key='id')[
         Column('id', auto_increment=True),
@@ -70,7 +82,7 @@ class OnSiteMessage(object):
         with env.db_query as db:
             conditions = []
             args = []
-            for name, value in sorted(kwargs.iteritems()):
+            for name, value in sorted(iteritems(kwargs)):
                 if name.endswith('_'):
                     name = name[:-1]
                 conditions.append(db.quote(name) + '=%s')

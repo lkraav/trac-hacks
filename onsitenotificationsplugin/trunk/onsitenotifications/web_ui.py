@@ -2,19 +2,29 @@
 
 import re
 
-from genshi.builder import tag, Markup
-
 from trac.core import *
 from trac.notification.api import (INotificationDistributor,
-                                   INotificationFormatter, NotificationSystem,
+                                   INotificationFormatter,
                                    get_target_id)
-from trac.resource import Resource, get_resource_description, get_resource_url
+from trac.resource import Resource, get_resource_description, get_resource_url, ResourceNotFound
 from trac.web.api import IRequestHandler
-from trac.web.chrome import add_ctxtnav, INavigationContributor
-from trac.util.compat import set
+from trac.web.chrome import Chrome, INavigationContributor
+from trac.util.html import Markup, tag
 from trac.util.text import to_unicode
 
 from onsitenotifications.model import OnSiteMessage
+
+
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
 
 
 class OnSiteNotificationsDistributor(Component):
@@ -76,7 +86,7 @@ class OnSiteNotificationsDistributor(Component):
             if sid:
                 msgdict.setdefault(fmt, set()).add((sid, authed))
 
-        for fmt, sids in msgdict.iteritems():
+        for fmt, sids in iteritems(msgdict):
             message = formats[fmt].format(transport, fmt, event)
             message = to_unicode(message)
             for sid, authenticated in sids:
@@ -121,7 +131,10 @@ class OnSiteNotificationsDistributor(Component):
             })
 
         data = { 'items': items }
-        return "onsitenotification_list.html", data, None
+        if hasattr(Chrome, 'jenv'):
+            return "onsitenotification_list_jinja.html", data
+        else:
+            return "onsitenotification_list.html", data, None
 
     def _render_message(self, req, id):
         message = OnSiteMessage.select_by_id(self.env, id)
@@ -139,4 +152,7 @@ class OnSiteNotificationsDistributor(Component):
             },
         }
 
-        return "onsitenotification.html", data, None
+        if hasattr(Chrome, 'jenv'):
+            return "onsitenotification_jinja.html", data
+        else:
+            return "onsitenotification.html", data, None

@@ -1,0 +1,43 @@
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block title
+      ${_("Notifications")}
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
+    # endblock
+  </head>
+  <body>
+    # block content
+    <div id="content">
+      <h2>${_("Notifications")}</h2>
+
+      <table class="listing">
+        <thead>
+          <tr class="trac-columns"><th>${_("Resource:")}</th><th>${_("Details:")}</th></tr>
+        </thead>
+        <tbody>
+        # for item in items:
+          <tr class="${loop.cycle('even', 'odd')}">
+            <td><a href="${item.resource_href}">${item['resource']}</a></td>
+            <td><a href="${item.details_href}">${item['details']}</a></td>
+          </tr>
+        #endfor
+        </tbody>
+      </table>
+    </div>
+    <div class="buttons">
+      <form id="deletenotifications" action="" method="post">
+        ${jmacros.form_token_input()}
+        <input type="hidden" name="action" value="deletenotifications" />
+        <input type="submit" class="trac-disable-on-submit" value="${_('Delete notifications')}" />
+      </form>
+    </div>
+    # endblock content
+  </body>
+</html>
