@@ -8,31 +8,21 @@ License: BSD
 
 import sys
 from types import GeneratorType
-
 from pkg_resources import resource_filename
 
-from genshi.builder import tag
-from genshi.template.base import TemplateSyntaxError, BadDirectiveError
-from genshi.template.text import TextTemplate
-
-try:
-    import jinja2
-except ImportError:
-    jinja2 = None
-
-from trac.core import *
+from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
+from trac.util.html import tag
 from trac.util.text import to_unicode
-from trac.util.translation import _
 from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
-                            add_stylesheet, add_script, add_ctxtnav, Chrome, web_context
+                            add_stylesheet, add_script, Chrome, web_context
 from trac.wiki.formatter import format_to_oneliner
 
 from tracrpc.api import XMLRPCSystem, IRPCProtocol, ProtocolException, \
-                          RPCError, ServiceException
+                        ServiceException
 from tracrpc.util import accepts_mimetype, exception_to_unicode
 
 try:
@@ -40,10 +30,16 @@ try:
 except ImportError:  # Trac 1.3.1+
     from trac.web.api import HTTPInternalServerError
 
-try:
+if hasattr(Chrome, 'jenv'):
     from trac.util.text import jinja2template
-except ImportError:
+    import jinja2
+    genshi = None
+else:
     jinja2template = None
+    jinja2 = None
+    import genshi
+    import genshi.template
+    import genshi.template.text
 
 __all__ = ['RPCWeb']
 
@@ -138,7 +134,7 @@ class RPCWeb(Component):
             data['expand_docs'] = self._expand_docs_jinja
             return 'rpc_jinja.html', data
         else:
-            data['expand_docs'] = self._expand_docs
+            data['expand_docs'] = self._expand_docs_genshi
             return 'rpc.html', data, None
 
     def _expand_docs_jinja(self, context, docs):
@@ -150,7 +146,7 @@ class RPCWeb(Component):
         except jinja2.TemplateError as e:
             self.log.error("Template error rendering protocol documentation%s",
                            exception_to_unicode(e, traceback=True))
-            return "'''Syntax error:''' [[BR]] %s" % (str(exc),)
+            return '**Error**: {{{%s}}}' % exception_to_unicode(e)
         except Exception as e:
             self.log.error("Runtime error rendering protocol documentation%s",
                            exception_to_unicode(e, traceback=True))
@@ -159,13 +155,14 @@ class RPCWeb(Component):
     if jinja2:
         _expand_docs_jinja = jinja2.contextfunction(_expand_docs_jinja)
 
-    def _expand_docs(self, docs, ctx):
+    def _expand_docs_genshi(self, docs, ctx):
         try :
-            tmpl = TextTemplate(docs)
+            tmpl = genshi.template.text.NewTextTemplate(docs)
             return tmpl.generate(**dict(ctx.items())).render()
-        except (TemplateSyntaxError, BadDirectiveError) as exc:
-            self.log.exception("Syntax error rendering protocol documentation")
-            return "'''Syntax error:''' [[BR]] %s" % (str(exc),)
+        except genshi.template.TemplateError as e:
+            self.log.error("Template error rendering protocol documentation%s",
+                           exception_to_unicode(e, traceback=True))
+            return '**Error**: {{{%s}}}' % exception_to_unicode(e)
         except Exception as e:
             self.log.error("Runtime error rendering protocol documentation%s",
                            exception_to_unicode(e, traceback=True))
