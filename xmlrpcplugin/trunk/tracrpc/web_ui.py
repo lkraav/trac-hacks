@@ -15,6 +15,11 @@ from genshi.builder import tag
 from genshi.template.base import TemplateSyntaxError, BadDirectiveError
 from genshi.template.text import TextTemplate
 
+try:
+    import jinja2
+except ImportError:
+    jinja2 = None
+
 from trac.core import *
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
@@ -34,6 +39,11 @@ try:
     from trac.web.api import HTTPInternalError as HTTPInternalServerError
 except ImportError:  # Trac 1.3.1+
     from trac.web.api import HTTPInternalServerError
+
+try:
+    from trac.util.text import jinja2template
+except ImportError:
+    jinja2template = None
 
 __all__ = ['RPCWeb']
 
@@ -116,27 +126,38 @@ class RPCWeb(Component):
         add_stylesheet(req, 'common/css/wiki.css')
         add_stylesheet(req, 'tracrpc/rpc.css')
         add_script(req, 'tracrpc/rpc.js')
-        data = {'rpc': {'functions': namespaces,
-                         'protocols': [p.rpc_info() + (list(p.rpc_match()),) \
-                                  for p in self.protocols],
-                         'version': __import__('tracrpc', ['__version__']).__version__
-                        }
-                 }
+        data = {
+            'rpc': {
+                'functions': namespaces,
+                'protocols': [p.rpc_info() + (list(p.rpc_match()),)
+                              for p in self.protocols],
+                'version': __import__('tracrpc', ['__version__']).__version__,
+            },
+        }
         if hasattr(Chrome, 'jenv'):
-            from functools import partial
-            chrome = Chrome(self.env)
-            dat = chrome.populate_data(req)
-            dat.update(data)
-            data['expand_docs'] = partial(self._expand_docs_jinja, chrome, dat)
+            data['expand_docs'] = self._expand_docs_jinja
             return 'rpc_jinja.html', data
         else:
             data['expand_docs'] = self._expand_docs
             return 'rpc.html', data, None
 
-    def _expand_docs_jinja(self, chrome, data, docs):
-        template = chrome.jenv.from_string(docs)
-        txt = chrome.render_template_string(template, data, True)
-        return txt
+    def _expand_docs_jinja(self, context, docs):
+        try:
+            template = jinja2template(docs, text=True,
+                                      line_statement_prefix=None,
+                                      line_comment_prefix=None)
+            return template.render(context)
+        except jinja2.TemplateError as e:
+            self.log.error("Template error rendering protocol documentation%s",
+                           exception_to_unicode(e, traceback=True))
+            return "'''Syntax error:''' [[BR]] %s" % (str(exc),)
+        except Exception as e:
+            self.log.error("Runtime error rendering protocol documentation%s",
+                           exception_to_unicode(e, traceback=True))
+            return "Error rendering protocol documentation. " \
+                   "Contact your '''Trac''' administrator for details"
+    if jinja2:
+        _expand_docs_jinja = jinja2.contextfunction(_expand_docs_jinja)
 
     def _expand_docs(self, docs, ctx):
         try :
@@ -145,10 +166,11 @@ class RPCWeb(Component):
         except (TemplateSyntaxError, BadDirectiveError) as exc:
             self.log.exception("Syntax error rendering protocol documentation")
             return "'''Syntax error:''' [[BR]] %s" % (str(exc),)
-        except Exception:
-            self.log.exception("Runtime error rendering protocol documentation")
+        except Exception as e:
+            self.log.error("Runtime error rendering protocol documentation%s",
+                           exception_to_unicode(e, traceback=True))
             return "Error rendering protocol documentation. " \
-                       "Contact your '''Trac''' administrator for details"
+                   "Contact your '''Trac''' administrator for details"
 
     def _rpc_process(self, req, protocol, content_type):
         """Process incoming RPC request and finalize response."""
