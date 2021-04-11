@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 from trac.util.html import Markup
 from trac.wiki.formatter import Formatter
 from trac.wiki.macros import WikiMacroBase, parse_args
