@@ -76,6 +76,8 @@ class FullBlogSetup(Component):
         dbm = DatabaseManager(self.env)
         if dbm.get_database_version(db_version_key) == 0:
             dbm.create_tables(schema)
+            with self.env.db_transaction as db:
+                db("INSERT into system values ('fullblog_infotext', '')")
         else:
             with self.env.db_transaction as db:
                 current_ver = 1
