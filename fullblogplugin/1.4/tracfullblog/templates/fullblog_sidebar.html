@@ -1,21 +1,27 @@
   <div id="sidebar">
 
+    # if blog_infotext:
+    <div id="blog-infotext" class="sidebar-section">
+      ${wiki_to_html(context, blog_infotext)}
+    </div>
+    # endif
+
+    # if blog_about and blog_about.version:
     <div class="sidebar-section">
-      # if not (blog_about and blog_about.version):
-      <p>
-        This blog does not yet have an 'About' post.
-        # if 'BLOG_CREATE' in perm('blog'):
-        <a href="${req.href.blog('create', name='about')}">
-          Create 'About' post.
-        </a>
-        # endif
-      </p>
-      # else:
       <p>
         About: <a href="${req.href.blog('about')}">${blog_about.title}</a>
       </p>
-      # endif
     </div>
+    # elif 'BLOG_ADMIN' in perm('blog'):
+    <div class="sidebar-section">
+      <p>
+        This blog does not yet have an 'About' post.
+        <a href="${req.href.blog('create', name='about')}">
+          Create 'About' post.
+        </a>
+      </p>
+    </div>
+    # endif
 
     <div class="sidebar-section">
       <p>
@@ -74,7 +80,7 @@
     </div>
     # endif
 
-    <div class="sidebar-section${not blog_infotext and ' last' or None}">
+    <div class="sidebar-section last">
       # if blog_categories:
       <p>Browse by category:</p>
       <ul>
@@ -97,11 +103,5 @@
       <p>No categories.</p>
       # endif
     </div>
-
-    # if blog_infotext:
-    <div id="blog-infotext" class="sidebar-section last">
-        ${wiki_to_html(context, blog_infotext)}
-    </div>
-    # endif
 
   </div>
