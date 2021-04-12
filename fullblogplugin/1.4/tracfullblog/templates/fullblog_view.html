@@ -116,6 +116,7 @@
           <div id="newcomment">
             <h3>Add New Comment</h3>
             <form action="${req.href.blog(blog_post.name)}#preview" method="post">
+              ${jmacros.form_token_input()}
               <fieldset>
                   <div class="field">
                     <label for="comment">Comment (you may use

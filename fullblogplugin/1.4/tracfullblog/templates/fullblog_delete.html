@@ -1,20 +1,24 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      xmlns:xi="http://www.w3.org/2001/XInclude">
-  <xi:include href="layout.html" />
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
   <head>
-    <title>Blog : Delete</title>
+    <title>
+      # block title
+      Blog : Delete
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
+    # endblock head
   </head>
-
   <body>
-
+  # block content
     <div id="content" class="blog wiki">
       <div id="blog-main">
-        <!--! Delete a comment. -->
-        <div py:if="defined('blog_comment')">
+        ## Delete a comment.
+        # if blog_comment is not undefined:
+        <div>
           <h1>Delete Blog Comment</h1>
           <p>Delete comment '${blog_comment.number}' by '${blog_comment.author}'
              on blog post '${blog_comment.post_name}'?</p>
@@ -22,6 +26,7 @@
           <div class="buttons">
             <form method="post"
                   action="${href.blog('delete', blog_comment.post_name)}">
+              ${jmacros.form_token_input()}
               <div>
                 <input type="hidden" name="comment" value="${blog_comment.number}" />
                 <input type="submit" name="blog-comment-delete"
@@ -31,8 +36,10 @@
             </form>
           </div>
         </div>
-        <!--! Delete a blog post. -->
-        <div py:if="defined('blog_post')">
+        # endif
+        ## Delete a blog post.
+        # if blog_post is not undefined:
+        <div>
           <h1>Delete Blog Post</h1>
           <p>Delete the latest version or all versions of
              blog post '${blog_post.name}'.</p>
@@ -41,6 +48,7 @@
           <div class="buttons">
             <form method="post"
                   action="${href.blog('delete', blog_post.name)}">
+              ${jmacros.form_token_input()}
               <div>
                 <input type="hidden" name="version" value="${blog_post.version}" />
                 <input type="submit" name="blog-version-delete"
@@ -54,8 +62,10 @@
             </form>
           </div>
         </div>
+        # endif
       </div>
     </div>
 
+    # endblock content
   </body>
 </html>

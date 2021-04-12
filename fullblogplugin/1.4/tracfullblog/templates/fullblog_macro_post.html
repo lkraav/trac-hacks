@@ -3,7 +3,7 @@
   # macro render_blog_post(post, list_mode=False)
   <div class="blog-post">
     <h1 class="blog-title" id="${post.name}">
-      # if not list_mode:
+      # if list_mode:
       <a href="${req.href.blog(post.name)}">${post.title}</a>
       # else:
       ${post.title}
