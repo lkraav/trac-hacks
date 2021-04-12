@@ -20,7 +20,7 @@ class SampleBlogPlugin(Component):
     def blog_post_changed(self, postname, version):
         if version == 1:
             text = "SampleBlogPlugin: Blog post '%s' created (version 1)."
-            self.log.debug(text, hostname)
+            self.log.debug(text, postname)
         else:
             text = "SampleBlogPlugin: Version '%d' of blog post '%s' added."
             self.log.debug(text, version, postname)

@@ -30,9 +30,9 @@ from trac.web.chrome import Chrome, INavigationContributor, \
         add_ctxtnav, prevnext_nav, web_context
 from trac.wiki.formatter import format_to_oneliner
 
-from model import *
-from core import FullBlogCore
-from util import map_month_names, parse_period
+from .model import *
+from .core import FullBlogCore
+from .util import map_month_names, parse_period
 
 
 class FullBlogModule(Component):

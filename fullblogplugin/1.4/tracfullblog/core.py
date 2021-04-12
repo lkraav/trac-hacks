@@ -22,9 +22,9 @@ from trac.util.html import tag
 from trac.util.text import unicode_unquote
 from trac.wiki.api import IWikiSyntaxProvider
 
-from api import IBlogChangeListener, IBlogManipulator
-from model import BlogPost, get_blog_resources, get_blog_posts
-from util import parse_period
+from .api import IBlogChangeListener, IBlogManipulator
+from .model import BlogPost, get_blog_resources, get_blog_posts
+from .util import parse_period
 
 SYSTEM_NAME = 'fullblog_infotext'
 

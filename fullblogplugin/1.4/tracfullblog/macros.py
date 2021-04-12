@@ -14,8 +14,8 @@ from trac.web.chrome import add_stylesheet, Chrome
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
 
-from model import get_blog_posts, BlogPost
-from util import parse_period
+from .model import get_blog_posts, BlogPost
+from .util import parse_period
 
 
 class BlogListMacro(WikiMacroBase):

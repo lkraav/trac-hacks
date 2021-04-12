@@ -12,7 +12,7 @@ from trac.admin import IAdminPanelProvider
 from trac.resource import Resource
 from trac.web.chrome import Chrome, add_warning
 
-from core import FullBlogCore
+from .core import FullBlogCore
 
 
 class FullBlogAdminPanel(Component):

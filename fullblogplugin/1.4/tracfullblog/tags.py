@@ -12,7 +12,7 @@ from trac.resource import Resource, get_resource_description
 from trac.web.chrome import Chrome
 from tractags.api import ITagProvider
 
-from model import BlogPost, _parse_categories
+from .model import BlogPost, _parse_categories
 
 
 class FullBlogTagSystem(Component):

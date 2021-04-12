@@ -78,7 +78,8 @@ class FullBlogSetup(Component):
             dbm.create_tables(schema)
         else:
             with self.env.db_transaction as db:
-                while current_ver+1 <= db_version:
-                    upgrade_map[current_ver+1](self.env)
+                current_ver = 1
+                while current_ver + 1 <= db_version:
+                    upgrade_map[current_ver + 1](self.env)
                     current_ver += 1
         dbm.set_database_version(db_version, db_version_key)
