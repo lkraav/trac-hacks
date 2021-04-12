@@ -1,33 +1,46 @@
-<div xmlns:py="http://genshi.edgewall.org/" py:strip="True">
 
-  <!--! Macro to render a plain listing with header (if available) -->
-  <div py:def="render_monthlist(heading, posts)" class="monthlist">
-      <h3 py:strip="not heading" id="${heading}">${heading}</h3>
-      <p py:if="not posts">No blog posts.</p>
+  ## Macro to render a plain listing with header (if available)
+  # macro render_monthlist(heading, posts)
+  <div class="monthlist">
+    # if heading:
+      <h3 id="${heading}">${heading}</h3>
+    # else:
+    ${heading}
+    # endif
+    # if not posts:
+    <p>No blog posts.</p>
+    # endif
       <ul>
-        <li py:for="name, version, time, author, title, body, categories in posts">
+        # for name, version, time, author, title, body, categories in posts:
+        <li>
           <a href="${req.href.blog(name)}">${title}</a>
-          <span class="metainfo" py:if="not defined('show_meta') and True or show_meta">
+          # if show_meta is undefined or show_meta:
+          <span class="metainfo">
             &nbsp;-- Posted on ${pretty_dateinfo and pretty_dateinfo(time) or format_datetime(time)}
-            <py:if test="not blog_personal_blog">
+            # if not blog_personal_blog:
               : author <a href="${req.href.blog('author', author)}">${authorinfo(author)}</a>
-            </py:if>
-            <py:if test="categories">
+            # endif
+            # if categories:
               : categories
-              <span py:for="cat in categories">
+              # for cat in categories:
+              <span>
                 <a href="${req.href.blog('category', cat)}">${cat}</a>
               </span>
-            </py:if>
+              # endfor
+            # endif
           </span>
+          # endif
         </li>
+        # endfor
       </ul>
   </div>
+  # endmacro
 
-  <!--! Directly execute the macro on import if 'execute_blog_macro' is set.
-        For this not to throw errors it presumes variables to be called
-        already exists in the data dictionary. -->
-  <py:if test="defined('execute_blog_macro') and execute_blog_macro">
+  {# Directly execute the macro on import if 'execute_blog_macro' is set.
+     For this not to throw errors it presumes variables to be called
+     already exists in the data dictionary.
+  #}
+  # if execute_blog_macro:
     <div class="blog">${render_monthlist(heading, posts)}</div>
-  </py:if>
+  # endif
 
-</div>

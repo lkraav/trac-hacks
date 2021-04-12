@@ -1,5 +1,5 @@
 
-  <!--! Macro to render a post -->
+  ## Macro to render a post
   # macro render_blog_post(post, list_mode=False)
   <div class="blog-post">
     <h1 class="blog-title" id="${post.name}">
@@ -50,10 +50,11 @@
   </div>
   # endmacro
 
-  <!--! Directly execute the macro on import if 'execute_blog_macro' is set.
-        For this not to throw errors it presumes variables to be called
-        already exists in the data dictionary. -->
-    # if execute_blog_macro:
-    ${render_blog_post(post, list_mode)}
-    # endif
+  {# Directly execute the macro on import if 'execute_blog_macro' is set.
+     For this not to throw errors it presumes variables to be called
+     already exists in the data dictionary.
+  #}
+  # if execute_blog_macro:
+  ${render_blog_post(post, list_mode)}
+  # endif
 
