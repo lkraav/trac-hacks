@@ -9,6 +9,7 @@ License: BSD
 
 from trac.core import *
 from trac.resource import Resource, get_resource_description
+from  trac.util.text import to_unicode
 from trac.web.chrome import Chrome
 from tractags.api import ITagProvider
 
@@ -57,6 +58,12 @@ class FullBlogTagSystem(Component):
         req.perm(resource).require('TAGS_VIEW')
         return BlogPost(self.env, resource.id).category_list
 
+    def resource_tags(self, resource):
+        # Using this interface anyone may query the categories.
+        # Is it smart to have no permission check here? This mwthod
+        # is mandated by the TracTagsPlugin
+        return BlogPost(self.env, resource.id).category_list
+
     def set_resource_tags(self, req, resource, tags):
         req.perm(resource).require('TAGS_MODIFY')
         post = BlogPost(self.env, resource.id)
@@ -66,6 +73,17 @@ class FullBlogTagSystem(Component):
             req.perm(resource).require('BLOG_MODIFY_ALL')
         post.categories = " ".join(tags)
         post.save(req.authname, 'Blog post categories changed via Tags plugin.')
+
+    def reparent_resource_tags(self, req, resource, old_id, comment=u''):
+        """Move tags, typically when renaming an existing resource."""
+        req.perm(resource).require('TAGS_MODIFY')
+        post = BlogPost(self.env, resource.id)
+        if post.author == req.authname:
+            req.perm(resource).require('BLOG_MODIFY_OWN')
+        else:
+            req.perm(resource).require('BLOG_MODIFY_ALL')
+        post.categories = post.categories.replace(old_id, to_unicode(resource.id))
+        post.save(req.authname, '%s (Blog post categories changed via Tags plugin)' % comment)
 
     def remove_resource_tags(self, req, resource):
         req.perm(resource).require('TAGS_MODIFY')
