@@ -1,28 +1,30 @@
-<div xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      py:strip="True">
-
   <div id="sidebar">
 
     <div class="sidebar-section">
-      <p py:if="not (defined('blog_about') and blog_about.version)">
+      # if not (blog_about and blog_about.version):
+      <p>
         This blog does not yet have an 'About' post.
-        <a py:if="'BLOG_CREATE' in perm('blog')"
-            href="${req.href.blog('create', name='about')}">
+        # if 'BLOG_CREATE' in perm('blog'):
+        <a href="${req.href.blog('create', name='about')}">
           Create 'About' post.
         </a>
+        # endif
       </p>
-      <p py:if="defined('blog_about') and blog_about.version">
+      # else:
+      <p>
         About: <a href="${req.href.blog('about')}">${blog_about.title}</a>
       </p>
+      # endif
     </div>
 
     <div class="sidebar-section">
       <p>
         <span class="metainfo">
           <a href="${req.href.blog(format='rss')}">
-            <img py:if="blog_archive_rss_icon"
-                src="${chrome.htdocs_location}feed.png" alt="RSS" /> rss
+            # if blog_archive_rss_icon:
+            <img src="${chrome.htdocs_location}feed.png" alt="RSS" />
+            # endif
+            rss
           </a>
         </span>
         Archive: <a href="${req.href.blog('archive')}">All posts</a> (${blog_total})
@@ -30,59 +32,76 @@
     </div>
 
     <div class="sidebar-section">
-      <py:if test="blog_months">
-        <p>Browse by time:</p>
-        <ul>
-          <li py:for="month, count in blog_months">
-            <a href="${req.href.blog(month[0], month[1])}"
-              >${blog_month_names[month[1]-1]} ${month[0]}</a> (${count})
-          </li>
-        </ul>
-      </py:if>
-      <p py:if="not blog_months">No posts.</p>
+
+      # if blog_months:
+      <p>Browse by time:</p>
+      <ul>
+        # for month, count in blog_months:
+        <li>
+          <a href="${req.href.blog(month[0], month[1])}"
+            >${blog_month_names[month[1]-1]} ${month[0]}</a> (${count})
+        </li>
+        # endfor
+      </ul>
+      # else:
+      <p>No posts.</p>
+      # endif
     </div>
 
-    <div class="sidebar-section"
-          py:if="not blog_personal_blog">
-      <py:if test="blog_authors">
-        <p>Browse by author:</p>
-        <ul>
-          <li py:for="author, count in blog_authors">
-            <span class="metainfo">
-              <a href="${req.href.blog('author', author, format='rss')}">
-                <img py:if="blog_all_rss_icons"
-                    src="${chrome.htdocs_location}feed.png" alt="RSS" /> rss
-              </a>
-            </span>
-            <a href="${req.href.blog('author', author)}">${author}</a> (${count})</li>
-        </ul>
-      </py:if>
-      <p py:if="not blog_authors">No authors.</p>
+    # if not blog_personal_blog:
+    <div class="sidebar-section">
+
+      # if blog_authors:
+      <p>Browse by author:</p>
+      <ul>
+        # for author, count in blog_authors:
+        <li>
+          <span class="metainfo">
+            <a href="${req.href.blog('author', author, format='rss')}">
+              # if blog_all_rss_icons:
+              <img src="${chrome.htdocs_location}feed.png" alt="RSS" />
+              # endif
+              rss
+            </a>
+          </span>
+          <a href="${req.href.blog('author', author)}">${author}</a> (${count})
+        </li>
+        # endfor
+      </ul>
+      # else:
+      <p>No authors.</p>
+      # endif
     </div>
+    # endif
 
     <div class="sidebar-section${not blog_infotext and ' last' or None}">
-      <py:if test="blog_categories">
-        <p>Browse by category:</p>
-        <ul py:if="blog_categories">
-          <li py:for="category, count in blog_categories">
-            <span class="metainfo">
-              <a href="${req.href.blog('category', category, format='rss')}">
-                <img py:if="blog_all_rss_icons"
-                    src="${chrome.htdocs_location}feed.png" alt="RSS" /> rss
-              </a>
-            </span>
-            <a href="${req.href.blog('category', category)}">${category}</a>
-                  (${count})
-          </li>
-        </ul>
-      </py:if>
-      <p py:if="not blog_categories">No categories.</p>
+      # if blog_categories:
+      <p>Browse by category:</p>
+      <ul>
+        # for category, count in blog_categories:
+        <li>
+          <span class="metainfo">
+            <a href="${req.href.blog('category', category, format='rss')}">
+              # if blog_all_rss_icons:
+              <img src="${chrome.htdocs_location}feed.png" alt="RSS" />
+              # endif
+              rss
+            </a>
+          </span>
+          <a href="${req.href.blog('category', category)}">${category}</a>
+                (${count})
+        </li>
+        # endfor
+      </ul>
+      # else:
+      <p>No categories.</p>
+      # endif
     </div>
 
-    <div py:if="blog_infotext" id="blog-infotext" class="sidebar-section last">
+    # if blog_infotext:
+    <div id="blog-infotext" class="sidebar-section last">
         ${wiki_to_html(context, blog_infotext)}
     </div>
+    # endif
 
   </div>
-
-</div>

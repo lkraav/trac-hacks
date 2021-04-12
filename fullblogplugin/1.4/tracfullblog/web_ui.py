@@ -392,7 +392,7 @@ class FullBlogModule(Component):
         data['blog_archive_rss_icon'] = self.all_rss_icons \
                                         or self.archive_rss_icon
         data['blog_all_rss_icons'] = self.all_rss_icons
-        return template, data, None
+        return template, data, {}
 
     # ISearchSource methods
 

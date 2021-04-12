@@ -1,19 +1,28 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      xmlns:xi="http://www.w3.org/2001/XInclude">
-  <xi:include href="layout.html" />
-  <xi:include href="macros.html"><xi:fallback /></xi:include>
+{# Copyright (C) 2007-2020 CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
+
+  This software is licensed as described in the file COPYING, which
+  you should have received as part of this distribution.
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  # include "macros.html" ignore missing
   <head>
-    <title>Blog${defined('blog_post') and ': ' + blog_post.title \
-                or req.args.get('blog_path') and defined('blog_list_title') \
-                      and ': ' + blog_list_title}</title>
-    <meta py:if="defined('blog_post_list')" name="ROBOTS" content="NOINDEX" />
-    <link py:if="defined('blog_post') and blog_post.version"
-        rel="alternate" href="${href.blog(format='rss')}"
-        type="application/rss+xml" class="rss" title="RSS Feed" />
+    <title>
+      # block title
+      Blog${blog_post and ': ' + blog_post.title or req.args.get('blog_path') and blog_list_title and ': ' + blog_list_title}
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
+    # if blog_post_list:
+    <meta name="ROBOTS" content="NOINDEX" />
+    # endif
+    # if blog_post and blog_post.version:
+    <link rel="alternate" href="${href.blog(format='rss')}"
+          type="application/rss+xml" class="rss" title="RSS Feed" />
+    # endif
     <script type="text/javascript">
       jQuery(document).ready(function($) {
         $("#content").find("h1,h2,h3,h4,h5,h6").filter("[id]").addAnchor("Link here");
@@ -22,85 +31,93 @@
           }, $("#preview").showOnPreview());
       });
     </script>
+    # endblock
   </head>
-
   <body>
+  # block content
 
-    <xi:include href="fullblog_macro_post.html" />
+    # include "fullblog_macro_post.html"
 
     <div id="content" class="blog wiki">
 
-      <xi:include href="fullblog_sidebar.html" />
+      # include "fullblog_sidebar.html"
 
       <div id="blog-main">
 
         <!--! View single post with comments -->
-
-        <py:if test="defined('blog_post') and blog_post.version">
+        # if blog_post and blog_post.version:
           ${render_blog_post(blog_post)}
 
           <!--! Buttons for edit etc. -->
-          <py:if test="not list_mode and ('BLOG_MODIFY_ALL' in perm(blog_post.resource) or (
-                  blog_post.author==perm.username and 'BLOG_MODIFY_OWN' in perm(blog_post.resource)))">
+          # if not list_mode and ('BLOG_MODIFY_ALL' in perm(blog_post.resource) or (blog_post.author==perm.username and 'BLOG_MODIFY_OWN' in perm(blog_post.resource))):
             <div class="buttons">
               <form method="get" action="${href.blog('edit', blog_post.name)}">
                 <div>
                   <input type="submit" value="${_('Edit post')}" accesskey="e" />
                 </div>
               </form>
-              <py:choose test="defined('attach_file_form')">
-                <py:when test="True">
+{# TODO
+              # if attach_file_form:
                   ${attach_file_form(blog_attachments)}
-                </py:when>
-                <py:when test="False">
+              # else:
+              #    set alist = blog_attachments
                   <xi:include href="attach_file_form.html"
                               py:with="alist=blog_attachments"/>
-                </py:when>
-              </py:choose>
-              <form method="get" action="${href.blog('delete', blog_post.name)}"
-                    py:if="'BLOG_DELETE' in perm(blog_post.resource)">
+              # endif
+
+#}
+              # if 'BLOG_DELETE' in perm(blog_post.resource):
+              <form method="get" action="${href.blog('delete', blog_post.name)}">
+                ${jmacros.form_token_input()}
                 <div>
                   <input type="submit" value="${_('Delete...')}"
                       accesskey="d" />
                 </div>
               </form>
+              # endif
             </div>
-          </py:if>
-
+          # endif
+{# TODO
           <!--! List attachments -->
-          <py:choose test="defined('list_of_attachments')">
-            <py:when test="True">
+            # if list_of_attachments:
               ${list_of_attachments(blog_attachments, compact=True)}
-            </py:when>
-            <py:when test="False">
-              <xi:include href="list_of_attachments.html"
-                          py:with="alist=blog_attachments; compact=True"/>
-            </py:when>
-          </py:choose>
+            # else:
+            # set alist = blog_attachments
+            # set compact = True
+              <xi:include href="list_of_attachments.html" py:with="alist=blog_attachments; compact=True"/>
+            # endif
 
+#}
           <!--! View comments -->
-          <div id="comments" py:with="blog_comments = blog_post.get_comments()">
+          # with
+          #    set blog_comments = blog_post.get_comments()
+          <div id="comments">
             <h2 id="comment-header">Comments</h2>
-            <py:if test="blog_comments">
-              <div py:for="index, comment in enumerate(blog_comments)"
-                  class="blog-comment${index % 2 == 0 and ' odd' or ' even'}" id="comment-${comment.number}">
-                <span py:if="'BLOG_DELETE' in perm(blog_post.resource)"
-                    class="metainfo blog-comment-delete">
+            # if blog_comments:
+              # for comment in blog_comments:
+            <div class="blog-comment ${loop.cycle('odd', 'even')}" id="comment-${comment.number}">
+                # if 'BLOG_DELETE' in perm(blog_post.resource):
+                <span class="metainfo blog-comment-delete">
                   <a href="${href.blog('delete', blog_post.name, comment=comment.number)}">Delete comment</a>
                 </span>
+                # endif
                 <div class="comment-info">
                     <a href="${req.href.blog(comment.post_name)}#comment-${to_unicode(comment.number)}">
                       ${comment.number}.</a>
                     ${authorinfo(comment.author)} --
                     ${pretty_dateinfo and pretty_dateinfo(comment.time) or format_datetime(comment.time)}</div>
                 <div class="comment-body">${wiki_to_html(context, comment.comment)}</div>
-              </div>
-            </py:if>
-            <p py:if="not blog_comments">No comments.</p>
+            </div>
+            # endfor
+            # else:
+            <p>No comments.</p>
+            # endif
           </div>
+          # endwith
 
           <!--! Add new comment -->
-          <div py:if="'BLOG_COMMENT' in perm(blog_post.resource)" id="newcomment">
+          #if 'BLOG_COMMENT' in perm(blog_post.resource):
+          <div id="newcomment">
             <h3>Add New Comment</h3>
             <form action="${req.href.blog(blog_post.name)}#preview" method="post">
               <fieldset>
@@ -110,21 +127,23 @@
                       here):
                     </label><br />
                     <textarea class="wikitext trac-fullwidth" id="comment"
-                              name="comment" cols="80" rows="8">${defined('blog_comment') and blog_comment.comment or ''}</textarea>
+                              name="comment" cols="80" rows="8">${blog_comment and blog_comment.comment or ''}</textarea>
                   </div>
-                  <a py:if="req.chrome.warnings" href="#warning">(Warnings)</a>
+                #if req.chrome.warnings:
+                  <a href="#warning">(Warnings)</a>
+                #endif
                   <div id="preview" class="trac-content trac-draft"
                        style="${'' if comment_preview else 'display:none'}">
-                    <py:if test="comment_preview">
+                    # if comment_preview:
                       ${wiki_to_html(context, blog_comment.comment)}
-                    </py:if>
+                    # endif
                   </div>
                 <div class="field">
                   <label for="author">Email or username:</label>
                     <br />
                     <input id="author" type="text"
                         name="author" size="30"
-                        value="${(defined('blog_comment') and blog_comment.author)
+                        value="${(blog_comment and blog_comment.author)
                                  or get_reporter_id(req)}" />
                 </div>
                 <div class="buttons">
@@ -137,33 +156,36 @@
               </fieldset>
             </form>
           </div>
+          # endif
 
-        </py:if>
+        # endif
         <!--! Single blog post rendering end -->
 
         <!--! Requesting a non-existing blog post -->
-        <p py:if="defined('blog_post') and not blog_post.version">
+        # if blog_post and not blog_post.version:
+        <p>
           No blog post named '${blog_post.name}'.
             <a href="${req.href.blog('create', name=blog_post.name)}"
               class="button">
               Create it!
             </a>
         </p>
+        # endif
 
         <!--! View list of posts -->
-        <py:if test="defined('blog_post_list')">
           <div class="blog-list-title">${blog_list_title}</div>
-          <p py:if="not len(blog_post_list)">
+          # if not blog_post_list:
+          <p>
             No blog posts available.
           </p>
-          <div py:for="blog_post in blog_post_list" py:strip="True">
+          # endif
+          # for blog_post in blog_post_list:
             ${render_blog_post(blog_post, list_mode=True)}
-          </div>
-        </py:if>
+          # endfor
 
       </div>
 
     </div>
-
+  # endblock content
   </body>
 </html>
