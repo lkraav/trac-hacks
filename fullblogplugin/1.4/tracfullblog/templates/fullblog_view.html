@@ -56,16 +56,14 @@
                   <input type="submit" value="${_('Edit post')}" accesskey="e" />
                 </div>
               </form>
-{# TODO
+
               # if attach_file_form:
                   ${attach_file_form(blog_attachments)}
               # else:
               #    set alist = blog_attachments
-                  <xi:include href="attach_file_form.html"
-                              py:with="alist=blog_attachments"/>
+                # include "attach_file_form.html"
               # endif
 
-#}
               # if 'BLOG_DELETE' in perm(blog_post.resource):
               <form method="get" action="${href.blog('delete', blog_post.name)}">
                 <div>
@@ -76,17 +74,16 @@
               # endif
             </div>
           # endif
-{# TODO
+
           <!--! List attachments -->
             # if list_of_attachments:
               ${list_of_attachments(blog_attachments, compact=True)}
             # else:
-            # set alist = blog_attachments
-            # set compact = True
-              <xi:include href="list_of_attachments.html" py:with="alist=blog_attachments; compact=True"/>
+            #   set alist = blog_attachments
+            #   set compact = True
+            #   include "list_of_attachments.html"
             # endif
 
-#}
           <!--! View comments -->
           # with
           #    set blog_comments = blog_post.get_comments()
