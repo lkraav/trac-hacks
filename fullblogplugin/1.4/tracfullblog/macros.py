@@ -9,7 +9,8 @@ License: BSD
 
 from trac.core import TracError
 from trac.util import as_int
-from trac.util.html import tag
+from trac.util.text import to_unicode
+from trac.util.html import Markup, tag
 from trac.web.chrome import add_stylesheet, Chrome
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
@@ -107,7 +108,7 @@ class BlogListMacro(WikiMacroBase):
                     'show_meta': show_meta,
                     'execute_blog_macro': True}
             return Chrome(self.env).render_template(formatter.req,
-                    'fullblog_macro_monthlist.html', data=data, fragment=True)
+                    'fullblog_macro_monthlist.html', data, {'fragment': True})
 
         elif format in ('full', 'float'):
             out = self._render_full_format(
@@ -138,6 +139,8 @@ class BlogListMacro(WikiMacroBase):
                         'execute_blog_macro': True}
                 if max_size:
                     data['blog_max_size'] = max_size
-                out.append(Chrome(self.env).render_template(formatter.req,
-                    'fullblog_macro_post.html', data=data, fragment=True))
+
+                txt = Chrome(self.env).render_template(formatter.req, 'fullblog_macro_post.html',
+                                                       data, {'fragment': True})
+                out.append(Markup(to_unicode(txt)))
         return out
