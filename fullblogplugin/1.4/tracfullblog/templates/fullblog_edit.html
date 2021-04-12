@@ -1,13 +1,15 @@
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      xmlns:xi="http://www.w3.org/2001/XInclude">
-  <xi:include href="layout.html" />
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
   <head>
-    <title>Edit Blog Post</title>
-
+    <title>
+      # block title
+      Edit Blog Post
+      ${ super() }
+      # endblock title
+    </title>
+    # block head
+    ${ super() }
     <script type="text/javascript">
       jQuery(function($) {
         $("#blog-body").autoPreview("${href.wiki_render()}", {
@@ -15,25 +17,24 @@
           }, $("#preview").showOnPreview());
       });
     </script>
+    # endblock head
   </head>
-
   <body>
+  # block content
 
-    <xi:include href="fullblog_macro_post.html" />
+    # import "fullblog_macro_post.html" as render with context
 
     <div id="content" class="blog wiki">
 
-    <py:with vars="is_create = not blog_edit.version;
-                   can_create = 'BLOG_CREATE' in perm('blog');
-                   is_edit = bool(blog_edit.version);
-                   can_edit = 'BLOG_MODIFY_ALL' in perm(blog_edit.resource) or defined(
-                        'blog_orig_author') or (
-                        perm.username==blog_edit.author and 'BLOG_MODIFY_OWN' in perm(blog_edit.resource));
-                   is_allowed = (is_create and can_create) or (is_edit and can_edit);
-                  ">
-
+      # with
+      #   set is_create = not blog_edit.version
+      #   set can_create = 'BLOG_CREATE' in perm('blog')
+      #   set is_edit = True if blog_edit.version else False
+      #   set can_edit = 'BLOG_MODIFY_ALL' in perm(blog_edit.resource) or defined('blog_orig_author') or (perm.username==blog_edit.author and 'BLOG_MODIFY_OWN' in perm(blog_edit.resource))
+      #   set is_allowed = (is_create and can_create) or (is_edit and can_edit)
       <div id="sidebar">
-        <py:if test="is_create and can_create">
+
+        #if is_create and can_create:
         <h4>Naming blog posts</h4>
         <p>When naming posts (<em>"Post shortname"</em>), it is recommended to make them URL friendly
           - like avoiding spaces and non-standard characters.</p>
@@ -47,36 +48,48 @@
             used for month-based browsing.</li>
         </ul>
         <p>The name of a post cannot be changed later.</p>
-        </py:if>
-        <py:if test="blog_categories">
+        # endif
+
+        # if blog_categories:
         <h4>Existing categories</h4>
         <ul>
-          <li py:for="category, count in blog_categories">${category} (${count})</li>
+          # for category, count in blog_categories:
+          <li>${category} (${count})</li>
+          # endfor
         </ul>
-        </py:if>
+        # endif
+
       </div>
 
       <div id="blog-main">
 
-        <h1 py:if="not blog_edit.version">Create Blog Post</h1>
-        <h1 py:if="blog_edit.version">Edit Blog Post</h1>
+        # if blog_edit.version:
+        <h1>Edit Blog Post</h1>
+        # else:
+        <h1>Create Blog Post</h1>
+        # endif
 
-          <div py:if="not is_allowed" class="system-message">You do not have the required permission to
+        # if not is_allowed:
+          <div class="system-message">You do not have the required permission to
               ${is_create and 'create a blog post' or 'edit this blog post'}.</div>
-          <form py:if="is_allowed"
-                action="${(is_create and req.href.blog('create')) or req.href.blog('edit', blog_edit.name)}"
-                method="post">
+        # else:
+        <form action="${(is_create and req.href.blog('create')) or req.href.blog('edit', blog_edit.name)}"
+              method="post">
+            ${jmacros.form_token_input()}
             <fieldset>
-              <div py:if="defined('blog_edit') and blog_edit.version">
+
+              # if blog_edit and blog_edit.version:
+              <div>
                 <p>Post shortname (cannot be changed): ${blog_edit.name}</p>
                 <input id="blog-name" type="hidden"
                       name="name" value="${blog_edit.name}" />
               </div>
+              # endif
               <div class="field">
                 <label for="blog-title">Title:</label><br />
                 <input id="blog-title" type="text"
                       name="title" size="80"
-                      value="${defined('blog_edit') and blog_edit.title or ''}" />
+                      value="${blog_edit and blog_edit.title or ''}" />
               </div>
               <div class="field">
                 <label for="blog-body">Post body (you may use
@@ -84,54 +97,57 @@
                   here):
                 </label><br />
                 <textarea class="wikitext trac-fullwidth" id="blog-body" name="body"
-                          cols="80" rows="15">${defined('blog_edit') and blog_edit.body or ''}</textarea>
+                          cols="80" rows="15">${blog_edit and blog_edit.body or ''}</textarea>
               </div>
               <div id="preview" class="trac-content trac-draft"
                    style="${'' if blog_action == 'preview' else 'display:none'}">
-                <py:if test="blog_action == 'preview'">
-                  ${render_blog_post(blog_edit)}
-                </py:if>
+                  # if blog_action == 'preview':
+                  ${render.render_blog_post(blog_edit)}
+                  # endif
               </div>
-              <div py:if="defined('blog_edit') and not blog_edit.version" class="field">
+              # if blog_edit and not blog_edit.version:
+              <div class="field">
                 <label for="blog-name">Post shortname (for URL):</label><br />
                 <input id="blog-name" type="text"
                       name="name" size="40"
                       value="${blog_edit.name or ''}" />
               </div>
+              # endif
               <div class="field">
                 <label for="blog-author">Post Author:</label><br />
                 <input id="blog-author" type="text"
                       name="author" size="40"
-                      value="${(defined('blog_edit') and blog_edit.author)
+                      value="${(blog_edit and blog_edit.author)
                                or get_reporter_id(req)}" />
               </div>
               <div class="field">
                 <label for="blog-categories">Categories (space separated):</label><br />
                 <input id="blog-categories" type="text"
                       name="categories" size="40"
-                      value="${defined('blog_edit') and blog_edit.categories or ''}" />
+                      value="${blog_edit and blog_edit.categories or ''}" />
               </div>
               <div class="field">
                 <label for="blog-version-comment">Comment for this version by ${req.authname}:</label><br />
                 <input id="blog-version-comment" type="text"
                       name="new_version_comment" size="80"
-                      value="${defined('blog_version_comment') and blog_version_comment or ''}" />
+                      value="${blog_version_comment and blog_version_comment or ''}" />
               </div>
               <div class="field">
                 <input type="submit" name="blog-preview" value="Preview post" />
                 <input size="30" type='submit' name="blog-save"
                     value="Save post" />
                 <input type="hidden" name="action"
-                      value="${defined('blog_edit') and blog_edit.version and 'edit' or 'new'}" />
+                      value="${blog_edit and blog_edit.version and 'edit' or 'new'}" />
                 <input type="submit" name="blog-cancel" value="Cancel" />
               </div>
             </fieldset>
-          </form>
+        </form>
+        # endif
 
       </div>
-
-    </py:with>
+      # endwith
     </div>
 
+    # endblock content
   </body>
 </html>

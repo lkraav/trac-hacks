@@ -36,7 +36,7 @@
   <body>
   # block content
 
-    # include "fullblog_macro_post.html"
+  # import "fullblog_macro_post.html" as render with context
 
     <div id="content" class="blog wiki">
 
@@ -46,7 +46,7 @@
 
         <!--! View single post with comments -->
         # if blog_post and blog_post.version:
-          ${render_blog_post(blog_post)}
+          ${render.render_blog_post(blog_post)}
 
           <!--! Buttons for edit etc. -->
           # if not list_mode and ('BLOG_MODIFY_ALL' in perm(blog_post.resource) or (blog_post.author==perm.username and 'BLOG_MODIFY_OWN' in perm(blog_post.resource))):
@@ -68,7 +68,6 @@
 #}
               # if 'BLOG_DELETE' in perm(blog_post.resource):
               <form method="get" action="${href.blog('delete', blog_post.name)}">
-                ${jmacros.form_token_input()}
                 <div>
                   <input type="submit" value="${_('Delete...')}"
                       accesskey="d" />
@@ -174,13 +173,13 @@
 
         <!--! View list of posts -->
           <div class="blog-list-title">${blog_list_title}</div>
-          # if not blog_post_list:
+          # if blog_post_list and not len(blog_post_list):
           <p>
             No blog posts available.
           </p>
           # endif
           # for blog_post in blog_post_list:
-            ${render_blog_post(blog_post, list_mode=True)}
+            ${render.render_blog_post(blog_post, list_mode=True)}
           # endfor
 
       </div>

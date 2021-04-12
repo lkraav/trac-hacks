@@ -347,6 +347,8 @@ class BlogPost(object):
         if not version_author:
             warnings.append(('version_author', 'Version author missing'))
         for attr in ['name', 'title', 'body', 'author']:
+            # TODO: use proper labels in the warnings. 'name' is the short name in
+            #       reality. This may be confusing.
             if not getattr(self, attr):
                 warnings.append((attr, '%s is empty.' % attr.capitalize()))
         # Return if initial problems, or only verification was wanted

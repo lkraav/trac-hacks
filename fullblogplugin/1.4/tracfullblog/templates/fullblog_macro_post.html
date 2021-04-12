@@ -18,7 +18,7 @@
       # endif
     </div>
     # endwith
-    # if show_meta:
+    # if show_meta is undefined or show_meta:
     <ul class="metainfo">
       <li class="metadates">Posted: ${pretty_dateinfo and pretty_dateinfo(post.publish_time) or format_datetime(post.publish_time)}
         # if len(post.versions) > 1:
