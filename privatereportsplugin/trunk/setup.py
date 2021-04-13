@@ -13,7 +13,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='TracPrivateReports',
-    version='1.3.0',
+    version='1.3.1',
     packages=find_packages(),
     author='Michael Henke',
     author_email='michael.henke@she.net',
