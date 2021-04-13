@@ -10,7 +10,7 @@ License: BSD
 from setuptools import setup
 
 setup(name='TracFullBlog',
-      version='0.3.0',
+      version='0.2.0',
       packages=['tracfullblog'],
       author='CodeResort.com = BV Network AS',
       author_email='simon-code@bvnetwork.no',
