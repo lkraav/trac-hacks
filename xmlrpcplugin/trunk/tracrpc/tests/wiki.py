@@ -75,9 +75,8 @@ class RpcWikiTestCase(TracRpcTestCase):
             xmlrpclib.Binary(open(image_url, 'r').read()))
         # Check rendering absolute
         markup_1 = self.admin.wiki.getPageHTML('ImageTest')
-        self.assertEquals('<html><body><p>\n<img src="http://127.0.0.1:8765'
-                '/raw-attachment/wiki/ImageTest/feed.png" alt="test image" '
-                'title="test image" />\n</p>\n</body></html>', markup_1)
+        self.assertTrue(' src="http://127.0.0.1:8765/raw-attachment/wiki/'
+                        'ImageTest/feed.png"' in markup_1, repr(markup_1))
         # Change to relative image reference and check again
         self.admin.wiki.putPage('ImageTest',
                         '[[Image(feed.png, nolink)]]\n', {})

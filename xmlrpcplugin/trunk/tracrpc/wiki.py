@@ -6,6 +6,7 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
+import inspect
 import os
 from datetime import datetime
 
@@ -22,6 +23,15 @@ from tracrpc.api import IXMLRPCHandler, expose_rpc, Binary
 from tracrpc.util import StringIO, to_utimestamp, from_utimestamp
 
 __all__ = ['WikiRPC']
+
+
+if 'remote_addr' in inspect.getargspec(WikiPage.save)[0]:
+    def _page_save(page, author, comment, remote_addr=None, t=None):
+        page.save(author, comment, remote_addr=remote_addr, t=t)
+else:
+    def _page_save(page, author, comment, remote_addr=None, t=None):
+        page.save(author, comment, t=t)
+
 
 class WikiRPC(Component):
     """Superset of the
@@ -151,8 +161,8 @@ class WikiRPC(Component):
         if req.perm(page.resource).has_permission('WIKI_ADMIN'):
             page.readonly = attributes.get('readonly') and 1 or 0
 
-        page.save(attributes.get('author', req.authname),
-                  attributes.get('comment'), req.remote_addr)
+        _page_save(page, attributes.get('author', req.authname),
+                   attributes.get('comment'), remote_addr=req.remote_addr)
         return True
 
     def deletePage(self, req, name, version=None):
