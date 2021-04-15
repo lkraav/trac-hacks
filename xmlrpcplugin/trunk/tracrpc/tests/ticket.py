@@ -316,7 +316,8 @@ class RpcTicketTestCase(TracRpcTestCase):
                     {'_ts': str(to_utimestamp(then)),
                      'action': 'leave'})
         except Exception as e:
-            self.assertTrue("modified by someone else" in str(e))
+            self.assertTrue("Your changes have not been saved" in str(e) or
+                            "modified by someone else" in str(e), str(e))
         self.admin.ticket.delete(tid)
 
     def test_update_time_same(self):

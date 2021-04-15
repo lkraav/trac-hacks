@@ -7,31 +7,46 @@ License: BSD
 """
 
 import inspect
+import pkg_resources
 from datetime import datetime
 
 import genshi
 
+from trac import __version__
 from trac.attachment import Attachment
-from trac.core import *
-from trac.perm import PermissionError
+from trac.core import Component, TracError, implements
 from trac.resource import Resource, ResourceNotFound
 import trac.ticket.model as model
 import trac.ticket.query as query
 from trac.ticket.api import TicketSystem
-try:
-    from trac.ticket.notification import TicketNotifyEmail
-    notify_available = True
-except ImportError:
-    notify_available = False
 from trac.ticket.web_ui import TicketModule
 from trac.web.chrome import add_warning
 from trac.util.datefmt import to_datetime, utc
-from trac.util.text import to_unicode
+from trac.util.text import exception_to_unicode, to_unicode
 
-from tracrpc.api import IXMLRPCHandler, expose_rpc, Binary
+try:
+    from trac.notification.api import NotificationSystem
+except ImportError:
+    from trac.ticket.notification import TicketNotifyEmail
+    NotificationSystem = TicketChangeEvent = None
+else:
+    from trac.ticket.notification import TicketChangeEvent
+    TicketNotifyEmail = None
+
+from tracrpc.api import IXMLRPCHandler, Binary
 from tracrpc.util import StringIO, to_utimestamp, from_utimestamp
 
 __all__ = ['TicketRPC']
+
+
+_parsed_version = pkg_resources.parse_version(__version__)
+
+if _parsed_version >= pkg_resources.parse_version('0.12'):
+    _ticket_created = lambda ticket: ticket['time']
+    _ticket_changed = lambda ticket: ticket['changetime']
+else:
+    _ticket_created = lambda ticket: ticket.time_created
+    _ticket_changed = lambda ticket: ticket.time_changed
 
 
 class TicketRPC(Component):
@@ -158,8 +173,9 @@ class TicketRPC(Component):
         """ Fetch a ticket. Returns [id, time_created, time_changed, attributes]. """
         t = model.Ticket(self.env, id)
         req.perm(t.resource).require('TICKET_VIEW')
-        t['_ts'] = str(to_utimestamp(t.time_changed))
-        return (t.id, t.time_created, t.time_changed, t.values)
+        changetime = _ticket_changed(t)
+        t['_ts'] = str(to_utimestamp(changetime))
+        return (t.id, _ticket_created(t), changetime, t.values)
 
     def create(self, req, summary, description, attributes={}, notify=False, when=None):
         """ Create a new ticket, returning the ticket ID.
@@ -178,19 +194,10 @@ class TicketRPC(Component):
         if when and not 'TICKET_ADMIN' in req.perm:
             self.log.warn("RPC ticket.create: %r not allowed to create with "
                           "non-current timestamp (%r)", req.authname, when)
-            when = None
+            when = to_datetime(None, utc)
         t.insert(when=when)
         if notify:
-            if notify_available:
-                try:
-                    tn = TicketNotifyEmail(self.env)
-                    tn.notify(t, newticket=True)
-                except Exception as e:
-                    self.log.exception("Failure sending notification on creation "
-                                       "of ticket #%s: %s", t.id, e)
-            else:
-                self.log.info("Ticket notification system not available. "
-                              "Not sending notification for ticket creation of #%s" % t.id)
+            self._notify_created_event(t, when, req.authname)
         return t.id
 
     def update(self, req, id, comment, attributes={}, notify=False, author='', when=None):
@@ -229,8 +236,8 @@ class TicketRPC(Component):
                              "has no workflow 'action'.", id, req.authname)
             req.perm(t.resource).require('TICKET_MODIFY')
             time_changed = attributes.pop('_ts', None)
-            if time_changed and \
-                    str(time_changed) != str(to_utimestamp(t.time_changed)):
+            if time_changed and str(time_changed) != \
+                                    str(to_utimestamp(_ticket_changed(t))):
                 raise TracError("Ticket has been updated since last get().")
             for k, v in attributes.iteritems():
                 t[k] = v
@@ -239,7 +246,8 @@ class TicketRPC(Component):
             ts = TicketSystem(self.env)
             tm = TicketModule(self.env)
             # TODO: Deprecate update without time_changed timestamp
-            time_changed = attributes.pop('_ts', to_utimestamp(t.time_changed))
+            time_changed = attributes.pop('_ts',
+                                          to_utimestamp(_ticket_changed(t)))
             try:
                 time_changed = int(time_changed)
             except ValueError:
@@ -277,16 +285,7 @@ class TicketRPC(Component):
                 for controller in controllers:
                     controller.apply_action_side_effects(req, t, action)
         if notify:
-            if notify_available:
-                try:
-                    tn = TicketNotifyEmail(self.env)
-                    tn.notify(t, newticket=False, modtime=when)
-                except Exception as e:
-                    self.log.exception("Failure sending notification on change of "
-                                       "ticket #%s: %s", t.id, e)
-            else:
-                self.log.info("Ticket notification system not available. "
-                              "Not sending notification for ticket update of #%s" % t.id)
+            self._notify_changed_event(t, when, author, comment)
         return self.get(req, t.id)
 
     def delete(self, req, id):
@@ -306,7 +305,6 @@ class TicketRPC(Component):
     def listAttachments(self, req, ticket):
         """ Lists attachments for a given ticket. Returns (filename,
         description, size, time, author) for each attachment."""
-        attachments = []
         for a in Attachment.select(self.env, 'ticket', ticket):
             if 'ATTACHMENT_VIEW' in req.perm(a.resource):
                 yield (a.filename, a.description, a.size, a.date, a.author)
@@ -348,6 +346,40 @@ class TicketRPC(Component):
     def getTicketFields(self, req):
         """ Return a list of all ticket fields fields. """
         return TicketSystem(self.env).get_ticket_fields()
+
+    # Internal methods
+
+    def _notify_created_event(self, ticket, when, author):
+        self._notify_event(ticket, when, author, True, None)
+
+    def _notify_changed_event(self, ticket, when, author, comment):
+        self._notify_event(ticket, when, author, False, comment)
+
+    if NotificationSystem:
+        def _notify_event(self, ticket, when, author, newticket, comment):
+            if newticket:
+                event = TicketChangeEvent('created', ticket, when, author)
+            else:
+                event = TicketChangeEvent('changed', ticket, when, author,
+                                          comment)
+            try:
+                NotificationSystem(self.env).notify(event)
+            except Exception as e:
+                self.log.warning("Failure sending notification on %s of "
+                                 "ticket #%s: %s",
+                                 'creation' if newticket else 'change',
+                                 ticket.id, exception_to_unicode(e))
+
+    else:
+        def _notify_event(self, ticket, when, author, newticket, comment):
+            try:
+                tn = TicketNotifyEmail(self.env)
+                tn.notify(ticket, newticket=newticket, modtime=when)
+            except Exception as e:
+                self.log.exception("Failure sending notification on %s of "
+                                   "ticket #%s: %s",
+                                   'creation' if newticket else 'change',
+                                   ticket.id, exception_to_unicode(e))
 
 
 class StatusRPC(Component):
