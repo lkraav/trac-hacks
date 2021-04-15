@@ -14,7 +14,7 @@ from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.html import tag
-from trac.util.text import to_unicode
+from trac.util.text import to_unicode, to_utf8
 from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
@@ -82,11 +82,13 @@ class RPCWeb(Component):
             return self._dump_docs(req)
         else:
             # Attempt at API call gone wrong. Raise a plain-text 415 error
-            body = "No protocol matching Content-Type '%s' at path '%s'." % (
-                                                content_type, req.path_info)
+            body = "No protocol matching Content-Type '%s' at path '%s'." % \
+                   (content_type, req.path_info)
             self.log.error(body)
-            req.send_error(None, template='', content_type='text/plain',
-                    status=HTTPUnsupportedMediaType.code, env=None, data=body)
+            # Close connection without reading request body
+            req.send_header('Connection', 'close')
+            req.send(to_utf8(body), 'text/plain',
+                     HTTPUnsupportedMediaType.code)
 
     # Internal methods
 
@@ -229,9 +231,7 @@ class RPCWeb(Component):
         method_name = req.rpc and req.rpc.get('method') or '(undefined)'
         body = "Unhandled protocol error calling '%s': %s" % (
                                         method_name, to_unicode(e))
-        req.send_error(None, template='', content_type='text/plain',
-                            env=None, data=body,
-                            status=HTTPInternalServerError.code)
+        req.send(to_utf8(body), 'text/plain', HTTPInternalServerError.code)
 
     # ITemplateProvider methods
 

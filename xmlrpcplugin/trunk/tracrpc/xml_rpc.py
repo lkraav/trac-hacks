@@ -16,12 +16,12 @@ try:
     import babel
 except ImportError:
     babel = None
-import genshi
 
 from trac.core import *
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
+from trac.util.html import Fragment, Markup
 from trac.util.text import to_unicode
 from trac.web.api import RequestDone
 
@@ -210,7 +210,7 @@ class XmlRpcProtocol(Component):
         1. None => ''
         2. datetime => xmlrpclib.DateTime
         3. Binary => xmlrpclib.Binary
-        4. genshi.builder.Fragment|genshi.core.Markup => unicode
+        4. Fragment|Markup => unicode
         """
         new_result = []
         for res in result:
@@ -221,8 +221,7 @@ class XmlRpcProtocol(Component):
                 new_result.append(res)
             elif res is None or res is empty:
                 new_result.append('')
-            elif isinstance(res, (genshi.builder.Fragment, \
-                                  genshi.core.Markup)):
+            elif isinstance(res, (Fragment, Markup)):
                 new_result.append(to_unicode(res))
             elif babel and isinstance(res, babel.support.LazyProxy):
                 new_result.append(to_unicode(res))

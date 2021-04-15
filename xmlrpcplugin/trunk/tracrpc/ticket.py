@@ -9,8 +9,6 @@ License: BSD
 import inspect
 from datetime import datetime
 
-import genshi
-
 from trac.attachment import Attachment
 from trac.core import Component, TracError, implements
 from trac.resource import Resource, ResourceNotFound
@@ -20,6 +18,7 @@ from trac.ticket.api import TicketSystem
 from trac.ticket.web_ui import TicketModule
 from trac.web.chrome import add_warning
 from trac.util.datefmt import to_datetime, utc
+from trac.util.html import Element, Fragment
 from trac.util.text import exception_to_unicode, to_unicode
 
 try:
@@ -123,7 +122,7 @@ class TicketRPC(Component):
         t = model.Ticket(self.env, id)
         actions = []
         for action in ts.get_available_actions(req, t):
-            fragment = genshi.builder.Fragment()
+            fragment = Fragment()
             hints = []
             first_label = None
             for controller in ts.action_controllers:
@@ -131,12 +130,12 @@ class TicketRPC(Component):
                                 in controller.get_ticket_actions(req, t)]:
                     label, widget, hint = \
                         controller.render_ticket_action_control(req, t, action)
-                    fragment += widget
+                    fragment.append(widget)
                     hints.append(to_unicode(hint).rstrip('.') + '.')
                     first_label = first_label == None and label or first_label
             controls = []
             for elem in fragment.children:
-                if not isinstance(elem, genshi.builder.Element):
+                if not isinstance(elem, Element):
                     continue
                 if elem.tag == 'input':
                     controls.append((elem.attrib.get('name'),
