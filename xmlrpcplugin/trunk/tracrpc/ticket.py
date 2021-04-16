@@ -12,13 +12,12 @@ from datetime import datetime
 from trac.attachment import Attachment
 from trac.core import Component, TracError, implements
 from trac.resource import Resource, ResourceNotFound
-import trac.ticket.model as model
-import trac.ticket.query as query
+from trac.ticket import model, query
 from trac.ticket.api import TicketSystem
 from trac.ticket.web_ui import TicketModule
 from trac.web.chrome import add_warning
 from trac.util.datefmt import to_datetime, utc
-from trac.util.html import Element, Fragment
+from trac.util.html import Element, Fragment, Markup
 from trac.util.text import exception_to_unicode, to_unicode
 
 try:
@@ -122,7 +121,7 @@ class TicketRPC(Component):
         t = model.Ticket(self.env, id)
         actions = []
         for action in ts.get_available_actions(req, t):
-            fragment = Fragment()
+            widgets = Fragment()
             hints = []
             first_label = None
             for controller in ts.action_controllers:
@@ -130,28 +129,10 @@ class TicketRPC(Component):
                                 in controller.get_ticket_actions(req, t)]:
                     label, widget, hint = \
                         controller.render_ticket_action_control(req, t, action)
-                    fragment.append(widget)
+                    widgets.append(widget)
                     hints.append(to_unicode(hint).rstrip('.') + '.')
                     first_label = first_label == None and label or first_label
-            controls = []
-            for elem in fragment.children:
-                if not isinstance(elem, Element):
-                    continue
-                if elem.tag == 'input':
-                    controls.append((elem.attrib.get('name'),
-                                    elem.attrib.get('value'), []))
-                elif elem.tag == 'select':
-                    value = ''
-                    options = []
-                    for opt in elem.children:
-                        if not (opt.tag == 'option' and opt.children):
-                            continue
-                        option = opt.children[0]
-                        options.append(option)
-                        if opt.attrib.get('selected'):
-                            value = option
-                    controls.append((elem.attrib.get('name'),
-                                    value, options))
+            controls = self._extract_action_controls(widgets)
             actions.append((action, first_label, " ".join(hints), controls))
         return actions
 
@@ -334,6 +315,44 @@ class TicketRPC(Component):
         return TicketSystem(self.env).get_ticket_fields()
 
     # Internal methods
+
+    def _extract_action_controls(self, widgets):
+
+        def unescape(value):
+            if isinstance(value, Markup):
+                return value.unescape()
+            return value
+
+        def walk(fragment, controls):
+            for child in fragment.children:
+                if isinstance(child, Element):
+                    tag = child.tag
+                    if tag == 'input':
+                        attrib = child.attrib
+                        controls.append((unescape(attrib.get('name')),
+                                         unescape(attrib.get('value')), []))
+                    elif tag == 'select':
+                        selected = ''
+                        options = []
+                        for opt in child.children:
+                            if opt.tag != 'option':
+                                continue
+                            if 'value' in opt.attrib:
+                                option = unescape(opt.attrib.get('value'))
+                            else:
+                                option = ''.join(map(unescape, opt.children))
+                            options.append(option)
+                            if 'selected' in opt.attrib:
+                                selected = option
+                        controls.append((unescape(child.attrib.get('name')),
+                                         selected, options))
+                    continue
+                if isinstance(child, Fragment):
+                    walk(child, controls)
+                    continue
+            return controls
+
+        return walk(widgets, [])
 
     def _notify_created_event(self, ticket, when, author):
         try:
