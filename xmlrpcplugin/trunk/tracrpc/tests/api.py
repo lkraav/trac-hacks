@@ -7,14 +7,9 @@ License: BSD
 
 import os
 import unittest
-import urllib2
 
-from tracrpc.tests import rpc_testenv, TracRpcTestCase
+from . import HTTPError, Request, urlopen, rpc_testenv, TracRpcTestCase
 
-from tracrpc.api import IRPCProtocol
-
-from trac.core import *
-from trac.test import Mock
 
 class ProtocolProviderTestCase(TracRpcTestCase):
 
@@ -25,13 +20,13 @@ class ProtocolProviderTestCase(TracRpcTestCase):
         TracRpcTestCase.tearDown(self)
 
     def test_invalid_content_type(self):
-        req = urllib2.Request(rpc_testenv.url_anon,
+        req = Request(rpc_testenv.url_anon,
                     headers={'Content-Type': 'text/plain'},
                     data='Fail! No RPC for text/plain')
         try:
-            resp = urllib2.urlopen(req)
+            resp = urlopen(req)
             self.fail("Expected urllib2.HTTPError")
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             self.assertEquals(e.code, 415)
             self.assertEquals(e.msg, "Unsupported Media Type")
             self.assertEquals(e.fp.read(),
@@ -39,7 +34,7 @@ class ProtocolProviderTestCase(TracRpcTestCase):
 
     def test_rpc_info(self):
         # Just try getting the docs for XML-RPC to test, it should always exist
-        from tracrpc.xml_rpc import XmlRpcProtocol
+        from ..xml_rpc import XmlRpcProtocol
         xmlrpc = XmlRpcProtocol(rpc_testenv.get_trac_environment())
         name, docs = xmlrpc.rpc_info()
         self.assertEquals(name, 'XML-RPC')
@@ -47,13 +42,13 @@ class ProtocolProviderTestCase(TracRpcTestCase):
 
     def test_valid_provider(self):
         # Confirm the request won't work before adding plugin
-        req = urllib2.Request(rpc_testenv.url_anon,
+        req = Request(rpc_testenv.url_anon,
                         headers={'Content-Type': 'application/x-tracrpc-test'},
                         data="Fail! No RPC for application/x-tracrpc-test")
         try:
-            resp = urllib2.urlopen(req)
+            resp = urlopen(req)
             self.fail("Expected urllib2.HTTPError")
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             self.assertEquals(e.code, 415)
         # Make a new plugin
         provider = os.path.join(rpc_testenv.tracdir, 'plugins', 'DummyProvider.py')
@@ -79,9 +74,9 @@ class ProtocolProviderTestCase(TracRpcTestCase):
             "        req.send(response, rpcreq['mimetype'], 200)\n")
         rpc_testenv.restart()
         try:
-            req = urllib2.Request(rpc_testenv.url_anon,
+            req = Request(rpc_testenv.url_anon,
                         headers={'Content-Type': 'application/x-tracrpc-test'})
-            resp = urllib2.urlopen(req)
+            resp = urlopen(req)
             self.assertEquals(200, resp.code)
             self.assertEquals("Got a result!", resp.read())
             self.assertEquals(resp.headers['Content-Type'],
@@ -116,10 +111,10 @@ class ProtocolProviderTestCase(TracRpcTestCase):
         # Make the request
         try:
             try:
-                req = urllib2.Request(rpc_testenv.url_anon,
+                req = Request(rpc_testenv.url_anon,
                         headers={'Content-Type': 'application/x-tracrpc-test'})
-                resp = urllib2.urlopen(req)
-            except urllib2.HTTPError as e:
+                resp = urlopen(req)
+            except HTTPError as e:
                 self.assertEquals(500, e.code)
                 self.assertEquals("No good.", e.fp.read())
                 self.assertTrue(e.hdrs['Content-Type'].startswith('text/plain'))

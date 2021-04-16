@@ -6,12 +6,11 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
-from trac.core import *
+from trac.core import Component, ExtensionPoint, implements
 from trac.search.api import ISearchSource
 from trac.search.web_ui import SearchModule
-from trac.util.compat import set
 
-from tracrpc.api import IXMLRPCHandler
+from .api import IXMLRPCHandler
 
 __all__ = ['SearchRPC']
 

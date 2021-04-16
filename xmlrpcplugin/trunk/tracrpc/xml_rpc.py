@@ -10,24 +10,23 @@ import datetime
 import re
 import sys
 import time
-import xmlrpclib
 
 try:
     import babel
 except ImportError:
     babel = None
 
-from trac.core import *
+from trac.core import Component, implements
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
 from trac.util.html import Fragment, Markup
-from trac.util.text import to_unicode
+from trac.util.text import empty, exception_to_unicode, to_unicode
 from trac.web.api import RequestDone
 
-from tracrpc.api import XMLRPCSystem, IRPCProtocol, Binary, \
-        RPCError, MethodNotFound, ProtocolException, ServiceException
-from tracrpc.util import empty, prepare_docs
+from .api import (IRPCProtocol, Binary, MethodNotFound, ProtocolException,
+                  ServiceException)
+from .util import basestring, prepare_docs, unichr, xmlrpclib
 
 __all__ = ['XmlRpcProtocol']
 
@@ -152,12 +151,7 @@ class XmlRpcProtocol(Component):
         if fault is not None:
             self._send_response(req, xmlrpclib.dumps(fault), rpcreq['mimetype'])
         else:
-            self.log.error(e)
-            import traceback
-            from tracrpc.util import StringIO
-            out = StringIO()
-            traceback.print_exc(file = out)
-            self.log.error(out.getvalue())
+            self.log.error('%s%s', e, exception_to_unicode(e, traceback=True))
             err_code = hasattr(e, 'code') and e.code or 1
             method = rpcreq.get('method')
             self._send_response(req,

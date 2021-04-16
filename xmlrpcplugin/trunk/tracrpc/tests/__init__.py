@@ -8,9 +8,20 @@ License: BSD
 import unittest
 import os
 import time
-import urllib2
+try:
+    from urllib.request import Request
+except ImportError:
+    from urllib2 import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm,
+                         HTTPError, Request, build_opener, urlopen)
+    from urlparse import urlparse, urlsplit
+else:
+    from urllib.error import HTTPError
+    from urllib.parse import urlparse, urlsplit
+    from urllib.request import (HTTPBasicAuthHandler,
+                                HTTPPasswordMgrWithDefaultRealm, build_opener,
+                                urlopen)
 
-from tracrpc.util import PY24
+from ..util import PY24
 
 try:
     from trac.tests.functional.svntestenv import SvnFunctionalTestEnvironment
@@ -35,7 +46,7 @@ try:
             self.getLogger = lambda : env.log
             self._tracadmin('permission', 'add', 'anonymous', 'XML_RPC')
             print("Created test environment: %s" % self.dirname)
-            parts = urllib2.urlparse.urlsplit(self.url)
+            parts = urlsplit(self.url)
             # Regular URIs
             self.url_anon = '%s://%s/rpc' % (parts[0], parts[1])
             self.url_auth = '%s://%s/login/rpc' % (parts[0], parts[1])
@@ -117,8 +128,10 @@ else :
                 raise self.failureException("\n\nExpected %s\n\nGot %s : %s" % (
                                         excName, e.__class__.__name__, excMsg))
             else:
-                if hasattr(excClass,'__name__'): excName = excClass.__name__
-                else: excName = str(excClass)
-                raise self.failureException, "Expected %s\n\nNothing raised" % excName
+                excName = excClass.__name__ \
+                          if hasattr(excClass,'__name__') else \
+                          str(excClass)
+                raise self.failureException("Expected %s\n\nNothing raised" %
+                                            excName)
 
         assertRaises = failUnlessRaises

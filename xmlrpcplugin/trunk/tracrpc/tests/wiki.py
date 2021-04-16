@@ -6,15 +6,12 @@ License: BSD
 """
 
 import unittest
-
-import xmlrpclib
+import io
 import os
 import time
 
-from trac.util.compat import sorted
-
-from tracrpc.tests import rpc_testenv, TracRpcTestCase
-from tracrpc.util import StringIO
+from ..util import xmlrpclib
+from . import rpc_testenv, TracRpcTestCase
 
 class RpcWikiTestCase(TracRpcTestCase):
 
@@ -29,9 +26,10 @@ class RpcWikiTestCase(TracRpcTestCase):
 
     def test_attachments(self):
         # Note: Quite similar to the tracrpc.tests.json.JsonTestCase.test_binary
-        image_url = os.path.join(rpc_testenv.trac_src, 'trac',
-                             'htdocs', 'feed.png')
-        image_in = StringIO(open(image_url, 'r').read())
+        image_url = os.path.join(rpc_testenv.trac_src, 'trac', 'htdocs',
+                                 'feed.png')
+        with open(image_url, 'rb') as f:
+            image_in = io.BytesIO(f.read())
         # Create attachment
         self.admin.wiki.putAttachmentEx('TitleIndex', 'feed2.png', 'test image',
             xmlrpclib.Binary(image_in.getvalue()))

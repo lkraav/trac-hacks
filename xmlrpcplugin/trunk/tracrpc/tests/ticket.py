@@ -6,15 +6,16 @@ License: BSD
 """
 
 import unittest
-
-import xmlrpclib
 import os
 import shutil
 import datetime
 import time
 
-from tracrpc.xml_rpc import to_xmlrpc_datetime
-from tracrpc.tests import rpc_testenv, TracRpcTestCase
+from trac.util.datefmt import to_datetime, to_utimestamp, utc
+
+from ..util import xmlrpclib
+from ..xml_rpc import from_xmlrpc_datetime, to_xmlrpc_datetime
+from . import Request, TracRpcTestCase, rpc_testenv, urlopen
 
 class RpcTicketTestCase(TracRpcTestCase):
 
@@ -124,11 +125,9 @@ class RpcTicketTestCase(TracRpcTestCase):
         self.assertTrue(self.user.ticket.update(1, "ok"))
         self.assertTrue(self.user.ticket.update(2, "ok"))
         # Enable security policy and test
-        from trac.core import Component, implements
-        from trac.perm import IPermissionPolicy
         policy = os.path.join(rpc_testenv.tracdir, 'plugins', 'TicketPolicy.py')
         open(policy, 'w').write(
-        "from trac.core import *\n"
+        "from trac.core import Component, implements\n"
         "from trac.perm import IPermissionPolicy\n"
         "class TicketPolicy(Component):\n"
         "    implements(IPermissionPolicy)\n"
@@ -236,7 +235,6 @@ class RpcTicketTestCase(TracRpcTestCase):
         self.admin.ticket.delete(tid)
 
     def test_create_at_time(self):
-        from tracrpc.util import to_datetime, utc
         now = to_datetime(None, utc)
         minus1 = to_xmlrpc_datetime(now - datetime.timedelta(days=1))
         # create the tickets (user ticket will not be permitted to change time)
@@ -253,7 +251,6 @@ class RpcTicketTestCase(TracRpcTestCase):
         self.admin.ticket.delete(two)
 
     def test_update_at_time(self):
-        from tracrpc.util import to_datetime, utc
         now = to_datetime(None, utc)
         minus1 = to_xmlrpc_datetime(now - datetime.timedelta(hours=1))
         minus2 = to_xmlrpc_datetime(now - datetime.timedelta(hours=2))
@@ -298,9 +295,6 @@ class RpcTicketTestCase(TracRpcTestCase):
 
     def test_update_time_changed(self):
         # Update with collision check
-        import datetime
-        from tracrpc.util import to_utimestamp
-        from tracrpc.xml_rpc import from_xmlrpc_datetime
         tid = self.admin.ticket.create('test_update_time_changed', '...', {})
         tid, created, modified, attrs = self.admin.ticket.get(tid)
         then = from_xmlrpc_datetime(modified) - datetime.timedelta(minutes=1)
@@ -371,7 +365,7 @@ class RpcTicketTestCase(TracRpcTestCase):
 
     def test_create_ticket_9096(self):
         # See http://trac-hacks.org/ticket/9096
-        import urllib2, base64
+        import base64
         body = """<?xml version="1.0"?>
                     <methodCall>
                         <methodName>ticket.create</methodName>
@@ -380,13 +374,13 @@ class RpcTicketTestCase(TracRpcTestCase):
                             <param><string>test desc</string></param>
                         </params>
                     </methodCall>"""
-        request = urllib2.Request(rpc_testenv.url + '/login/rpc', data=body)
+        request = Request(rpc_testenv.url + '/login/rpc', data=body)
         request.add_header('Content-Type', 'application/xml')
         request.add_header('Content-Length', str(len(body)))
         request.add_header('Authorization', 'Basic %s' \
                                  % base64.encodestring('admin:admin')[:-1])
         self.assertEquals('POST', request.get_method())
-        response = urllib2.urlopen(request)
+        response = urlopen(request)
         self.assertEquals(200, response.code)
         self.assertEquals("<?xml version='1.0'?>\n"
                           "<methodResponse>\n"
@@ -430,7 +424,6 @@ class RpcTicketVersionTestCase(TracRpcTestCase):
         TracRpcTestCase.tearDown(self)
 
     def test_create(self):
-        from tracrpc.util import to_datetime, utc
         dt = to_xmlrpc_datetime(to_datetime(None, utc))
         desc = "test version"
         v = self.admin.ticket.version.create('9.99',

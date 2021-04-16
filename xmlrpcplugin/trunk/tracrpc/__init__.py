@@ -8,7 +8,7 @@ License: BSD
 
 import pkg_resources
 
-pkg_resources.require('Trac >= 1.0')
+pkg_resources.require('Trac>=1.0')
 
 from tracrpc.api import *
 from tracrpc.json_rpc import *
@@ -23,6 +23,6 @@ __author__ = ['Alec Thomas <alec@swapoff.org>',
 __license__ = 'BSD'
 
 try:
-    __version__ = __import__('pkg_resources').get_distribution('TracXMLRPC').version
+    __version__ = pkg_resources.get_distribution('TracXMLRPC').version
 except (ImportError, pkg_resources.DistributionNotFound):
     pass

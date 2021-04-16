@@ -8,17 +8,17 @@ License: BSD
 
 import inspect
 import re
-import types
 from datetime import datetime
-import xmlrpclib
 
-from trac.core import *
+from trac.core import (Component, ExtensionPoint, Interface, TracError,
+                       implements)
 from trac.perm import IPermissionRequestor
+
+from .util import basestring, unicode, xmlrpclib
 
 __all__ = ['expose_rpc', 'IRPCProtocol', 'IXMLRPCHandler', 'AbstractRPCHandler',
             'Method', 'XMLRPCSystem', 'Binary', 'RPCError', 'MethodNotFound',
             'ProtocolException', 'ServiceException']
-
 
 class Binary(xmlrpclib.Binary):
     """ RPC Binary type. Currently == xmlrpclib.Binary. """

@@ -10,12 +10,14 @@ import sys
 
 from setuptools import setup, find_packages
 
-try :
+test_deps = []
+if sys.version_info[0] == 2:
+    test_deps.append('twill')
+
+try:
     import crypt
-except ImportError :
-    test_deps = ['twill', 'fcrypt']
-else :
-    test_deps = ['twill']
+except ImportError:
+    test_deps.append('fcrypt')
 
 setup(
     name='TracXMLRPC',
@@ -28,16 +30,16 @@ setup(
     url='https://trac-hacks.org/wiki/XmlRpcPlugin',
     description='RPC interface to Trac',
     zip_safe=True,
-    test_suite = 'tracrpc.tests.test_suite',
-    tests_require = test_deps,
+    test_suite='tracrpc.tests.test_suite',
+    tests_require=test_deps,
     packages=find_packages(exclude=['*.tests']),
     package_data={
         'tracrpc': ['templates/*.html', 'htdocs/*.js', 'htdocs/*.css']
-        },
+    },
     classifiers=[
         'Framework :: Trac',
     ],
     entry_points={
-        'trac.plugins': 'TracXMLRPC = tracrpc'
-        },
-    )
+        'trac.plugins': 'TracXMLRPC = tracrpc',
+    },
+)

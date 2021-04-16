@@ -7,6 +7,7 @@ License: BSD
 """
 
 import inspect
+import io
 from datetime import datetime
 
 from trac.attachment import Attachment
@@ -16,7 +17,7 @@ from trac.ticket import model, query
 from trac.ticket.api import TicketSystem
 from trac.ticket.web_ui import TicketModule
 from trac.web.chrome import add_warning
-from trac.util.datefmt import to_datetime, utc
+from trac.util.datefmt import from_utimestamp, to_datetime, to_utimestamp, utc
 from trac.util.html import Element, Fragment, Markup
 from trac.util.text import exception_to_unicode, to_unicode
 
@@ -29,8 +30,7 @@ else:
     from trac.ticket.notification import TicketChangeEvent
     TicketNotifyEmail = None
 
-from tracrpc.api import IXMLRPCHandler, Binary
-from tracrpc.util import StringIO, to_utimestamp, from_utimestamp
+from .api import IXMLRPCHandler, Binary
 
 __all__ = ['TicketRPC']
 
@@ -298,7 +298,7 @@ class TicketRPC(Component):
         req.perm(attachment.resource).require('ATTACHMENT_CREATE')
         attachment.author = req.authname
         attachment.description = description
-        attachment.insert(filename, StringIO(data.data), len(data.data))
+        attachment.insert(filename, io.BytesIO(data.data), len(data.data))
         return attachment.filename
 
     def deleteAttachment(self, req, ticket, filename):

@@ -7,20 +7,21 @@ License: BSD
 """
 
 import inspect
+import io
 import os
 from datetime import datetime
 
 from trac.attachment import Attachment
-from trac.core import *
+from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.resource import Resource, ResourceNotFound
+from trac.util.datefmt import from_utimestamp, to_utimestamp
 from trac.util.text import to_unicode
 from trac.web.chrome import web_context
 from trac.wiki.api import WikiSystem, IWikiPageManipulator
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import format_to_html
 
-from tracrpc.api import IXMLRPCHandler, expose_rpc, Binary
-from tracrpc.util import StringIO, to_utimestamp, from_utimestamp
+from .api import IXMLRPCHandler, Binary
 
 __all__ = ['WikiRPC']
 
@@ -205,7 +206,7 @@ class WikiRPC(Component):
         
         Use this method if you don't care about WikiRPC compatibility. """
         if not WikiPage(self.env, pagename).exists:
-            raise ResourceNotFound, 'Wiki page "%s" does not exist' % pagename
+            raise ResourceNotFound('Wiki page "%s" does not exist' % pagename)
         if replace:
             try:
                 attachment = Attachment(self.env, 'wiki', pagename, filename)
@@ -217,14 +218,14 @@ class WikiRPC(Component):
         req.perm(attachment.resource).require('ATTACHMENT_CREATE')
         attachment.author = req.authname
         attachment.description = description
-        attachment.insert(filename, StringIO(data.data), len(data.data))
+        attachment.insert(filename, io.BytesIO(data.data), len(data.data))
         return attachment.filename
 
     def deleteAttachment(self, req, path):
         """ Delete an attachment. """
         pagename, filename = os.path.split(path)
         if not WikiPage(self.env, pagename).exists:
-            raise ResourceNotFound, 'Wiki page "%s" does not exist' % pagename
+            raise ResourceNotFound('Wiki page "%s" does not exist' % pagename)
         attachment = Attachment(self.env, 'wiki', pagename, filename)
         req.perm(attachment.resource).require('ATTACHMENT_DELETE')
         attachment.delete()

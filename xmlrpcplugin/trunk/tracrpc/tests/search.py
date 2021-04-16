@@ -7,13 +7,13 @@ License: BSD
 
 import unittest
 
-import xmlrpclib
 import os
 import shutil
 import datetime
 import time
 
-from tracrpc.tests import rpc_testenv, TracRpcTestCase
+from ..util import xmlrpclib
+from . import rpc_testenv, TracRpcTestCase
 
 class RpcSearchTestCase(TracRpcTestCase):
 

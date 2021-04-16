@@ -8,10 +8,14 @@ License: BSD
 import os
 import sys
 import unittest
+from datetime import datetime
 
-import xmlrpclib
+from trac.util.datefmt import to_datetime, utc
 
-from tracrpc.tests import rpc_testenv, TracRpcTestCase
+from ..util import xmlrpclib
+from ..xml_rpc import (to_xmlrpc_datetime, from_xmlrpc_datetime,
+                       _illegal_unichrs, REPLACEMENT_CHAR)
+from . import rpc_testenv, TracRpcTestCase
 
 class RpcXmlTestCase(TracRpcTestCase):
 
@@ -75,9 +79,6 @@ class RpcXmlTestCase(TracRpcTestCase):
         self.admin.ticket.delete(t_id)
 
     def test_to_and_from_datetime(self):
-        from datetime import datetime
-        from trac.util.datefmt import to_datetime, utc
-        from tracrpc.xml_rpc import to_xmlrpc_datetime, from_xmlrpc_datetime
         now = to_datetime(None, utc)
         now_timetuple = now.timetuple()[:6]
         xmlrpc_now = to_xmlrpc_datetime(now)
@@ -130,8 +131,6 @@ class RpcXmlTestCase(TracRpcTestCase):
         "    def unichr(self, req, code):\n"
         "        return (r'\U%08x' % code).decode('unicode-escape')\n")
         rpc_testenv.restart()
-
-        from tracrpc.xml_rpc import _illegal_unichrs, REPLACEMENT_CHAR
 
         for low, high in _illegal_unichrs:
             for x in (low, (low + high) / 2, high):

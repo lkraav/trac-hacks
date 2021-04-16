@@ -6,7 +6,6 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
-import sys
 from types import GeneratorType
 from pkg_resources import resource_filename
 
@@ -14,16 +13,16 @@ from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.html import tag
-from trac.util.text import to_unicode, to_utf8
+from trac.util.text import exception_to_unicode, to_unicode, to_utf8
 from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
                             add_stylesheet, add_script, Chrome, web_context
 from trac.wiki.formatter import format_to_oneliner
 
-from tracrpc.api import XMLRPCSystem, IRPCProtocol, ProtocolException, \
-                        ServiceException
-from tracrpc.util import accepts_mimetype, exception_to_unicode
+from .api import (XMLRPCSystem, IRPCProtocol, ProtocolException,
+                  ServiceException)
+from .util import accepts_mimetype
 
 try:
     from trac.web.api import HTTPInternalError as HTTPInternalServerError
@@ -115,12 +114,8 @@ class RPCWeb(Component):
                             method.description),
                         method.permission))
             except Exception as e:
-                from tracrpc.util import StringIO
-                import traceback
-                out = StringIO()
-                traceback.print_exc(file=out)
-                raise Exception('%s: %s\n%s' % (method.name,
-                                                str(e), out.getvalue()))
+                raise Exception('%s: %s%s' % (method.name, e,
+                                exception_to_unicode(e, traceback=True)))
         add_stylesheet(req, 'common/css/wiki.css')
         add_stylesheet(req, 'tracrpc/rpc.css')
         add_script(req, 'tracrpc/rpc.js')
@@ -198,15 +193,14 @@ class RPCWeb(Component):
                 result = (XMLRPCSystem(self.env).get_method(method_name)(req, args))[0]
                 if isinstance(result, GeneratorType):
                     result = list(result)
-            except (TracError, PermissionError, ResourceNotFound) as e:
+            except (TracError, PermissionError, ResourceNotFound):
                 raise
-            except Exception:
-                e, tb = sys.exc_info()[-2:]
+            except Exception as e:
                 self.log.error("RPC(%s) [%s] Exception caught while calling "
                                "%s(*%r) by %s%s", proto_id, req.remote_addr,
                                method_name, args, req.authname,
                                exception_to_unicode(e, traceback=True))
-                raise ServiceException(e), None, tb
+                raise ServiceException(e)
             else :
                 protocol.send_rpc_result(req, result)
         except RequestDone :
