@@ -1,5 +1,7 @@
 # Copyright (c) Jeff Hammel
 # Copyright (c) 2010, Rowan Wookey www.obsidianproject.co.uk
+# Copyright (c) 2012-2019, Ryan J Ollos
+# Copyright (c) 2021 Cinc
 #
 # All rights reserved.
 #
@@ -36,8 +38,8 @@ setup(name='TracLoomingClouds',
       description="Inline tag cloud for tickets",
       author='Jeff Hammel',
       author_email='jhammel@openplans.org',
-      maintainer='Rowan Wookey',
-      maintainer_email='support@obsidianproject.co.uk',
+      maintainer='',
+      maintainer_email='',
       url='https://trac-hacks.org/wiki/LoomingCloudsPlugin',
       keywords='trac plugin',
       license='3-Clause BSD',
@@ -48,6 +50,6 @@ setup(name='TracLoomingClouds',
       install_requires=['TracTags'],
       entry_points="""
       [trac.plugins]
-      loomingclouds = loomingclouds
+      loomingclouds = loomingclouds.loomingclouds
       """,
       )

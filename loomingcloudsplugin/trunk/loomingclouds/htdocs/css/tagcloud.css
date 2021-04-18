@@ -7,3 +7,17 @@
  overflow:hidden;
  } /* tag cloud within properties shouldn't have margin or padding */
 
+#properties table .tag-cloud-filler {
+ font-size: 80%;
+}
+
+#properties table .tag-cloud-div {
+  margin-left: 5%;
+}
+
+#properties table .tag-cloud-div span{
+  color: grey;
+  font-size: 75%;
+}
+
+

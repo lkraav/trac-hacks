@@ -1,6 +1,3 @@
-import pkg_resources
+from pkg_resources import require
 
-from loomingclouds import *
-from autocompletetags import *
-
-pkg_resources.require('Trac >= 1.4')
+require('Trac >= 1.4')
