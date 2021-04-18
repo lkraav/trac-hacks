@@ -32,7 +32,7 @@ from setuptools import find_packages, setup
 
 
 setup(name='TracLoomingClouds',
-      version='1.0',
+      version='1.1.0',
       description="Inline tag cloud for tickets",
       author='Jeff Hammel',
       author_email='jhammel@openplans.org',
