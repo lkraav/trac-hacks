@@ -1,0 +1,214 @@
+<div xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:py="http://genshi.edgewall.org/"
+     xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+    <py:def function="sortable_th(order, desc, class_, title)">
+        <th class="$class_${order == class_ and (desc and ' desc' or ' asc') or ''}">
+            <a title="Sort by $class_${order == class_ and not desc and
+                                             ' (descending)' or ''}"
+               href="${href.peerReviewBrowser(path, rev=stickyrev, order=(class_ != 'name' and class_ or None),
+                                                   desc=(class_ == order and not desc and 1 or None))}">$title</a>
+        </th>
+    </py:def>
+
+    <py:def function="sizeinfo(size)">
+        <span title="${_('%(size)s bytes', size=size)}">
+            ${pretty_size(size)}</span>
+    </py:def>
+
+    <div id="repo" class="browser" py:if="norepo">
+        <div class="warning system-message"><p class="">$norepo</p>
+        </div>
+    </div>
+
+    <div py:if="show_repo_idx" id="repo_idx">
+        <p class="help">Select a repository from the following list.</p>
+        <table class="listing" id="sel_repo_table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tr py:for="key, val in all_repos.iteritems()">
+                <td><a class="link_repo_idx" href="${browse_url+'?repo='+val.name}">${val.name if val.name else '(default)'}</a></td>
+                <td>${wiki_to_oneliner(context('wiki'), val.description)}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="repo" class="browser" py:if="not norepo and not show_repo_idx">
+        <div>
+            <p py:if="reponame">Current repository: ${repo.reponame}</p>
+            <p py:if="not reponame">Current repository: (default)</p>
+            <p>
+                Current path:
+                <xi:include href="peer_path_links.html"/>
+            </p>
+        </div>
+
+        <div id="jumprev">
+            <div>
+                <label for="switch_rev"
+                       title="${stickyrev and 'Hint: clear the field to view latest revision' or None}">
+                    View revision:</label>
+                <input type="text" id="switch_rev" name="newrev" value="$stickyrev" size="6"/>
+            </div>
+        </div>
+
+        <table py:if="dir" class="listing dirlist" id="dirlist">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th class="name">Name</th>
+                    <th class="size">Size</th>
+                    <th class="rev">Rev</th>
+                    <th class="date">Age</th>
+                    <th class="author">Author</th>
+                    <th class="change">Last Change</th>
+                </tr>
+            </thead>
+            <tbody style="overflow: auto; max-height: 400px">
+                <py:if test="'up' in chrome.links">
+                    <tr class="even">
+                        <td class="name" colspan="7">
+                            <a class="parent" title="Parent Directory" href="${chrome.links.up[0].href}">../</a>
+                        </td>
+                    </tr>
+                </py:if>
+                <py:for each="idx, item in enumerate(dir['items'])">
+                    <py:with vars="change = dir.changes[item.rev]">
+                        <tr class="${idx % 2 and 'even' or 'odd'}">
+                            <td class="'sel">
+                                <input py:if="item.size" class="fileselect" type="checkbox" name="sel"
+                                       data-rev="${item.rev}" value="${item.fullpath}"/>
+                            </td>
+                            <td class="name">
+                                <py:if test="not item.permission">
+                                    <span class="${item.is_dir and 'dir' or 'file'}" title="Access Denied" href="">${item.name}</span>
+                                </py:if>
+                                <py:if test="item.permission">
+                                    <a class="${item.is_dir and 'dir' or 'file'}"
+                                       title="${item.is_dir and 'Browse Directory' or 'View File'}"
+                                       href="${item.browser_href}">${item.name}</a>
+                                </py:if>
+                            </td>
+                            <td class="size">${item.size}</td>
+                            <td class="rev">
+                                <py:if test="not item.permission">${item.rev}</py:if>
+                                <py:if test="item.permission">
+                                    <a title="View Revision Log" href="${item.log_href}">${item.rev}</a>
+                                </py:if>
+                            </td>
+                            <td class="age">
+                                <span title="${dir.changes[item.rev].date}">${dir.changes[item.rev] and dateinfo(dir.changes[item.rev].date) or '-'}</span>
+                            </td>
+                            <td class="author">
+                                ${dir.changes[item.rev].author}
+                            </td>
+                            <td class="change">
+                                <py:if test="wiki_format_messages">
+                                    ${wiki_to_oneliner(context('changeset', item.rev, parent=repo.resource),
+                                    dir.changes[item.rev].message, shorten=True)}
+                                </py:if>
+                                <py:if test="not wiki_format_messages">
+                                    ${shorten_line(dir.changes[item.rev].message)}
+                                </py:if>
+                            </td>
+                        </tr>
+                    </py:with>
+                </py:for>
+            </tbody>
+        </table>
+
+        <!--! Properties -->
+        <table py:if="props or file" id="info" summary="Revision info">
+            <py:if test="file">
+                <tr>
+                    <th scope="row">
+                        Revision <a href="${href.changeset(rev)}">${rev}</a>
+                        (checked in by ${authorinfo(file.changeset.author)}, ${dateinfo(file.changeset.date)} ago)
+                    </th>
+                </tr>
+                <tr>
+                    <td class="message">${file.changeset.message}</td>
+                </tr>
+                <tr>
+                    <td><strong>File Size:</strong> ${sizeinfo(file.size)}</td>
+                </tr>
+            </py:if>
+            <py:if test="props">
+                <tr>
+                    <td colspan="2">
+                        <ul class="props">
+                            <li py:for="prop in props">
+                                Property <strong>${prop.name}</strong> set to
+                                <em><code>${prop.value}</code></em>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+            </py:if>
+        </table>
+        <py:if test="not file">
+            <p class="help">To select a section of a file for review click on the filename to open the file preview.</p>
+            <div id="add-file">
+                <div>
+                    <input type="button" id="addfiles" value="Add selected files" disabled="1"/>
+                </div>
+                <input type="hidden" value="0" id="lineBox1"/>
+                <input type="hidden" value="0" id="lineBox2"/>
+                <input type="hidden" value="$revision" id="fileRevVal" name="revision"/>
+                <input type="hidden" value="$reponame" id="reponame_file" name="repofile"/>
+            </div>
+        </py:if>
+        <!--! The following is only shown for files -->
+        <py:if test="file">
+            <div id="file-preview">
+                <py:if test="not file.preview and file.max_file_size_reached">
+                    <div id="add-file">
+                        <div class="warning system-message">
+                            <p>
+                                <strong>Warning: </strong>No HTML preview is available (the file size exceeds
+                                ${sizeinfo(file.max_file_size)}) - you cannot add it to a code review.
+                            </p>
+                        </div>
+                        <p class="help">The allowed filesize can be set by an administrator.</p>
+                    </div>
+                </py:if>
+                <py:if test="not file.preview and not file.max_file_size_reached">
+                    <div id="add-file">
+                        <div class="warning system-message">
+                            <p>
+                                <strong>Warning: </strong>No HTML preview is available for this file - you cannot add it
+                                to a code review.
+                            </p>
+                        </div>
+                    </div>
+                </py:if>
+                <py:if test="file.preview">${file.preview}
+                </py:if>
+            </div>
+            <div id="add-file" py:if="file.preview">
+                <input type="hidden" value="$reponame" id="reponame_file" name="repofile"/>
+                <p class="help">Click on the line numbers to select start and end of the section.</p>
+
+                <div>
+                    <input type="button" onclick="addFile('${path}')" value="Add File" disabled="true"
+                           id="addFileButton"/> &nbsp;&nbsp;
+                </div>
+                <div class="field">
+                    <label>Start Line: <input type="text" onkeypress="lineEnter(event);" value=""
+                                              size="5" id="lineBox1" onchange="addButtonEnable();"/>
+                    </label>
+                    <label>End Line: <input type="text" onkeypress="lineEnter(event);" value=""
+                                            size="5" id="lineBox2" onchange="addButtonEnable();"/>
+                    </label>
+                </div>
+                <input type="hidden" name="revision" value="$revision" id="fileRevVal"/>
+            </div>
+
+        </py:if>
+
+    </div>
+</div>

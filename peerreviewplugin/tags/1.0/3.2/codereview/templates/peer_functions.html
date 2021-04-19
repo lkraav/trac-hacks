@@ -1,0 +1,66 @@
+<div xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:py="http://genshi.edgewall.org/"
+     xmlns:xi="http://www.w3.org/2001/XInclude"
+     xmlns:i18n="http://genshi.edgewall.org/i18n"
+     py:strip="">
+
+    <py:def function="review_info(review)">
+        <table class="info-table">
+            <tbody>
+            <tr>
+                <th>Name:</th>
+                <td><a href="${req.href.peerreviewview(review['review_id'])}">${review['name']}</a></td>
+            </tr>
+            <tr>
+                <th>Status:</th>
+                <td>${review['status']}</td>
+            </tr>
+            <tr>
+                <th>ID:</th>
+                <td>${review['review_id']}</td>
+            </tr>
+            <tr>
+                <th>Project:</th>
+                <td>${review['project']}</td>
+            </tr>
+            <tr>
+                <th>Author:</th>
+                <td>${review['owner']}</td>
+            </tr>
+            <tr>
+                <th>Creation Date:</th>
+                <td>$review.date</td>
+            </tr>
+            <tr>
+                <th>Finish Date:</th>
+                <td>$review.finish_date</td>
+            </tr>
+            <tr py:if="changeset">
+                <th>Changeset:</th>
+                <td>
+                    <a href="${href.changeset(changeset, repo)}" title="Show changeset ${changeset}">${changeset}</a>
+                </td>
+            </tr>
+            <tr py:if="changeset">
+                <th>Repository:</th>
+                <td>
+                    <a href="${href.browser(repo)}" title="Show repository ${repo}">${repo}</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table py:if="review['notes']" class="info-table">
+            <tbody>
+            <tr>
+                <th>
+                    <p>Author notes:</p>
+                </th>
+                <td>
+                    $review.html_notes
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </py:def>
+
+</div>
