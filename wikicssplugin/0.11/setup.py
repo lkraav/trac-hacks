@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='TracWikiCssPlugin',
-    version='0.3',
+    version='0.3.1',
     packages=['tracwikicss'],
     author='Martin Scharrer',
     author_email='martin@scharrer-online.de',

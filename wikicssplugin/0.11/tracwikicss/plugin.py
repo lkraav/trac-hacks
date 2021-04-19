@@ -16,7 +16,14 @@ from trac.wiki.model import WikiPage
 
 
 class WikiCssPlugin (Component):
-    """ This Trac plug-in implements a way to use a wiki page as CSS file
+    """ This plug-in allows to specify CSS styles for Trac using a wiki page.
+
+    You have to specif the wiki page with the styling information in ''trac.ini'':
+    {{{#!ini
+    [wikicss]
+    # configure wiki page to be used for CSS styling
+    wikipage = SiteStyle
+    }}}
     """
     implements(IRequestHandler, IRequestFilter)
 
@@ -48,7 +55,7 @@ class WikiCssPlugin (Component):
                      content_type='text/css', status=200)
         except RequestDone:
             pass
-        except Exception, e:
+        except Exception as e:
             raise HTTPNotFound(e, path=req.path_info)
         raise RequestDone
 
