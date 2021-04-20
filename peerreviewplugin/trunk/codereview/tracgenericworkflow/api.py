@@ -18,9 +18,10 @@ from trac.core import Interface, Component, implements, ExtensionPoint, \
 from trac.resource import Resource, get_resource_url
 from trac.util import get_reporter_id
 from trac.util.html import html as tag
+from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
-from trac.web.chrome import ITemplateProvider
+from trac.web.chrome import Chrome, ITemplateProvider
 from string import Template
 from genshi import HTML
 
@@ -224,7 +225,7 @@ class ResourceWorkflowSystem(Component):
         status = this_action['newstate']
         operations = this_action['operations']
 
-        controls = [] # default to nothing
+        controls = []  # default to nothing
         hints = []
 
         for operation in operations:
@@ -242,7 +243,7 @@ class ResourceWorkflowSystem(Component):
             if status != '*':
                 hints.append(_(" Next status will be '%(name)s'", name=status))
 
-        return (this_action['name'], tag(*controls), '. '.join(hints))
+        return this_action['name'], tag(*controls) if controls else None, '. '.join(hints)
 
     def get_workflow_markup(self, req, base_href, realm, resource, data=None):
         form_tmpl = u"""
@@ -291,7 +292,8 @@ class ResourceWorkflowSystem(Component):
                 if not first_label:
                     first_label = label
 
-                widgets.append(widget)
+                if widget:
+                    widgets.append(widget)
                 hints.append(hint)
 
                 action_controls.append((action[1], first_label, tag(widgets), hints))
@@ -299,10 +301,15 @@ class ResourceWorkflowSystem(Component):
             ctrls = ""
             for i, ac in enumerate(action_controls):
                 # The default action is the first in the action_controls list.
+                if hasattr(Chrome, 'jenv'):
+                    ctrl = to_unicode(ac[2])
+                else:
+                    ctrl = ac[2].generate().render(encoding=None)
+
                 cdata = {'is_checked': 'checked="1"' if i == 0 else '',
                          'val': ac[0],
                          'label': ac[1],
-                         'ctrl': ac[2].generate().render(encoding=None),
+                         'ctrl': ctrl,
                          'hint': ac[3][0]}
                 if len(ac[2].children):
                     # This is some custom workflow creating it's own markup
