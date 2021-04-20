@@ -90,7 +90,7 @@ class PeerReviewBrowser(Component):
                 return cursor.fetchone()[0] != 0
 
         #  We only handle the browser
-        if path and req.path_info.startswith('/browser/'):
+        if path and req.path_info.startswith('/browser/') and data:
             if rev:
                 is_head = 'HEAD'
             else:

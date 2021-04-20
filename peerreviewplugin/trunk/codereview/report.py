@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -10,7 +10,7 @@
 #
 
 from trac.core import Component, implements
-from trac.web.chrome import INavigationContributor, add_stylesheet
+from trac.web.chrome import add_stylesheet, Chrome, INavigationContributor
 from trac.web.main import IRequestHandler
 from codereview.peerReviewMain import add_ctxt_nav_items
 
@@ -72,4 +72,8 @@ class PeerReviewReport(Component):
 
         add_stylesheet(req, 'common/css/report.css')
         add_ctxt_nav_items(req)
-        return 'peerreview_report.html', data, None
+
+        if hasattr(Chrome, 'jenv'):
+            return 'peerreview_report_jinja.html', data
+        else:
+            return 'peerreview_report.html', data, None

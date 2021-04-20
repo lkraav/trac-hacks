@@ -1,0 +1,244 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block admintitle
+            Project File Information
+            # endblock admintitle
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
+    </head>
+    <body>
+    # block adminpanel
+        <h2>Manage Project File Information</h2>
+            # if view == 'detail':
+            <form class="mod" id="modprojinfo" method="post" action="">
+                <fieldset>
+                    <legend>Modify Project File List</legend>
+                    <div class="field">
+                        <label>Project Name:</label>
+                        <input type="text" class="form-control" maxlength="255" id="projname"
+                               name="projectname" value="$projectname" />
+                    </div>
+                    <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
+                    <div class="field">
+                        <label>Root Folder:</label>
+                        <p class="help">You may browse repositories and folders here.</p>
+                        <div id="repo_browser"></div>
+                        <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                               name="rootfolder" value="$rootfolder" />
+                        <p class="help">The root folder in the repository holding all the project files.</p>
+                        <label>
+                            <input type="checkbox" name="follow_ext" value="1" checked="${follow_externals == '1' or None}"/>
+                            Follow externals
+                        </label>
+                        <p class="help">When selected files in folders referenced as Subversion externals will also be added to the
+                            list of project files. Note that only externals to repositories configured in this Trac instance are
+                            taken into account.</p>
+                    </div>
+                    <div class="field">
+                        <label>Allowed Extensions:</label>
+                        <input type="text" class="form-control" maxlength="255" id="includeext"
+                               name="includeext" value="$includeext" />
+                    </div>
+                    <p class="help">File extensions used when collecting the projects files. Use commas for separating.
+                        Example: <strong>.c, .h, .cpp</strong>.</p>
+                    <div class="field">
+                        <label>Ignored Extensions:</label>
+                        <input type="text" class="form-control" maxlength="255" id="excludeext"
+                               name="excludeext" value="$excludeext" />
+                    </div>
+                    <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
+                        Example: <strong>.tmb, .zip</strong>.</p>
+                    <p class="help"><strong>Note:</strong> This list is ignored if an include list is provided.</p>
+                    <div class="field">
+                        <label>Ignored Paths:</label>
+                        <textarea class="trac-fullwidth" name="excludepath" cols="60" rows="2"
+                                  id="excludepath">${excludepath}</textarea>
+                    </div>
+                    <p class="help">Specify directories to be excluded from the file list. Use commas for separating.
+                        Example: <strong>/root/path/to/diectory, /root2/anotherpath/to/diectory</strong>.</p>
+                    <div class="buttons">
+                        <input type="submit" name="cancel" value="${_('Cancel')}" />
+                        <input type="submit" name="save" value="${_('Save')}" />
+                    </div>
+                </fieldset>
+                <p class="help">Saving may need some time because all the files for a project are gathered and processed
+                    for future report generation.</p>
+            </form>
+            # elif view == 'filelist':
+
+                <div>
+                    <p>List of Files for project <strong>$projectname</strong>.</p>
+                </div>
+                <div>
+                    <p>${len(files)} files altogether.</p>
+                </div>
+
+                <form class="mod" id="filelistform" method="post" action="">
+                    <fieldset>
+                        <div class="buttons">
+                            <input type="submit" name="back" value="${_('Back')}" />
+                        </div>
+                    </fieldset>
+                    <table class="listing" id="filelisttbl">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th>File Id</th>
+                            <th>Path</th>
+                            <th>Hash</th>
+                            <th>Revision</th>
+                            <th>Change Revision</th>
+                            <th>Approved</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        # for file, status in files:
+                            <tr class="${None if status == 'Approved' else 'error'}">
+                                <td>${loop.index}</td>
+                                <td>${file.file_id}</td>
+                                <td><a href="${'%s/%s%s' % (href('browser'), file.repo, file.path)}">${file.path}</a></td>
+                                <td>${file.hash}</td>
+                                <td>${file.rev}</td>
+                                <td>${file.changerev}</td>
+                                <td>${status}</td>
+                            </tr>
+                        # endfor
+                        </tbody>
+                    </table>
+
+                    <fieldset>
+                        <div class="buttons">
+                            <input type="submit" name="back" value="${_('Back')}" />
+                        </div>
+                    </fieldset>
+                </form>
+
+            # else:
+
+                <div>
+                    <p>
+                        You may define a project identifier and a root folder from the repository holding all the files
+                        of a project here.
+                        When saving the information all the files in the folder hierarchy are hashed and file name,
+                        revision, hash and project name are inserted in the database.
+                    </p>
+                    <p>
+                        Using the file information it is possible to create reports
+                        (see <a href="${href.wiki('TracReports')}">TracReports</a> for more information) like which
+                        files may need a review and more. Predefined codereview reports can be found
+                        <a href="${href('peerreviewreport')}">here</a>.
+                    </p>
+                </div>
+                # if projects:
+                <form id="projinfo_table" method="post" action="">
+                    <table class="listing" id="projinfolist">
+                        <thead>
+                        <tr>
+                            <th class="sel">&nbsp;</th>
+                            <th>Project</th>
+                            <th>Root Folder</th>
+                            <th>Repository</th>
+                            <th>Revision</th>
+                            <th>Include Extensions</th>
+                            <th>Exclude Extensions</th>
+                            <th>Exclude Paths</th>
+                            <th>File List</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        # for proj in projects:
+                        <tr>
+                            <td class="sel"><input type="checkbox" name="sel" value="${proj[0]}" /></td>
+                            <td class="name">
+                                <a href="${panel_href(proj[0])}">${proj[0]}</a>
+                            </td>
+                            <td class="owner">${proj[1].rootfolder}</td>
+                            <td>${proj[1].repo}</td>
+                            <td>${proj[1].revision}</td>
+                            <td class="includeext">${proj[1].includeext}</td>
+                            <td class="extensions">${proj[1].excludeext}</td>
+                            <td class="extensions">${proj[1].excludepath}</td>
+                            <td><a href="${panel_href(proj[0])}?filelist=1" title="Show Files of Project ${proj[0]}">Show Files</a></td>
+                        </tr>
+                        # endfor
+                        </tbody>
+                    </table>
+                    <div class="buttons">
+                        <input type="submit" name="remove" value="${_('Remove selected items')}" />
+                    </div>
+                </form>
+                # else:
+                <div class="system-message notice">
+                    <p>There is no project file information defined yet.</p>
+                </div>
+                # endif
+
+                <form action="" id="addprojinfo" method="post">
+                    <fieldset>
+                        <legend>Add Project File List</legend>
+                        <div class="field">
+                            <label>Project Name:</label>
+                            <input type="text" class="form-control" maxlength="255" id="projname"
+                                   name="projectname" value="$projectname" />
+                        </div>
+                        <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
+                        <div class="field">
+                            <label>Root Folder:</label>
+                            <p class="help">You may browse repositories and folders here.</p>
+                            <div id="repo_browser"></div>
+                            <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                                   name="rootfolder" value="$rootfolder" />
+                            <p class="help">The root folder in the repository holding all the project files.</p>
+                            <label>
+                                <input type="checkbox" name="follow_ext" value="1"/>Follow externals</label>
+                            <p class="help">When selected files in folders referenced as Subversion externals will also be added to the
+                                list of project files. Note that only externals to repositories configured in this Trac instance are
+                                taken into account.</p>
+                        </div>
+                        <div class="field">
+                            <label>Allowed Extensions:</label>
+                            <input type="text" class="form-control" maxlength="255" id="includeext"
+                                   name="includeext" value="$includeext" />
+                        </div>
+                        <p class="help">File extensions used when collecting the projects files. Use commas for separating.
+                            Example: <strong>.c, .h, .cpp</strong>.</p>
+                        <div class="field">
+                            <label>Ignored Extensions:</label>
+                            <input type="text" class="form-control" maxlength="255" id="excludeext"
+                                   name="excludeext" value="$excludeext" />
+                        </div>
+                        <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
+                            Example: <strong>.tmb, .zip</strong>.</p>
+                        <p class="help"><strong>Note:</strong> This list is ignored if an include list is provided.</p>
+                        <div class="field">
+                            <label>Ignored Paths:</label>
+                            <textarea class="trac-fullwidth" name="excludepath"
+                                      cols="60" rows="2" id="excludepath">${excludepath}</textarea>
+                        </div>
+                        <p class="help">Specify directories to be excluded from the file list. Use commas for separating.
+                            Example: <strong>/root/path/to/diectory, /root2/anotherpath/to/diectory</strong>.</p>
+                        <div class="buttons">
+                            <input name="add" value="${_('Add')}" type="submit" />
+                        </div>
+                    </fieldset>
+                    <p class="help">Adding a project may need some time because all the files for a project are gathered and processed
+                        for future report generation.</p>
+                </form>
+
+            # endif
+
+    # endblock adminpanel
+    </body>
+</html>

@@ -231,7 +231,10 @@ class PeerReviewView(Component):
         add_stylesheet(req, 'common/css/ticket.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
-        return 'peerreview_view.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'peerreview_view_jinja.html', data
+        else:
+            return 'peerreview_view.html', data, None
 
     def add_parent_data(self, req, review, data):
         """Add inforamtion about parent review to dict 'data'. Do nothing if now parent."""

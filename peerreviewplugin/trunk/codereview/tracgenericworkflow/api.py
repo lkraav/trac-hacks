@@ -248,6 +248,7 @@ class ResourceWorkflowSystem(Component):
     def get_workflow_markup(self, req, base_href, realm, resource, data=None):
         form_tmpl = u"""
                 <form class="workflow-actions" method="post" action="$action" name="resource_workflow_form">
+                    $form_token
                     <fieldset>
                         <input name="id" type="hidden" value="$resource_id" />
                         <input name="res_realm" type="hidden" value="$realm" />
@@ -272,13 +273,16 @@ class ResourceWorkflowSystem(Component):
         sorted_actions = self.get_available_actions(
             req, realm, resource=resource)
 
+        form_token = '<input type="hidden" name="__FORM_TOKEN" value="{ftoken}" />'.format(ftoken=req.form_token)
+
         tdata = {'action': base_href+'/workflowtransition',
                  'resource_id': resource.id,
                  'cur_state': rws['state'],
                  'ctrls': "",
                  'realm': realm,
                  'redirect': '',
-                 'display': ''}
+                 'display': '',
+                 'form_token': form_token if hasattr(Chrome, 'jenv') else ''}
 
         tmpl = Template(form_tmpl)
         if len(sorted_actions) > 0:

@@ -15,7 +15,7 @@ from trac.config import ConfigSection
 from trac.core import Component, implements
 from trac.mimeview.api import Mimeview
 from trac.util.translation import _
-from trac.web.chrome import add_link, add_notice, add_script, add_script_data, add_stylesheet, add_warning
+from trac.web.chrome import add_link, add_notice, add_script, add_script_data, add_stylesheet, add_warning, Chrome
 from .model import ReviewDataModel, ReviewFileModel
 from .repo import insert_project_files, repo_path_exists
 
@@ -312,4 +312,8 @@ class PeerReviewFileAdmin(Component):
                               'show_repo_idx': path_info == None if 'error' not in req.args else False}
                         )
         add_script(req, 'hw/js/admin_files.js')
-        return 'admin_files.html', data
+
+        if hasattr(Chrome, 'jenv'):
+            return 'peeradmin_files_jinja.html', data
+        else:
+            return 'admin_files.html', data

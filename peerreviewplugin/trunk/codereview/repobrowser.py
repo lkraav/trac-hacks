@@ -23,7 +23,7 @@ from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchChangeset, RepositoryManager
 from trac.versioncontrol.web_ui.util import *
 from trac.web import IRequestHandler, RequestDone
-from trac.web.chrome import add_link, web_context
+from trac.web.chrome import add_link, Chrome, web_context
 from trac.wiki import format_to_html
 
 IMG_RE = re.compile(r"\.(gif|jpg|jpeg|png)(\?.*)?$", re.IGNORECASE)
@@ -96,7 +96,10 @@ class PeerRepoBrowser(Component):
         context = web_context(req)
         # Depending on from where we are coming we have to preprocess in match_request() thus use different paths
         browse_url_base = 'adminrepobrowser' if is_admin_browser else 'peerReviewBrowser'
-        template_file = 'admin_repobrowser.html' if is_admin_browser else 'repobrowser.html'
+        if hasattr(Chrome, 'jenv'):
+            template_file = 'peeradmin_repobrowser_jinja.html' if is_admin_browser else 'peerrepobrowser_jinja.html'
+        else:
+            template_file = 'admin_repobrowser.html' if is_admin_browser else 'repobrowser.html'
 
         # display_rev = lambda rev: rev
 
@@ -109,7 +112,10 @@ class PeerRepoBrowser(Component):
         all_repos = repoman.get_all_repositories()
         if not all_repos:
             data['norepo'] = _("No source repository available.")
-            return 'repobrowser.html', data, None
+            if hasattr(Chrome, 'jenv'):
+                return 'peerrepobrowser_jinja.html', data
+            else:
+                return 'repobrowser.html', data, None
 
         # Repositories may be hidden
         filtered_repos = {}
@@ -123,7 +129,10 @@ class PeerRepoBrowser(Component):
 
         if not filtered_repos:
             data['norepo'] = _("No source repository available.")
-            return 'repobrowser.html', data, None
+            if hasattr(Chrome, 'jenv'):
+                return 'peerrepobrowser_jinja.html', data
+            else:
+                return 'repobrowser.html', data, None
 
         data['all_repos'] = filtered_repos
 
@@ -131,12 +140,18 @@ class PeerRepoBrowser(Component):
         if req.args.get('repo', None) == None:
             # We open the page for the first time
             data['show_repo_idx'] = True
-            return template_file, data, None
+            if hasattr(Chrome, 'jenv'):
+                return template_file, data
+            else:
+                return template_file, data, None
 
         if cur_repo not in data['all_repos']:
             data['repo_gone'] = cur_repo if cur_repo else '(default)'
             data['show_repo_idx'] = True
-            return template_file, data, None
+            if hasattr(Chrome, 'jenv'):
+                return template_file, data
+            else:
+                return template_file, data, None
 
         # Find node for the requested repo/path/rev
         repo = repoman.get_repository(cur_repo)
@@ -145,14 +160,20 @@ class PeerRepoBrowser(Component):
                 node, display_rev, context = get_node_from_repo(req, repo, path, rev)
             except NoSuchChangeset as e:
                 data['norepo'] = _(e.message)
-                return template_file, data, None
+                if hasattr(Chrome, 'jenv'):
+                    return template_file, data
+                else:
+                    return template_file, data, None
             except ResourceNotFound as e:  # NoSuchNode is converted to this exception by Trac
                 data['nonode'] = e.message
                 node = None
                 display_rev = rev
         else:
             data['norepo'] = _("No source repository available.")
-            return template_file, data, None
+            if hasattr(Chrome, 'jenv'):
+                return template_file, data
+            else:
+                return template_file, data, None
 
         hidden_properties = [p.strip() for p
                              in self.config.get('browser', 'hide_properties',
@@ -184,7 +205,10 @@ class PeerRepoBrowser(Component):
             'display_rev': display_rev,
             'wiki_format_messages': self.config['changeset'].getbool('wiki_format_messages'),
         })
-        return template_file, data, None
+        if hasattr(Chrome, 'jenv'):
+            return template_file, data
+        else:
+            return template_file, data, None
 
     # Internal methods
 

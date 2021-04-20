@@ -1,40 +1,56 @@
-<!DOCTYPE html
-        PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:i18n="http://genshi.edgewall.org/i18n">
-    <xi:include href="layout.html"/>
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
     <head>
-        <title>Review File - $review_file['name']</title>
+        <title>
+            # block title
+            Review File - $review_file['name']
+            ${ super() }
+            # endblock title
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
     </head>
 
-    <xi:include href="peer_functions.html"/>
+    # import "peer_functions_jinja.html" as review_info with context
 
     <body>
+    # block content
         <div id="content">
-            <div py:if="is_finished" class="notice system-message">
+            # if is_finished:
+            <div class="notice system-message">
                 <p>
                     This review is finished. A code review manager may reopen it.
                 </p>
             </div>
-            <div py:if="review_locked and not is_finished" class="notice system-message">
+            # endif
+            # if review_locked and not is_finished:
+            <div class="notice system-message">
                 <p>
                     This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
                 </p>
             </div>
+            # endif
 
-            <py:if test="parent_review">
+            # if parent_review:
                 <form id="prefs" action="">
                     <div>
-                        <input type="hidden" name="IDFile" value="$file_id"/>
-                        <xi:include href="diff_options.html"/>
+                        <input type="hidden" name="IDFile" value="${file_id}"/>
+                        # include "diff_options.html"
                     </div>
                 </form>
-            </py:if>
+            # endif
 
-            <div py:if="parent_review and not changeset" id="review-info">
+            # if parent_review and not changeset:
+            <div id="review-info">
                 <table class="review-table">
                     <thead>
                     <tr>
@@ -44,13 +60,16 @@
                     </thead>
                     <tbody>
                     <tr>
-                        <td>${review_info(review)}</td>
-                        <td>${review_info(parent_review)}</td>
+                        <td>${review_info.render_info(review)}</td>
+                        <td>${review_info.render_info(parent_review)}</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
-            <div py:if="not parent_review or changeset">
+            # endif
+
+            # if not parent_review or changeset:
+            <div>
                 <table class="review-table">
                     <thead>
                     <tr>
@@ -58,21 +77,25 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr py:if="changeset">
+                    # if changeset:
+                    <tr>
                         <td><em>This is a review for changeset
                             <a href="${href.changeset(changeset, repo)}" title="Show changeset ${changeset}">${changeset}</a>.</em>
                         </td>
                     </tr>
+                    # endif
                     <tr>
-                        <td>${review_info(review)}</td>
+                        <td>${review_info.render_info(review)}</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
+            # endif
 
             <h3>File Information</h3>
-            <dl class="overview" id="file-info"
-                py:with="repo_url=review_file['repo'] if review_file['repo'] else ''">
+            # with
+            #   set repo_url = review_file['repo'] if review_file['repo'] else ''
+            <dl class="overview" id="file-info">
                 <dt>Path:</dt>
                 <dd><a href="${href.browser(repo_url, review_file['path'], rev=review_file['changerevision'])}"
                        title="Show file in browser">${review_file['path']}</a></dd>
@@ -93,18 +116,19 @@
                        title="Show file in browser">${review_file['changerevision']}</a>
                     <small><em>(click to show file @ ${review_file['revision']})</em></small>
                 </dd>
-                <py:if test="review_file['line_start'] != 0">
+                # if review_file['line_start'] != 0:
                     <dt>Start Line:</dt>
                     <dd>${review_file['line_start']}<br/></dd>
                     <dt>End Line:</dt>
                     <dd>${review_file['line_end']}<br/></dd>
-                </py:if>
+                # endif
             </dl>
+            # endwith
 
-            <py:if test="parent_review">
+            # if parent_review:
+            #    set repo_url = par_file['repo'] if par_file['repo'] else ''
                 <h3>Followup from file:</h3>
-                <dl class="overview" id="parent-info"
-                    py:with="repo_url=par_file['repo'] if par_file['repo'] else ''">
+                <dl class="overview" id="parent-info">
                     <dt>Path:</dt>
                     <dd><a href="${href.browser(repo_url, par_file['path'], rev=par_file['changerevision'])}"
                            title="Show file in browser">${par_file['path']}</a></dd>
@@ -120,86 +144,105 @@
                         <small><em>(click to show file @ ${par_file['revision']})</em></small>
                     </dd>
                     <dt>Comments:</dt>
-                    <dd py:if="diff.options.contextall">
-                        <py:for each="idx, line in enumerate(par_file.comments)">
-                            <py:with vars="last = idx == len(par_file.comments) - 1">
-                                <a href="#P$line">Line $line</a><span py:if="not last">, </span>
-                            </py:with>
-                        </py:for>
-                        <py:if test="not par_file.comments">No comments</py:if>
+                    # if diff.options.contextall:
+                    <dd>
+                        # for line in par_file.comments:
+                        #   set last = loop.index0 == len(par_file.comments) - 1
+                        <a href="#P${line}">Line ${line}</a>
+                        # if not last:
+                        <span>, </span>
+                        # endif
+                        # endfor
+                        # if not par_file.comments:
+                        No comments
+                        # endif
                     </dd>
-                    <dd py:if="not diff.options.contextall">
-                        <py:for each="idx, line in enumerate(par_file.comments)">
-                            <py:with vars="last = idx == len(par_file.comments) - 1">
-                                Line $line<span py:if="not last">, </span>
-                            </py:with>
-                        </py:for>
-                        <p class="help" py:if="par_file.comments">Some comments may be hidden. Select
+                    # else:
+                    <dd>
+                        # for line in par_file.comments:
+                        #   set last = loop.index0 == len(par_file.comments) - 1
+
+                        Line ${line}
+                        # if not last:
+                        <span>, </span>
+                        # endif
+                        # endfor
+                        # if par_file.comments:
+                        <p class="help">Some comments may be hidden. Select
                             <strong>Show changes in full context</strong> to show the whole file.</p>
-                        <py:if test="not par_file.comments">No comments</py:if>
+                        # else:
+                        <p class="help">No comments</p>
+                        # endif
                     </dd>
+                    # endif
                 </dl>
-            </py:if>
+            # endif
 
             <p>Back to the <a href="${href.peerreviewview(review_file['review_id'])}"> Code Review Details</a> page.</p>
 
+            <label><input type="checkbox" id="inline-comments" />Show comments inline.</label>
 
-                <label><input type="checkbox" id="inline-comments" />Show comments inline.</label>
-
-            <table py:if="diffs or not parent_review" border="0" width="100%" style="border-collapse: collapse" id="table1">
+            # if diffs or not parent_review:
+            <table border="0" width="100%" style="border-collapse: collapse" id="table1">
                 <tr>
                     <td align="left">
                         <p class="help">Click line number to Add/View comments</p>
                     </td>
-                    <td py:if="not fullrange" align="right">
+                    # if not fullrange:
+                    <td align="right">
                         <p>View <input type="text" id="SelectRangeTextBox"
                                        size="1" value="3"
                                        onKeyDown="if(event.keyCode == 13 || event.keyCode == 3){resetLines();}"
                                        style="text-align: center"/> lines on either side of selection.</p>
                     </td>
+                    # endif
                 </tr>
             </table>
-            <py:if test="parent_review">
-                <xi:include href="peerreview_diff.html"/>
-                <div py:if="nochanges">
+            # endif
+            # if parent_review:
+                # include "peerreview_diff_jinja.html"
+                # if nochanges:
+                <div>
                     <div class="notice system-message">
                         <p>The files are identical.</p>
-                        <p py:if="not diff.options.contextall">Show the file in full context to add comments to the revision '${review_file['revision']}'.</p>
+                        # if not diff.options.contextall:
+                        <p>Show the file in full context to add comments to the revision '${review_file['revision']}'.</p>
+                        # endif
                     </div>
                 </div>
-            </py:if>
-            <!--! displays the contents of the file being reviewed -->
+                # endif
+            # endif
+            ## displays the contents of the file being reviewed
 
-            <div id="FilePreview">$file_rendered</div>
+            <div id="FilePreview">${file_rendered}</div>
 
-            <py:if test="preview">
-            <!--! This is taken from preview_file.html with addition of system message div -->
-            <py:choose>
-                <p py:when="preview.size == 0">
-                        <strong>(The file is empty)</strong>
-                </p>
-                <p py:when="not preview.rendered">
-                    <py:choose>
-                        <py:when test="preview.max_file_size_reached">
-                            <div class="warning system-message">
-                            <i18n:msg params="size">
-                            <strong>HTML preview not available</strong>, since the file size exceeds $preview.max_file_size bytes.
-                            </i18n:msg>
-                            </div>
-                        </py:when>
-                        <py:otherwise><div class="warning system-message"><i18n:msg>
-                            <strong>HTML preview not available</strong>, since no preview renderer could handle it.
-                        </i18n:msg></div></py:otherwise>
-                    </py:choose>
-                </p>
-            </py:choose>
-            <!--! End of taken from preview_file.html -->
-            </py:if>
+            # if preview:
+            ## This is taken from preview_file.html with addition of system message div
+
+            # if preview.size == 0:
+            <p><strong>(The file is empty)</strong></p>
+            # elif not preview.rendered:
+            <div>
+                # if preview.max_file_size_reached:
+                <div class="warning system-message">
+                    <strong>HTML preview not available</strong>, since the file size exceeds ${preview.max_file_size} bytes.
+                </div>
+                # else:
+                <div class="warning system-message">
+                    <strong>HTML preview not available</strong>, since no preview renderer could handle it.
+                </div>
+                # endif
+            </div>
+            # endif
+
+            ## End of taken from preview_file.html
+            # endif
 
             <p>Back to the <a href="${href.peerreviewview(review_file['review_id'])}"> Code Review Details</a> page.</p>
 
             <div id="add-comment-dlg">
                 <form action="peerReviewCommentCallback" method="POST" id="add-comment-form">
+                    ${jmacros.form_token_input()}
                     <div>
                         <textarea rows="6" id="comment-txt" name="comment"></textarea>
                         <div id="commentchange" class="ticketdraft" style="display: none">
@@ -238,5 +281,6 @@
             </script>
 
     </div>
+    # endblock content
     </body>
 </html>

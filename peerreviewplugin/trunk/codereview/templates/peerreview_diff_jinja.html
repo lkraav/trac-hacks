@@ -1,0 +1,310 @@
+{#
+       changes   - a list of diff items, each being a dict containing information about
+                   changes for one file:
+                     .href         - link for the title (optional)
+                     .title        - tooltip for the title link (optional)
+                     .comments     - annotation for the change (optional)
+                     .new and .old - information about the files being diffed
+                       .path         - path of the file
+                       .rev          - rev of the file (for 'sidebyside')
+                       .shortrev     - abbreviated form of rev of the file (for 'inline')
+                       .href         - link to the full file (optional)
+                     .props        - a list of property changes
+                       .name         - name of the property
+                       .diff         - rendered difference
+                       .old          - old value of the property
+                       .new          - new value for the property
+                       (both .old and .new have .name, .value and .rendered properties)
+                     .diffs        - a sequence of list of blocks
+
+                       Each block being a dict:
+                       .type         - one of 'unmod', 'add', 'rem' or 'mod'
+                       .base and .changed - information about lines from old and new content
+                         .lines              - the lines
+                         .offset             - position within the file
+
+                     .diffs_title  - a sequence of titles for the list of blocks
+                                     Note: integrate this into .diffs for 0.12 or 0.13.
+
+       diff      - dict specifying diff style and options
+                     .style     - can be 'sidebyside' (4 columns) or 'inline' (3 columns)
+                     .options   - contexlines, various ignore...
+
+       longcol  - "long" column header; e.g. 'Revision' or 'File' or '' (for 'sidebyside')
+       shortcol - "short" column header: e.g. 'r' or '' (for 'inline')
+       no_id    - skip generation of id attributes in h2 headings
+
+#}
+<div class="diff">
+
+  # macro add_comment(linenum, fileid)
+    # if review.status == 'closed' or not_allowed:
+    ${linenum or '&nbsp;'}
+    # endif
+    # if review.status != 'closed' and not not_allowed:
+    <a href="javascript:addComment(${linenum}, ${fileid}, -1)">${linenum or '&nbsp;'}</a>
+    # endif
+  # endmacro
+
+  ## if any([item.diffs or item.props for item in changes]):
+  # if changes|selectattr('diffs') or changes|selectattr('props'):
+  <ul class="entries">
+    # for item in changes:
+    #   set old = item.old
+    #   set new = item.new
+    #   if item and (item.diffs or item.props or 'comments' in item):
+      <li class="entry">
+        # set comments = item.get('comments')
+        <h2 id="${not no_id and 'file%s' % loop.index0 or None}">
+          # if new.path:
+          <a href="${item.get('href', new.get('href'))}"
+             title="${item.get('title', new.get('title'))}">${new.path}</a>
+          # else:
+          &nbsp;
+          # endif
+        </h2>
+        # if comments:
+        <pre>${comments}</pre>
+        # endif
+
+        # if item.props:
+        <ul class="props">
+          # macro prop_name(name, attrs)
+            <strong ${attrs|htmlattr}>${name}</strong>
+          # endmacro
+
+          # macro render_property(prop)
+              # if prop.rendered:
+                ${prop.rendered.content}
+              # elif istext(prop.value):
+              <em><tt>${prop.value}</tt></em>
+              # else:
+              ${prop.value}
+              # endif
+          # endmacro
+
+          # for prop in item.props:
+          #   set one = prop.old or prop.new
+          #   if prop.diff:
+          ${prop.diff}
+          #   elif one:
+          #     set both = prop.old and prop.new
+          #     set name_attrs = one.rendered and one.rendered.name_attributes
+          #     set name = one.rendered and one.rendered.name or prop.name
+          <li>
+            # if both:
+            Property ${prop_name(name, name_attrs)}
+            changed from ${render_property(prop.old)} to ${render_property(prop.new)}
+            # elif not prop.old:
+            Property ${prop_name(name, name_attrs)} set to ${render_property(prop.new)}
+            # else:
+            Property ${prop_name(name, name_attrs)} deleted
+            # endif
+          </li>
+          #   endif
+          # endfor
+        </ul>
+        # endif
+
+        # if item.diffs:
+        #   set fromline = item.diffs[0][0].base.offset + 1
+        #   set toline = item.diffs[0][0].changed.offset + 1
+        <table class="trac-diff ${diff.style}" summary="Differences" cellspacing="0">
+            # if diff.style == 'sidebyside':
+              <colgroup class="l"><col class="lineno" /><col class="content" /></colgroup>
+              <colgroup class="r"><col class="lineno" /><col class="content" /></colgroup>
+              <thead>
+                <tr>
+                  <th colspan="2">
+                    # if 'href' not in old:
+                    ${longcol} ${old.rev}
+                    # else:
+                    <a title="${old.get('title')}" href="${old.get('href')}#L${fromline}">${longcol} ${old.rev}</a>
+                    # endif
+                  </th>
+                  <th colspan="2">
+                    # if 'href' not in new:
+                    ${longcol} ${new.rev}
+                    # else:
+                    <a title="${new.get('title')}" href="${new.get('href')}#L${toline}">${longcol} ${new.rev}</a>
+                    # endif
+                  </th>
+                </tr>
+              </thead>
+            # elif diff.style == 'inline':
+              <colgroup><col class="lineno" /><col class="lineno" /><col class="content" /></colgroup>
+              <thead>
+                <tr>
+                  <th title="${longcol} ${old.rev}">
+                    # if 'href' not in old:
+                      ${shortcol}${old.shortrev}
+                    # else:
+                    <a title="${old.get('title')}" href="${old.get('href')}#L${fromline}">
+                      ${shortcol}${old.shortrev}</a>
+                    # endif
+                  </th>
+                  <th title="${longcol} ${new.rev}">
+                    # if 'href' not in new:
+                      ${shortcol}${new.shortrev}
+                    # else:
+                    <a title="${new.get('title')}" href="${new.get('href')}#L${toline}">
+                      ${shortcol}${new.shortrev}</a>
+                    # endif
+                  </th>
+                  <td>
+                    # if 'diffs_title' in item:
+                    <em>${item.diffs_title[0]}</em>
+                    # endif
+                    &nbsp;</td>
+                </tr>
+              </thead>
+            # endif
+
+          # for blocks in item.diffs:
+            # for block in blocks:
+            <tbody class="${block.type}">
+                # if block.type == 'unmod':
+
+                  ## Show identical lines on both "sides"
+                  # for line in block.base.lines:
+                  #   set from_n = block.base.offset + loop.index
+                  #   set to_n = block.changed.offset + loop.index
+                  #   set clines = block.changed.lines
+                  <tr>
+                      # if diff.style == 'sidebyside':
+                        <th id="P${from_n}">${from_n}</th>
+                          <td class="l"><span>${line}</span>&nbsp;</td>
+                        <th id="L${to_n}">${add_comment(to_n, file_id)}</th>
+                          <td class="r"><span>${loop.index0 < len(clines) and clines[loop.index0] or ''}</span>&nbsp;</td>
+                      # elif diff.style == 'inline':
+                      <th id="P${from_n}">${from_n}</th>
+                      <th id="L${to_n}">${add_comment(to_n, file_id)}</th>
+                      <td class="l"><span>${line}</span>&nbsp;</td>
+                      # endif
+                  </tr>
+                  # endfor
+
+                # elif block.type == 'add':
+
+                  ## Show only added lines, on the "right side"
+                  # for line in block.changed.lines:
+                  #   set to_n = block.changed.offset + loop.index
+                  <tr${{'class': first_last(loop.index0, block.changed.lines) if diff.style == 'inline'}|htmlattr}>
+                      # if diff.style == 'sidebyside':
+                      <th>&nbsp;</th><td class="l">&nbsp;</td>
+                      <th id="L${to_n}">${add_comment(to_n, file_id)}</th><td class="r"><ins>${line}</ins>&nbsp;</td>
+                      # elif diff.style == 'inline':
+                      <th>&nbsp;</th><th id="L${to_n}">${add_comment(to_n, file_id)}</th><td class="r"><ins>${line}</ins>&nbsp;</td>
+                      # endif
+                  </tr>
+                  # endfor
+
+                # elif block.type == 'rem':
+
+                  ## Show only deleted lines, on the "left side"
+                  # for line in block.base.lines:
+                  #   set from_n = block.base.offset + loop.index
+                  <tr${{'class': first_last(loop.index0, block.base.lines) if diff.style == 'inline'}|htmlattr}>
+                      # if diff.style == 'sidebyside':
+                        <th id="P${from_n}">${from_n}</th><td class="l"><del>${line}</del>&nbsp;</td>
+                        <th>&nbsp;</th><td class="r">&nbsp;</td>
+                      # elif diff.style == 'inline':
+                        <th id="P${from_n}">${from_n}</th><th>&nbsp;</th><td class="l"><del>${line}</del>&nbsp;</td>
+                      # endif
+                  </tr>
+                  # endfor
+
+                # elif block.type == 'mod':
+
+                  ## Show edited lines, on both "sides"
+                  # if diff.style == 'sidebyside':
+                      # if len(block.base.lines) >= len(block.changed.lines):
+                        # for line in block.base.lines:
+                        #   set within_change = loop.index0 < len(block.changed.lines)
+                        <tr>
+                          <th id="P${block.base.offset + loop.index}">${block.base.offset+loop.index}</th>
+                          <td class="l"><span>${line}</span>&nbsp;</td>
+                            <th id="L${within_change and block.changed.offset + loop.index or '0'}">
+                                ${add_comment(within_change and block.changed.offset+loop.index or 0, file_id)}
+                            </th>
+                            <td class="r">
+                              # if within_change:
+                              <span>${block.changed.lines[loop.index0]}</span>
+                              # endif
+                              &nbsp;</td>
+                        </tr>
+                        # endfor
+                      # else:
+                        ## there are more changed lines than original lines
+                        # for line in block.changed.lines:
+                        #   set within_change = loop.index0 < len(block.base.lines)
+                        <tr>
+                            <th id="P${within_change and block.base.offset + loop.index or 0}">${within_change and block.base.offset+loop.index or '&nbsp;'}</th>
+                            <td class="l">
+                              # if within_change:
+                              <span>${block.base.lines[loop.index0]}</span>
+                              # endif
+                              &nbsp;</td>
+                          <th id="L${block.changed.offset + loop.index}">
+                              ${add_comment(block.changed.offset + loop.index, file_id)}
+                          </th>
+                          <td class="r"><span>${line}</span>&nbsp;</td>
+                        </tr>
+                        # endfor
+                      # endif
+                  # elif diff.style == 'inline':
+                    ## First show the "old" lines
+                    # for line in block.base.lines:
+                    <tr${{'class': 'first' if loop.first}|htmlattr}>
+                      <th id="P${block.base.offset + loop.index}">${block.base.offset + loop.index}</th>
+                      <th>&nbsp;</th>
+                      <td class="l"><span>${line}</span>&nbsp;</td>
+                    </tr>
+                    # endfor
+                    ## Then show the "new" lines
+                    # for line in block.changed.lines:
+                    <tr${{'class': 'last' if loop.index == len(block.changed.lines)}|htmlattr}>
+                      <th>&nbsp;</th>
+                      <th id="L${block.changed.offset + loop.index}">
+                          ${add_comment(block.changed.offset + loop.index, file_id)}
+                      </th>
+                        <td class="r"><span>${line}</span>&nbsp;</td>
+                    </tr>
+                    # endfor
+                  # endif
+                # endif
+            </tbody>
+            # endfor
+
+            # if loop.index0 < len(item.diffs) - 1:
+            #   set fromline = item.diffs[loop.index][0].base.offset + 1
+            #   set toline = item.diffs[loop.index][0].changed.offset + 1
+              <tbody class="skipped">
+              # if diff.style == 'sidebyside':
+                <tr>
+                  <th><a href="${old.href}#L${fromline}">&hellip;</a></th><td>&nbsp;</td>
+                  <th><a href="${new.href}#L${toline}">&hellip;</a></th><td>&nbsp;</td>
+                </tr>
+              # elif diff.style == 'inline':
+                <tr>
+                  <th><a href="${old.href}#L${fromline}">&hellip;</a></th>
+                  <th><a href="${new.href}#L${toline}">&hellip;</a></th>
+                  <td>
+                    # if 'diffs_title' in item:
+                    <em>${item.diffs_title[loop.index]}</em>
+                    # endif
+                    nbsp;</td>
+                </tr>
+              # endif
+              </tbody>
+            # endif
+          # endfor
+        </table>
+        # endif
+      </li>
+    #   endif
+    # endfor
+  </ul>
+  # endif
+
+</div>

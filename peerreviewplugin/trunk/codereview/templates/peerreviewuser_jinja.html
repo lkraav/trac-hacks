@@ -1,0 +1,68 @@
+<div>
+    ## Display a full reviewer drop-down list if it's a new CodeReview, display unassigned reviewers if resubmitted
+        # if new == 'yes':
+        <span>
+            <select id="Reviewers">
+                # for item in users:
+                <option value="${item}">${item}</option>
+                # endfor
+            </select>
+        </span>
+        # else:
+        <span>
+            # if unassigned_users:
+            <span>
+                <select id="Reviewers">
+                    # for item in unassigned_users:
+                    <option value="${item}">${item}</option>
+                    # endfor
+                </select>
+            </span>
+            # else:
+            <span>
+                <select id="Reviewers">
+                    <option value="-1">-- No more users --</option>
+                </select>
+            </span>
+            # endif
+        </span>
+        # endif
+
+    <input id="adduserbutton" type="button" value="Add user" ${{"disabled": unassigend_users}|htmlattr}/>
+
+    ## Display an empty user list if it's a new CodeReview, display previous list if resubmitted
+    <div>
+        # if new == 'yes':
+        <table class="listing" id="myuserlist">
+            <thead>
+                <tr>
+                    <th>Username (Click to remove)</th>
+                </tr>
+            </thead>
+            <tbody id="myuserbody">
+                <tr id="no-users" class="even">
+                    <td>No users have been added to the code review.</td>
+                </tr>
+            </tbody>
+        </table>
+        # else:
+        <table class="listing" id="myuserlist">
+            <thead>
+                <tr>
+                    <th>Username (Click to remove)</th>
+                </tr>
+            </thead>
+            <tbody id="myuserbody">
+            # for item in assigned_users:
+                <tr id="${item}id" class="${loop.cycle('even', 'odd')}">
+                    <td value="${item}">
+                        <input type="hidden" name="user" value="${item}"/>
+                        <a href="" data-user="${item}" class="remove-user">${item}</a>
+                    </td>
+                </tr>
+            # endfor
+            </tbody>
+        </table>
+        # endif
+    </div>
+</div>

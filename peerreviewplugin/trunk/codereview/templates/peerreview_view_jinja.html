@@ -1,0 +1,307 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block title
+            _("Code Review Details") - ${review['name']}
+            ${ super() }
+            # endblock title
+        </title>
+    # block head
+    ${ super() }
+    # endblock head
+    </head>
+    # import "peer_functions_jinja.html" as review_info with context
+    <body>
+    # block content
+        <div id="content" class="peerreview-content">
+            <h1>Code Review Details - ${review['name']}</h1>
+            # if is_finished:
+            <div class="notice system-message">
+                <p>
+                    This review is finished. A code review manager may reopen it.
+                </p>
+            </div>
+            # endif
+            # if review_locked and not is_finished:
+            <div class="notice system-message">
+                <p>
+                    This review is marked as <strong>reviewed</strong> and can't be changed. The author of the code review may change the current status.
+                </p>
+            </div>
+            # endif
+            # if review_done and not is_finished and not review_locked:
+            <div class="notice system-message">
+                <p>
+                    This review is marked as <strong>reviewed</strong>. Reviewers can't change it anymore. As author you have to set the final status now.
+                </p>
+            </div>
+            # endif
+            # if parent_review:
+            <div>
+                <table class="review-table">
+                    <thead>
+                        <tr>
+                            <th>Review Information</th>
+                            <th>Followup from</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${review_info.render_info(review)}</td>
+                            <td>${review_info.render_info(parent_review)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            # endif
+            # if not parent_review:
+            <div>
+                <table class="review-table">
+                    <thead>
+                        <tr>
+                            <th>Review Information</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    # if changeset:
+                    <tr>
+                        <td><em>This is a review for changeset
+                            <a href="${href.changeset(changeset, repo)}" title="Show changeset ${changeset}">${changeset}</a>.</em>
+                        </td>
+                    </tr>
+                    # endif
+                    <tr>
+                        <td>${review_info.render_info(review)}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            # endif
+
+            <h2>Files associated with this code review</h2>
+            # if parent_review:
+            <p>The files will be compared with those from review
+                <a href="${href.peerreviewview(parent_review['review_id'])}">${review['name']} (#${parent_review['review_id']})</a>.
+            </p>
+            # endif
+            <table class="listing" id="filelist">
+                <thead>
+                <tr>
+                    <th>File ID</th>
+                    <th>Filename</th>
+                    <th>Repository</th>
+                    <th>File Revision</th>
+                    <th>Repo Revision</th>
+                    # if parent_review:
+                    <th>Previous File Revision</th>
+                    <th>Previous Repo Revision</th>
+                    # endif
+                    <th>Line Numbers</th>
+                    <th># of Comments</th>
+                    <th># Not Read</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                # if not review_files:
+                <tr class="even" colspan="8">
+                    <td>There are no files included in this code review.</td>
+                </tr>
+                # endif
+                # for item in review_files:
+                <tr class="${loop.cycle('even', 'odd')}" id="${item['file_id']}">
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
+                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
+                    <td>${item['repo'] if item['repo'] else '(default)'}</td>
+                    <td>${item['changerevision']}</td>
+                    <td>${item['revision']}</td>
+                    # if parent_review:
+                    <td>${file_map[item['file_id']]['changerevision'] or '---'}</td>
+                    <td>${file_map[item['file_id']]['revision'] or '---'}</td>
+                    # endif
+                    # if item['line_start'] == 0:
+                    <td>1 - End of file</td>
+                    # else:
+                    <td>${item['line_start']} - ${item['line_end']}</td>
+                    # endif
+                    <td>${item.num_comments}</td>
+                    <td ${{"class": 'comment-notread' if item.num_notread}|htmlattr}>${item.num_notread}</td>
+                    <td>${item['status']}</td>
+                </tr>
+                # endfor
+                </tbody>
+            </table>
+            <p class="help">The status of the listed files will be set when the review author sets the final status
+                of the review.</p>
+            <h2>Users assigned to this code review</h2>
+
+            # if review['owner'] == req.authname or manager:
+            <table class="listing dirlist" id="userlist">
+                <thead>
+                    <tr>
+                        <th style="width:90%">User name</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                # if reviewer:
+                # for item in reviewer:
+                    <tr class="${loop.cycle('even', 'odd')}">
+                        <td>${item['reviewer']}</td>
+                        <td>${item['status']}</td>
+                    </tr>
+                # endfor
+                # else:
+                    <tr class="even">
+                        <td>There are no users included in this code review.</td>
+                    </tr>
+                # endif
+                </tbody>
+            </table>
+            # endif
+
+            # if review['owner'] != req.authname and not manager:
+            <table class="listing dirlist" id="userlist">
+                <thead>
+                    <tr>
+                        <th>User name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                # if reviewer:
+                # for item in reviewer:
+                <tr class="${loop.cycle('even', 'odd')}">
+                    <td>${item['reviewer']}</td>
+                </tr>
+                # endfor
+                # else:
+                <tr class="even">
+                    <td>There are no users included in this code review.</td>
+                </tr>
+                # endif
+                </tbody>
+            </table>
+            # endif
+
+            ## Ticket creation in Trac
+            # if (manager or review['owner'] == req.authname) and review_done and show_ticket:
+                <h2>Prepare ticket</h2>
+                <form class="workflow-actions" action="${req.href.newticket()}" method="post" target="_blank" id="prepare-ticket">
+                    ${jmacros.form_token_input()}
+                    <input type="hidden" name="preview" value="" />
+                    <input type="hidden" name="field_project" value="${review['project']}" />
+                    <input type="hidden" name="field_summary" value="$ticket_summary"/>
+                    <input type="hidden" name="field_description" value="$ticket_desc" />
+                    <fieldset>
+                        <table class="ticket-table">
+                            <tr>
+                                <th>Summary:</th>
+                                <td>$ticket_summary</td>
+                            </tr>
+                            <tr>
+                                <th>Description:</th>
+                                <td>
+                                    <div id="ticket" class="trac-content ticketdraft">
+                                        <div class="description">
+                                            <h3>Description</h3>
+                                        ${ticket_desc_wiki}
+                                        </div>
+                                    </div>
+                                    <p class="help">This is a preview. You may change summary and description on the ticket page which
+                                        opens in a new window or tab.</p>
+                                </td>
+                            </tr>
+                    </table>
+                    <div class="buttons">
+                        <input type="submit" value="Prepare Ticket"/>
+                    </div>
+                    </fieldset>
+                </form>
+                <p class="help">
+                     Clicking <strong>Prepare Ticket</strong> will open a <strong>New Ticket</strong> page where you may
+                    modify all settings.
+                </p>
+            # endif
+
+            # if canivote:
+                <h2>Workflow actions for reviewer</h2>
+
+                ${reviewer_workflow}
+                # if not is_finished:
+                <p class="help">Setting the correct state helps the review author to track progress.</p>
+                # endif
+            # endif
+
+            # if manager or review['owner'] == req.authname:
+                # if not is_finished:
+                # if manager:
+                <h2>Workflow actions for author or manager</h2>
+                # else:
+                <h2>Workflow actions for author</h2>
+                # endif
+                ${workflow}
+                    <p class="help">
+                        Closing a review means it is marked as obsolete and <strong>all associated data will be unavailable</strong>.
+                    </p>
+                # endif
+                # if is_finished and manager:
+                    # if manager:
+                    <h2>Workflow actions for manager</h2>
+                    # endif
+                    ${workflow}
+                # endif
+                <hr />
+                <form class="workflow-actions" action="" method="post">
+                    ${jmacros.form_token_input()}
+                    <fieldset>
+                        <div class="buttons">
+                            <input type="hidden" value="${review['review_id']}" name="Review"/>
+                            # if manager:
+                            <input type="submit" value="Resubmit For Review" name="resubmit"/>
+                            # endif
+                            # if review['status'] != 'closed':
+                            <input type="submit"
+                                   value="Followup Review" name="followup"
+                                   ${{"disabled": not is_finished}|htmlattr}/>
+                            # endif
+                            # if not is_finished or manager:
+                            <input type="submit"
+                                   value="Modify" name="modify"/>
+                            # endif
+                        </div>
+                    </fieldset>
+                </form>
+                # if manager:
+                <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
+                    a new code review.
+                    Comments will not be copied. When the new review is created <strong>this one will be closed
+                    automatically</strong> which means it will be practically discarded.
+                </p>
+                # endif
+                # if review['status'] != 'closed':
+                <p class="help">
+                    When creating a <strong>Followup Review</strong> all the data of this review will be
+                    used for prefilling the fields of a new code review. Comments will not be copied. During
+                    the new review it is possible to view the changes between file data at different revisions.
+                </p>
+                # endif
+                # if review['status'] != 'closed' and not is_finished:
+                <p class="help">
+                    A followup review can't be created at the moment because this review is not in a
+                    terminal state. Terminal states are: <strong>$finished_states_str</strong>.
+                </p>
+                # endif
+            # endif
+        </div>
+    # endblock content
+    </body>
+</html>

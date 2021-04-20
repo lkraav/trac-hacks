@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2019 Cinc
+# Copyright (c) 2019-2021 Cinc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@ from codereview.report import PeerReviewReport
 from trac.admin.console import TracAdmin
 from trac.perm import PermissionError
 from trac.test import EnvironmentStub, MockRequest
+from trac.web.chrome import Chrome
 
 
 class TestResource(unittest.TestCase):
@@ -126,8 +127,12 @@ codereview=1
         req = MockRequest(self.env, authname='RevDev')
         self._create_standard_reports()
         res = self.plugin.process_request(req)
-        self.assertEqual('peerreview_report.html', res[0])
-        self.assertIsNone(res[2])
+        if hasattr(Chrome, 'jenv'):
+            self.assertEqual('peerreview_report_jinja.html', res[0])
+            self.assertEqual(2, len(res))
+        else:
+            self.assertEqual('peerreview_report.html', res[0])
+            self.assertIsNone(res[2])
         self.assertIn('reports', res[1])
         self.assertEqual(0, len(res[1]['reports']))
 
@@ -137,8 +142,12 @@ codereview=1
         self._create_standard_reports()
         self._create_codereview_reports()
         res = self.plugin.process_request(req)
-        self.assertEqual('peerreview_report.html', res[0])
-        self.assertIsNone(res[2])
+        if hasattr(Chrome, 'jenv'):
+            self.assertEqual('peerreview_report_jinja.html', res[0])
+            self.assertEqual(2, len(res))
+        else:
+            self.assertEqual('peerreview_report.html', res[0])
+            self.assertIsNone(res[2])
         self.assertIn('reports', res[1])
         self.assertEqual(4, len(res[1]['reports']))
         for item in res[1]['reports']:

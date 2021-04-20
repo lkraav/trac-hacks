@@ -1,0 +1,216 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>
+            # block title
+            # if not followup:
+            Create Code Review
+            # else:
+            Create Followup Code Review
+            # endif
+            ${ super() }
+            # endblock title
+        </title>
+    # block head
+    ${ super() }
+    # endblock head
+    </head>
+
+    <body>
+    # block content
+    # set modify = req.args.get('modify', 0)
+        <div id="content">
+            # if not followup and not modify:
+            <h1>Create a New Code Review</h1>
+            # elif followup:
+            <h1>Create a New Followup Code Review</h1>
+            # elif modify:
+            <h1>Modify an existing Code Review</h1>
+            # endif
+
+            ## CodeReview name is empty if new, with previous name is resubmitted
+            <form class="workflow-actions" method="post" action="${href.peerReviewNew()}"
+                  onsubmit="return validateInput(this);" id="new-review">
+                ${jmacros.form_token_input()}
+                <fieldset id="properties">
+                    <legend>General information.</legend>
+                    <table>
+                        <tr>
+                            <th>Name:</th>
+                            <td><input type="text" name="Name" value="${name}" id="review-name"/></td>
+                        </tr>
+                        <tr>
+                            <th>Project:</th>
+                            <td>
+                                <select id="project" name="project">
+                                    <option value=""> --- </option>
+                                    # for item in projects:
+                                    <option value="${item}"
+                                            ${{"selected": curproj == item}|htmlattr}>${item}</option>
+                                    # endfor
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Additional notes:</th>
+                            <td>
+                                <p class="help">You may use wiki formating here.</p>
+                                ## Display an empty notes area if it's a new CodeReview, display previous notes
+                                ## if resubmitted
+                                <textarea class="trac-fullwidth" name="Notes" cols="60" rows="8"
+                                          id="review-notes">${notes}</textarea>
+                                <div id="noteschange" class="ticketdraft" style="display: none">
+                                    <p>Preview:</p>
+                                    <div class="notes-preview comment searchable">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+
+
+                <fieldset>
+                    <legend>
+                        # if modify:
+                        Modify the list of files.
+                        # else:
+                        Select files for review.
+                        # endif
+                    </legend>
+
+                    <!--! Displays the file browser -->
+                    <div id="repo_browser" data-is-modify="${modify}">
+                    </div>
+
+                    # if modify:
+                    <div>
+                        <p>You can't add files when modifying a review. Only files without comments may be removed</p>
+                    </div>
+                    # endif
+
+                    <table class="listing dirlist" id="myfilelist">
+                        <thead>
+                            <tr>
+                                <th>Filename (Click to remove)</th>
+                                <th>Repository</th>
+                                <th>Start Line</th>
+                                <th>End Line</th>
+                                # if followup:
+                                <th>Current File Revision</th>
+                                # endif
+                                <th>Current Repo Revision</th>
+                                # if followup:
+                                <th>Previous File Revision</th>
+                                <th>Previous Repo Revision</th>
+                                # endif
+                                # if modify:
+                                <th>Comments</th>
+                                # endif
+                            </tr>
+                        </thead>
+                        ## Display an empty file list if it's a new CodeReview, display previous list if resubmitted
+                        # if new == 'yes':
+                        <tbody id="myfilebody">
+                            <tr id="no-files" class="even">
+                                <td>No files have been added to the code review.</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                # if modify:
+                                <td></td>
+                                # endif
+                            </tr>
+                        </tbody>
+                        # endif
+
+                        # if new != 'yes':
+                        <tbody id="myfilebody">
+                        # for item in prevFiles:
+                        <tr id="${item.element_id}" class="${loop.cycle('even', 'odd')}">
+                                <td>
+                                    <input type="hidden" name="file"
+                                           value="${item.id_string}"/>
+                                    # if not item.num_comments:
+                                    <a href="javascript:removefile('${item.id_string}')">${item['path']}</a>
+                                    # else:
+                                    ${item['path']}
+                                    # endif
+                                </td>
+                                <td>${item['repo'] if item['repo'] else '(default)'}</td>
+                                <td>${item['line_start']}</td>
+                                <td>${item['line_end']}</td>
+                                # if followup:
+                                <td>${item.curchangerevision}</td>
+                                <td>${item.curreporev}</td>
+                                <td>${item['changerevision']}</td>
+                                # endif
+                                <td>${item['revision']}</td>
+                                # if modify:
+                                <td>${item.num_comments}</td>
+                                # endif
+                            </tr>
+                        # endfor
+                        </tbody>
+                        # endif
+                    </table>
+                    # if not modify:
+                    <p class="help">If <strong>Start Line</strong> and <strong>End Line</strong> are set to zero the
+                        whole file is selected for review.</p>
+                    # endif
+                </fieldset>
+
+                <fieldset>
+                    <legend>Select reviewers for your review.</legend>
+
+                    # include "peerreviewuser_jinja.html"
+
+                </fieldset>
+
+                <div>
+                    <div class="buttons">
+                        # if oldid:
+                        <input type="hidden" name="oldid" value="${oldid}"/>
+                        # endif
+                        # if not followup and not modify:
+                        <input type="submit" name="create"
+                               value="${new == 'yes' and 'Add Code Review' or 'Resubmit Code Review'}"/>
+                        # endif
+                        # if followup:
+                        <input type="hidden" name="followup" value="1"/>
+                        <input type="submit" name="createfollowup"
+                               value="${new == 'yes' and 'Add Code Review' or 'Add Followup Review'}"/>
+                        # endif
+                        # if modify:
+                        <input type="submit" name="cancel" value="Cancel"/>
+                        <input type="submit" name="save" value="Save Changes"/>
+                        # endif
+                    </div>
+                </div>
+
+            </form>
+            <div id="dialog-confirm" title="Remove file?">
+                <p>
+                    <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+                    Really remove the file <strong id="confirm-name"></strong>?</p>
+            </div>
+            <div id="user-rem-confirm" title="Remove user?">
+                <p>
+                    <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+                    Really remove the user <strong id="user-rem-name"></strong>?</p>
+            </div>
+            <script type="text/javascript" src="${href.chrome('hw/js/peerReviewNew.js')}"></script>
+        </div>
+    # endblock content
+    </body>
+</html>

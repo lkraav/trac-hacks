@@ -19,7 +19,8 @@ from trac.resource import get_resource_url, IResourceManager, resource_exists, R
 from trac.util import as_int, format_date
 from trac.util.html import Markup, html as tag
 from trac.util.translation import _
-from trac.web.chrome import add_ctxtnav, add_stylesheet, INavigationContributor, ITemplateProvider, web_context
+from trac.web.chrome import add_ctxtnav, add_stylesheet, Chrome,\
+    INavigationContributor, ITemplateProvider, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.api import IWikiSyntaxProvider
 from trac.wiki.formatter import format_to
@@ -193,7 +194,10 @@ class PeerReviewMain(Component):
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
 
-        return 'peerReviewMain.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'peerreview_main_jinja.html', data
+        else:
+            return 'peerReviewMain.html', data, None
 
     # IResourceManager methods
 

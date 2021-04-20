@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 #
 # All rights reserved.
 #
@@ -223,7 +223,10 @@ class NewReviewModule(Component):
         add_script(req, "hw/js/peer_review_new.js")
         add_script(req, 'hw/js/peer_user_list.js')
         add_ctxt_nav_items(req)
-        return 'peerReviewNew.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'peerreview_new_jinja.html', data
+        else:
+            return 'peerReviewNew.html', data, None
 
     def createCodeReview(self, req, action):
         """Create a new code review from the data in the request object req.

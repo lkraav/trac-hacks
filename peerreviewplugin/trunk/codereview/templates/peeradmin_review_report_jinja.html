@@ -1,0 +1,87 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block admintitle
+            Review Report
+            # endblock admintitle
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
+    </head>
+    <body>
+    # block adminpanel
+        <h2>Settings for Review Reports</h2>
+            <form action="" id="docvar-form" method="post">
+                <fieldset>
+                    <h3>Document Variables</h3>
+                    <div class="field">
+                        <label>Title:</label>
+                        <input type="text" class="form-control" maxlength="255" id="doctitle"
+                               name="title" value="${title}" />
+                    </div>
+                    <div class="field">
+                        <label>Subject:</label>
+                        <input type="text" class="form-control" maxlength="255" id="docsubject"
+                               name="subject" value="${subject}" />
+                    </div>
+                    <p class="help">You may use the following
+                        variable in title and subject which will be replaced with the actual value when creating a document.
+                    </p>
+                    <p class="help"><strong>$reviewid</strong>: ID of the review</p>
+                    <p class="help"><strong>$review_name</strong>: review name</p>
+                    <p class="help"><strong>Example</strong>: Report for Review $reviewid</p>
+                    <h3>Document Template</h3>
+                    <div class="field">
+                        <label>Path:</label>
+                        <input type="text" class="form-control" maxlength="255" id="tmplpath"
+                               name="template" value="${template}" />
+                    </div>
+                    # if not template_valid:
+                    <div class="system-message warning">
+                        <p>The template path is not valid. A default template will be used instead:
+                            <strong>${template_default}</strong></p>
+                    </div>
+                    # endif
+                    <p class="help">The path must be readable by Trac. If no template is specified a default
+                        will be used.</p>
+                    <div class="buttons">
+                        <input name="save" value="${_('Save')}" type="submit" />
+                    </div>
+                </fieldset>
+            </form>
+
+        <h2>Setting for File Lists</h2>
+        <form action="" id="filelist-form" method="post">
+            <fieldset>
+                <h3>Document Template</h3>
+                <div class="field">
+                    <label>Path:</label>
+                    <input type="text" class="form-control" maxlength="255" id="filelist-tmplpath"
+                           name="template" value="${filelist_template}" />
+                </div>
+                # if not filelist_template_valid:
+                <div class="system-message warning">
+                    <p>The template path is not valid. A default template will be used instead:
+                        <strong>${filelist_template_default}</strong></p>
+                </div>
+                # endif
+                <p class="help">The path must be readable by Trac. If no template is specified a default
+                    will be used.</p>
+                <div class="buttons">
+                    <input name="save_filelist" value="${_('Save')}" type="submit" />
+                </div>
+            </fieldset>
+        </form>
+    # endblock adminpanel
+    </body>
+</html>

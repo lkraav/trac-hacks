@@ -1,0 +1,53 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block title
+            Codereview Reports
+            ${ super() }
+            # endblock title
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
+    </head>
+    <body>
+    # block content
+        <div id="content" class="report">
+            <h1>Codereview Reports</h1>
+            <p>The reports are specially crafted for Codereviews. Following a link will open the report result page.
+            Depending on the report it may be necessary to add parameters on the report page so results are shown.</p>
+            <p>More reports can be found on the Trac <a title="Report Page" href="${href.report()}">report page</a>.
+            </p>
+
+            <h2>Available Codereview Reports</h2>
+            <div class="reports">
+                # for report in reports:
+                <div>
+                    <h3>
+                        <a title="${report.title}" href="${href.report(report.id, PROJECT='none')}">
+                            <em>${report.id}</em> ${report.title}</a>
+                    </h3>
+                    # if report.desc:
+                    <div class="description">
+                        ${wiki_to_html(context.child('report', report.id), report.desc)}
+                    </div>
+                    # endif
+                </div>
+                # endfor
+                # if not reports:
+                <p>There are no Codereview reports defined.</p>
+                # endif
+            </div>
+        </div>
+    # endblock content
+    </body>
+</html>

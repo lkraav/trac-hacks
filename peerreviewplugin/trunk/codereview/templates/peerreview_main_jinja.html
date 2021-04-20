@@ -1,0 +1,165 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>
+            # block title
+            My Code Review
+            ${ super() }
+            # endblock title
+        </title>
+    # block head
+    ${ super() }
+    # endblock head
+    </head>
+
+    <body>
+        # block content
+        <div id="content">
+            <h1>My Code Reviews</h1>
+
+            <h2>This is a list of open code reviews currently assigned to you.</h2>
+            <form action="" method="get">
+                <fieldset>
+                    <label><input type="checkbox" value="1" name="allassigned"
+                                  ${{"checked": allassigned}|htmlattr}/>
+                        Show my finished reviews.</label>
+                    <input type="hidden" value="${allcreated or None}" name="allcreated" />
+                    <input type="submit" value="Update" name="update" />
+                    <p class="help">When selected the list will include reviews already finished and marked as
+                        <strong>reviewed</strong> by the reviewer. Note that reviews which are marked as finished by the author
+                        will not be shown.
+                    </p>
+                </fieldset>
+            </form>
+
+            ## Display your currently assigned code reviews in a table
+            <table class="listing dirlist" id="assignedreviewlist">
+                <thead>
+                <tr>
+                    <th>Review</th>
+                    <th>Author</th>
+                    <th>Name</th>
+                    <th>Review Status</th>
+                    <th>My Status</th>
+                    <th># Comments</th>
+                    <th># Not Read</th>
+                    <th>Date Created</th>
+                    <th>Date Finished</th>
+                    <th>Files</th>
+                </tr>
+                </thead>
+                <tbody>
+                ## if there are no reviews open for you, state this in the table
+                # if not assigned_reviews:
+                <tr>
+                    <td>There are no code reviews assigned to you.</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                # endif
+                # for item in assigned_reviews:
+                <tr class="${loop.cycle('even', 'odd')}">
+                    <!--! Set up the table with the appropriate values and then links to view the review -->
+                    <td><a href="${href.peerreviewview(item['review_id'])}">${item['review_id']}</a></td>
+                    <td>${item['owner']}</td>
+                    <td><a href="${href.peerreviewview(item['review_id'])}">${item['name']}</a></td>
+                    <td>${item['status']}</td>
+                    <td>${item.reviewer['status']}</td>
+                    <td>${item.num_comments}</td>
+                    <td ${{"class": 'comment-notread'} if item.num_notread}|htmlattr}>${item.num_notread}</td>
+                    <td>${item.date}</td>
+                    <td>${item.finish_date}</td>
+                    <td>
+                        # for file in item.rev_files:
+                        <p class="path">
+                            <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>
+                        </p>
+                        # endfor
+                    </td>
+                </tr>
+                # endfor
+                </tbody>
+            </table>
+
+            <h2>This is a list of code reviews created by you.</h2>
+            <form action="" method="get">
+                <fieldset>
+                    <label><input type="checkbox" value="1" name="allcreated"
+                                  ${{"checked": allcreated}|htmlattr}/>
+                        Show closed reviews.</label>
+                    <input type="hidden" value="${allassigned or None}" name="allassigned" />
+                    <input type="submit" value="Update" name="update" />
+                    <p class="help">When selected the list will include reviews marked as <strong>closed</strong>. These
+                        are obsolete reviews.
+                    </p>
+                </fieldset>
+            </form>
+            <table class="listing dirlist" id="myreviewlist">
+                <thead>
+                    <tr>
+                        <th>Review</th>
+                        <th>Name</th>
+                        <th>Review Status</th>
+                        <th># Comments</th>
+                        <th># Not Read</th>
+                        <th>Date Created</th>
+                        <th>Date Finished</th>
+                        <th>Files</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!--! if there are no reviews open for you, state this in the table -->
+                    # if not myreviews:
+                    <tr>
+                        <td>You have no code reviews currently open.</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    # endif
+                    # for item in myreviews:
+                    <tr class="${loop.cycle('even', 'odd')}">
+                        <!--! Set up the table with the appropriate values and then links to view the review -->
+                        <td><a href="${href.peerreviewview(item['review_id'])}">${item['review_id']}</a></td>
+                        <td><a href="${href.peerreviewview(item['review_id'])}">${item['name']}</a></td>
+                        <td>${item['status']}</td>
+                        <td>${item.num_comments}</td>
+                        <td ${{"class": 'comment-notread'} if item.num_notread}|htmlattr}>${item.num_notread}</td>
+                        <td>${item.date}</td>
+                        <td>${item.finish_date}</td>
+                        <td>
+                            # for file in item.rev_files:
+                            <p class="path">
+                                <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>
+                            </p>
+                            # endfor
+                        </td>
+                    </tr>
+                # endfor
+                </tbody>
+            </table>
+
+        </div>
+        # endblock content
+    </body>
+</html>

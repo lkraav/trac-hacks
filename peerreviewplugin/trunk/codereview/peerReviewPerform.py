@@ -155,7 +155,10 @@ class PeerReviewPerform(Component):
         add_script(req, "hw/js/peer_review_perform.js")
         self.add_ctxt_nav_items(req, review, r_file)
 
-        return 'peerReviewPerform.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'peerreview_perform_jinja.html', data
+        else:
+            return 'peerReviewPerform.html', data, None
 
     def add_ctxt_nav_items(self, req, review, r_file):
         rev_files = ["%s:%s" % (item['path'], item['file_id'])

@@ -9,7 +9,7 @@ from trac.core import Component, implements
 from trac.mimeview.api import IContentConverter, Mimeview
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
-from trac.web.chrome import add_notice, add_warning
+from trac.web.chrome import add_notice, add_warning, Chrome
 from model import PeerReviewModel, ReviewDataModel
 
 try:
@@ -222,7 +222,10 @@ class PeerReviewDocx(Component):
                 'filelist_default': self._get_template_path(filelist_data['filelist.template']['data'] or '',
                                                             'review_filelist.docx')
                 }
-        return 'admin_review_report.html', data
+        if hasattr(Chrome, 'jenv'):
+            return 'peeradmin_review_report_jinja.html', data
+        else:
+            return 'admin_review_report.html', data
 
     def get_report_defaults(self):
         """
