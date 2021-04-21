@@ -10,7 +10,7 @@
 # Author: Team5
 #
 # Provides functionality for main page
-# Works with peerReviewMain.html
+# Works with peerreview_main.html
 
 import itertools
 from trac.core import Component, implements
@@ -197,7 +197,7 @@ class PeerReviewMain(Component):
         if hasattr(Chrome, 'jenv'):
             return 'peerreview_main_jinja.html', data
         else:
-            return 'peerReviewMain.html', data, None
+            return 'peerreview_main.html', data, None
 
     # IResourceManager methods
 

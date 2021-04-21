@@ -9,7 +9,7 @@
 #
 
 # Provides functionality to create a new code review.
-# Works with peerReviewNew.html
+# Works with peerreview_new.html
 
 import itertools
 import time
@@ -226,7 +226,7 @@ class NewReviewModule(Component):
         if hasattr(Chrome, 'jenv'):
             return 'peerreview_new_jinja.html', data
         else:
-            return 'peerReviewNew.html', data, None
+            return 'peerreview_new.html', data, None
 
     def createCodeReview(self, req, action):
         """Create a new code review from the data in the request object req.

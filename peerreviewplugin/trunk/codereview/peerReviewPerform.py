@@ -158,7 +158,7 @@ class PeerReviewPerform(Component):
         if hasattr(Chrome, 'jenv'):
             return 'peerreview_perform_jinja.html', data
         else:
-            return 'peerReviewPerform.html', data, None
+            return 'peerreview_perform.html', data, None
 
     def add_ctxt_nav_items(self, req, review, r_file):
         rev_files = ["%s:%s" % (item['path'], item['file_id'])

@@ -63,7 +63,7 @@ class PeerReviewCommentHandler(Component):
         if not (req.perm.has_permission('CODE_REVIEW_MGR') or
                 req.perm.has_permission('CODE_REVIEW_DEV')):
             data['invalid'] = 4
-            return 'peerReviewCommentCallback.html', data, None
+            return 'peerreview_comment_callback.html', data, None
 
         if req.method == 'POST':
             if req.args.get('addcomment'):
@@ -75,7 +75,8 @@ class PeerReviewCommentHandler(Component):
                 # We shouldn't end here but in case just drop out.
                 if self.review_is_closed(req):
                     data['invalid'] = 'closed'
-                    return 'peerReviewCommentCallback.html', data, None
+                    return 'peerreview_comment_callback.html', data, None
+
                 txt = req.args.get('comment')
                 comment = ReviewCommentModel(self.env)
                 comment['file_id'] = data['fileid'] = req.args.get('fileid')
@@ -120,7 +121,7 @@ class PeerReviewCommentHandler(Component):
         else:
             data['invalid'] = 5
 
-        return 'peerReviewCommentCallback.html', data, None
+        return 'peerreview_comment_callback.html', data, None
 
     def review_is_closed(self, req):
         fileid = req.args.get('IDFile')
@@ -399,7 +400,6 @@ class PeerReviewCommentHandler(Component):
                  }
 
         if hasattr(Chrome, 'jenv'):
-            self.log.info('#### Rendering with Jinja')
             chrome = Chrome(self.env)
             template = chrome.jenv.from_string(self.comment_template_jinja)
             return chrome.render_template_string(template, tdata, True)
