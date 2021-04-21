@@ -138,7 +138,7 @@ class GenericClassSystem(Component):
     def get_templates_dirs(self):
         """
         Return the absolute path of the directory containing the provided
-        Genshi templates.
+        templates.
         """
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]

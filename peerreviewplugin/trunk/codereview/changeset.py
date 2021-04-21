@@ -13,7 +13,6 @@ from codereview.model import get_users, PeerReviewModel, PeerReviewerModel, \
 from codereview.peerReviewCommentCallback import writeJSONResponse, writeResponse
 from codereview.repo import hash_from_file_node
 from codereview.repobrowser import get_node_from_repo
-from genshi.template import MarkupTemplate
 from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
 from trac.util.translation import _
@@ -29,18 +28,11 @@ class PeerChangeset(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        """Called after initial handler selection, and can be used to change
-        the selected handler or redirect request.
-
-        Always returns the request handler, even if unchanged.
-        """
+        """Always returns the request handler, even if unchanged."""
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        """Do any post-processing the request might need; typically adding
-        values to the template `data` dictionary, or changing the Genshi
-        template or mime type.
-
+        """Do any post-processing the request might need;
         `data` may be updated in place.
 
         Always returns a tuple of (template, data, content_type), even if
@@ -125,50 +117,49 @@ class PeerChangeset(Component):
 """.format(title=_('Codereview'))
 
     def create_review_info(self, req, review):
-        _rev_info = """
-        <dl xmlns:py="http://genshi.edgewall.org/" id="peer-review-info">
-            <dt class="property" style="margin-top: 1em">Review ID:</dt>
-            <dd style="margin-top: 1em"><a href="{review_url}" title="Open Review #{review_id}">#{review_id}</a>
-              <small><em>(click to open review)</em></small>
+        _rev_info = u"""
+        <dl id="peer-review-info">
+            <dt class="property" style="margin-top: 1em">{review_id_label}</dt>
+            <dd style="margin-top: 1em"><a href="{review_url}" title="{reviewer_id_title}">#{review_id}</a>
+              <small><em>{reviewer_id_help}</em></small>
             </dd>
-            <dt class="property">Status:</dt>
-            <dd>${review['status']}</dd>
-            <dt class="property">Reviewers</dt>
-            <dd>
-            <ul id="userlist">
-                    <li py:if="not reviewer" class="even">
-                        There are no users included in this code review.
-                    </li>
-                    <li py:if="reviewer" py:for="item in reviewer">
-                        ${item['reviewer']}
-                    </li>
-            </ul>
-            </dd>
+            <dt class="property">{status_label}</dt>
+            <dd>{status}</dd>
+            <dt class="property">{reviewers_label}</dt>
+            <dd>{user_list}</dd>
         </dl>
         """
+        def create_user_list():
+            if reviewer:
+                usr = [u"<li>%s</li>" % item['reviewer'] for item in reviewer]
+                li = u"".join(usr)
+            else:
+                li = '<li class="even">{msg}</li>'.format(msg=_("There are no users included in this code review."))
+            return u'<ul id="userlist">{li}</ul>'.format(li=li)
 
         if 'CODE_REVIEW_VIEW' not in req.perm:
-            return ""
+            no_perm_tmpl = """<dl id="peer-review-info"><dt class="property" style="margin-top: 1em">Review:</dt>
+            <dd style="margin-top: 1em"><p>{msg}</p></dd></dl>"""
+            return no_perm_tmpl.format(msg=_("You don't have permission to view code review information."))
 
         res = Resource('peerreview', review['review_id'])
-
+        reviewer = list(PeerReviewerModel.select_by_review_id(self.env, review['review_id']))
         data = {
-            'reponame': req.args.get('peer_repo', ''),
-            'rev': req.args.get('peer_rev', ''),
-            'new': 'no',
-            'review': review,
-            'reviewer': list(PeerReviewerModel.select_by_review_id(self.env, review['review_id'])),
-            'cycle': itertools.cycle
+            'status': review['status'],
+            'user_list': create_user_list(),
+            'review_url': get_resource_url(self.env, res, req.href),
+            'review_id': review['review_id'],
+            'status_label': _("Status:"),
+            'review_id_label': _("Review ID:"),
+            'reviewers_label': _("Reviewers:"),
+            'reviewer_id_help': _("(click to open review)"),
+            'reviewer_id_title': _("Open Review #%s") % review['review_id']
         }
 
-        format_data = {'review_url': get_resource_url(self.env, res, req.href),
-                       'review_id': review['review_id']
-                       }
-        template = MarkupTemplate(_rev_info)
         if req.args.get('peer_create'):
-            return self.review_tmpl % template.generate(**data).render().format(**format_data)
+            return self.review_tmpl % _rev_info.format(**data)
         else:
-            return template.generate(**data).render().format(**format_data)
+            return _rev_info.format(**data)
 
     def match_request(self, req):
         return req.path_info == '/peerreviewchangeset'

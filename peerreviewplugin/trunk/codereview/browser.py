@@ -52,18 +52,11 @@ class PeerReviewBrowser(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        """Called after initial handler selection, and can be used to change
-        the selected handler or redirect request.
-
-        Always returns the request handler, even if unchanged.
-        """
+        """Always returns the request handler, even if unchanged."""
         return handler
 
     def post_process_request(self, req, template, data, content_type):
-        """Do any post-processing the request might need; typically adding
-        values to the template `data` dictionary, or changing the Genshi
-        template or mime type.
-
+        """Do any post-processing the request might need;
         `data` may be updated in place.
 
         Always returns a tuple of (template, data, content_type), even if

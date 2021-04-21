@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2010-2015 Roberto Longobardi
+# Copyright (C) 2016-2021 Cinc
 #
 # This file is part of the Test Manager plugin for Trac.
 #
@@ -17,13 +18,17 @@ from trac.core import Interface, Component, implements, ExtensionPoint, \
     TracError
 from trac.resource import Resource, get_resource_url
 from trac.util import get_reporter_id
-from trac.util.html import html as tag
+from trac.util.html import html as tag, TracHTMLSanitizer
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import Chrome, ITemplateProvider
 from string import Template
-from genshi import HTML
+
+if not hasattr(Chrome, 'jenv'):
+    # This is Trac 1.2
+    from genshi import HTML
+
 
 from ..tracgenericclass.util import formatExceptionInfo
 from .model import ResourceWorkflowState
@@ -92,7 +97,7 @@ class IWorkflowOperationProvider(Interface):
         :param res_wf_state: the ResourceWorkflowState
                              transitioned from old_state to new_state
         :param resource: the Resource object transitioned.
-        :return: a Genshi tag with the required control(s) and a string
+        :return: a tag with the required control(s) and a string
                  with the operation hint.
         """
 
@@ -273,7 +278,7 @@ class ResourceWorkflowSystem(Component):
         sorted_actions = self.get_available_actions(
             req, realm, resource=resource)
 
-        form_token = '<input type="hidden" name="__FORM_TOKEN" value="{ftoken}" />'.format(ftoken=req.form_token)
+        form_token = u'<input type="hidden" name="__FORM_TOKEN" value="{ftoken}" />'.format(ftoken=req.form_token)
 
         tdata = {'action': base_href+'/workflowtransition',
                  'resource_id': resource.id,
@@ -338,10 +343,16 @@ class ResourceWorkflowSystem(Component):
             if data and data.get('redirect'):
                 tdata['redirect'] = data.get('redirect')
 
-            return HTML(tmpl.safe_substitute(tdata), encoding="utf-8")
+            if hasattr(Chrome, 'jenv'):
+                return TracHTMLSanitizer().sanitize(tmpl.safe_substitute(tdata))
+            else:
+                return HTML(tmpl.safe_substitute(tdata), encoding='utf-8')
         else:
             tdata['display'] = 'style="display: none;"'
-            return HTML(tmpl.safe_substitute(tdata), encoding="utf-8")
+            if hasattr(Chrome, 'jenv'):
+                return TracHTMLSanitizer().sanitize(tmpl.safe_substitute(tdata))
+            else:
+                return HTML(tmpl.safe_substitute(tdata), encoding='utf-8')
 
     # Workflow operations management
 
@@ -478,7 +489,7 @@ class ResourceWorkflowSystem(Component):
     def get_templates_dirs(self):
         """
         Return the absolute path of the directory containing the provided
-        Genshi templates.
+        templates.
         """
         from pkg_resources import resource_filename
         return [resource_filename(__name__, 'templates')]
