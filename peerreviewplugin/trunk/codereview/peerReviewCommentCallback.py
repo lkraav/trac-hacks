@@ -20,11 +20,14 @@ import json
 from codereview.dbBackend import *
 from codereview.model import ReviewCommentModel, PeerReviewModel, ReviewDataModel, ReviewFileModel
 from codereview.util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
-from genshi.template.markup import MarkupTemplate
+try:
+    from genshi.template.markup import MarkupTemplate
+except ImportError:
+    pass  # We are Trac 1.4 and use Jinja2
 from trac import util
 from trac.core import *
 from trac.util import Markup
-from trac.web.chrome import web_context
+from trac.web.chrome import Chrome, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki import format_to_html
 
@@ -302,6 +305,65 @@ class PeerReviewCommentHandler(Component):
             </tbody>
             </table>
         """
+    comment_template_jinja = u"""
+            <table style="width:400px"
+                   class="${'comment-table' if comment.IDComment in read_comments else 'comment-table comment-notread'}"
+                   id="${comment.IDParent}:${comment.IDComment}" data-child-of="${comment.IDParent}">
+            <tbody>
+            <tr>
+                <td style="width:${width}px"></td>
+                <td colspan="3" style="width:${400-width}px"
+                class="border-col"></td>
+            </tr>
+            <tr>
+                <td style="width:${width}px"></td>
+                <td colspan="2" class="comment-author">Author: ${comment.Author}
+                # if comment.IDComment not in read_comments:
+                <a href="javascript:markCommentRead(${line}, ${fileid}, ${comment.IDComment}, ${review['review_id']})">Mark read</a>
+                # else:
+                <a href="javascript:markCommentNotread(${line}, ${fileid}, ${comment.IDComment}, ${review['review_id']})">Mark unread</a>
+                # endif
+                </td>
+                <td style="width:100px" class="comment-date">${date}</td>
+            </tr>
+            <tr>
+                <td style="width:${width}px"></td>
+                <td valign="top" style="width:${factor}px" id="${comment.IDComment}TreeButton">
+                    # if childrenHTML:
+                    <img src="${href.chrome('hw/images/minus.gif')}" id="${comment.IDComment}collapse"
+                         onclick="collapseComments(${comment.IDComment});" style="cursor: pointer;" />
+                    <img src="${href.chrome('hw/images/plus.gif')}" style="display: none;cursor:pointer;"
+                         id="${comment.IDComment}expand"
+                         onclick="expandComments($comment.IDComment);" />
+                    # endif
+                </td>
+                <td colspan="2">
+                <div class="comment-text">
+                    ${text}
+                </div>
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td>
+                    ## Attachment
+                    # if comment.AttachmentPath:
+                    <a border="0" alt="Code Attachment"
+                       href="${callback}?actionType=getCommentFile&amp;fileName=${comment.AttachmentPath}&amp;IDFile=${fileid}">
+                        <img src="${href.chrome('hw/images/paper_clip.gif')}" /> ${comment.AttachmentPath}
+                    </a>
+                    # endif
+                </td>
+                <td class="comment-reply">
+                   # if not is_locked:
+                   <a href="javascript:addComment(${line}, ${fileid}, ${comment.IDComment})">Reply</a>
+                   # endif
+                </td>
+            </tr>
+            </tbody>
+            </table>
+        """
 
     # Recursively builds the comment html to send back.
     def build_comment_html(self, req, comment, nodesIn, linenum, fileid, first, data):
@@ -336,5 +398,11 @@ class PeerReviewCommentHandler(Component):
                  'read_comments': data['read_comments']
                  }
 
-        tbl = MarkupTemplate(self.comment_template, lookup='lenient')
-        return tbl.generate(**tdata).render(encoding=None) + children_html
+        if hasattr(Chrome, 'jenv'):
+            self.log.info('#### Rendering with Jinja')
+            chrome = Chrome(self.env)
+            template = chrome.jenv.from_string(self.comment_template_jinja)
+            return chrome.render_template_string(template, tdata, True)
+        else:
+            tbl = MarkupTemplate(self.comment_template, lookup='lenient')
+            return tbl.generate(**tdata).render(encoding=None) + children_html
