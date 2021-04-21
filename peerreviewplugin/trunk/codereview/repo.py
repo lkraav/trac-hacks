@@ -50,7 +50,7 @@ def get_node(repos, path, rev):
     except NoSuchNode as e:
         return None
 
-from svn_externals import parse_externals
+from .svn_externals import parse_externals
 
 
 def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, excl_path, follow_ext, repo_name=''):

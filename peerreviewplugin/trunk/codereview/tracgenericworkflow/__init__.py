@@ -12,6 +12,6 @@
 # Author: Roberto Longobardi <otrebor.dev@gmail.com>
 #
 
-import api
-import model
-import operations
+from .api import *
+from .model import *
+from .operations import *

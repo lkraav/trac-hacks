@@ -19,8 +19,8 @@ from trac.util.datefmt import format_date, to_datetime, to_utimestamp, user_time
 from trac.web.chrome import add_stylesheet, add_script, add_script_data, Chrome, INavigationContributor
 from trac.web.main import IRequestHandler
 
-from peerReviewMain import add_ctxt_nav_items
-from model import get_users
+from .peerReviewMain import add_ctxt_nav_items
+from .model import get_users
 
 
 class PeerReviewSearch(Component):
