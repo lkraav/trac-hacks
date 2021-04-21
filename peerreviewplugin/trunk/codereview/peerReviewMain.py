@@ -25,8 +25,8 @@ from trac.web.chrome import add_ctxtnav, add_stylesheet, Chrome,\
 from trac.web.main import IRequestHandler
 from trac.wiki.api import IWikiSyntaxProvider
 from trac.wiki.formatter import format_to
-from model import ReviewCommentModel, ReviewDataModel, ReviewFileModel, PeerReviewModel, PeerReviewerModel
-from util import review_is_finished
+from .model import ReviewCommentModel, ReviewDataModel, ReviewFileModel, PeerReviewModel, PeerReviewerModel
+from .util import review_is_finished
 
 
 def add_ctxt_nav_items(req):

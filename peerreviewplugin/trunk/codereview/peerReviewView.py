@@ -26,8 +26,7 @@ from trac.config import BoolOption, ListOption
 from trac.core import Component, implements, TracError
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
-from trac.util import format_date
-from trac.util.datefmt import format_datetime, to_datetime, user_time
+from trac.util.datefmt import format_date, format_datetime, to_datetime, user_time
 from trac.util.html import html as tag
 from trac.util.text import CRLF, obfuscate_email_address
 from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor, web_context

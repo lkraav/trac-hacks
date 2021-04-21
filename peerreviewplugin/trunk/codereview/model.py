@@ -20,9 +20,8 @@ from trac.resource import ResourceNotFound
 from trac.search.api import shorten_result
 from trac.util.datefmt import from_utimestamp, to_utimestamp, utc
 from trac.util.translation import N_, _
-from tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, \
+from .tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, \
     need_db_create_for_realm, create_db_for_realm, need_db_upgrade_for_realm, upgrade_db_for_realm
-from tracgenericclass.util import get_timestamp_db_type
 
 __author__ = 'Cinc'
 

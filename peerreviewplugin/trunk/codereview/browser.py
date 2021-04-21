@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from model import ReviewFileModel
-from peerReviewCommentCallback import writeResponse
-from peerReviewPerform import CommentAnnotator
+from .model import ReviewFileModel
+from .peerReviewCommentCallback import writeResponse
+from .peerReviewPerform import CommentAnnotator
 from string import Template
 from trac.core import Component, implements
 from trac.util.html import tag

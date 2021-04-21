@@ -7,13 +7,13 @@ import os
 import zipfile
 from collections import defaultdict
 from lxml import etree as et
-from repo import get_repository_dict
+from .repo import get_repository_dict
 from trac.util.datefmt import format_date
 from trac.util.text import to_unicode, to_utf8
 from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.web_ui.util import get_existing_node
 from .model import PeerReviewModel, PeerReviewerModel, ReviewCommentModel, ReviewFileModel
-from peerReviewPerform import file_data_from_repo
+from .peerReviewPerform import file_data_from_repo
 
 try:
     from docx import Document

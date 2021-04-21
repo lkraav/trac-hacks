@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -8,7 +8,7 @@
 #
 # Author: Cinc
 #
-from model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
+from .model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
 from trac.core import Component, implements
 from trac.wiki.formatter import format_to_html
 from trac.resource import Resource, get_resource_url

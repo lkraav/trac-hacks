@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
+# Copyright (C) Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -9,7 +10,7 @@
 #
 
 import string
-from ReviewCommentStruct import *
+from .ReviewCommentStruct import *
 
 
 class dbBackend(object):

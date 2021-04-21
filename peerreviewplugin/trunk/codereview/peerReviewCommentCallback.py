@@ -26,8 +26,8 @@ except ImportError:
     pass  # We are Trac 1.4 and use Jinja2
 from trac import util
 from trac.core import *
-from trac.util import Markup
 from trac.util.datefmt import format_date, to_datetime, user_time
+from trac.util.html import Markup
 from trac.web.chrome import Chrome, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki import format_to_html

@@ -26,6 +26,12 @@ from trac.web import IRequestHandler, RequestDone
 from trac.web.chrome import add_link, Chrome, web_context
 from trac.wiki import format_to_html
 
+try:
+    cmp
+except NameError:
+    def cmp(a, b):
+        return (a > b) - (a < b)
+
 IMG_RE = re.compile(r"\.(gif|jpg|jpeg|png)(\?.*)?$", re.IGNORECASE)
 CHUNK_SIZE = 4096
 DIGITS = re.compile(r'[0-9]+')

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from admin import get_prj_file_list
+from .admin import get_prj_file_list
 from string import Template
 from trac.admin import IAdminPanelProvider
 from trac.config import PathOption
@@ -10,7 +10,7 @@ from trac.mimeview.api import IContentConverter, Mimeview
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.web.chrome import add_notice, add_warning, Chrome
-from model import PeerReviewModel, ReviewDataModel
+from .model import PeerReviewModel, ReviewDataModel
 
 try:
     from docx import Document

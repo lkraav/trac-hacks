@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -9,10 +9,10 @@
 # Author: Cinc
 #
 
-from model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
+from .model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
 
 __author__ = 'Cinc'
-__copyright__ = "Copyright 2016"
+__copyright__ = "Copyright 2016-2021"
 __license__ = "BSD"
 
 
