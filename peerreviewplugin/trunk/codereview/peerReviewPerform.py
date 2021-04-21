@@ -24,12 +24,13 @@ from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.resource import ResourceNotFound
-from trac.util import format_date
+from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.chrome import add_ctxtnav, INavigationContributor, Chrome, \
                             add_link, add_stylesheet, add_script_data, add_script, web_context
 from trac.web.main import IRequestHandler
+from trac.wiki.formatter import format_to_html
 from trac.versioncontrol.web_ui.util import *
 from trac.versioncontrol.api import InvalidRepository, RepositoryManager
 from trac.versioncontrol.diff import diff_blocks, get_diff_options
@@ -103,7 +104,9 @@ class PeerReviewPerform(Component):
             raise InvalidRepository("Unable to acquire repository.", "Repository Error")
 
         review = PeerReviewModel(self.env, r_file['review_id'])
-        review.date = format_date(review['created'])
+
+        review.date = user_time(req, format_date, to_datetime(review['created']))
+        review.html_notes = format_to_html(self.env, web_context(req), review['notes'])
 
         data = {'file_id': fileid,
                 'review_file': r_file,
@@ -113,25 +116,17 @@ class PeerReviewPerform(Component):
                 }
 
         # Add parent data if any
-        data.update(self.parent_data(review, r_file, repos))
+        data.update(self.parent_data(req, review, r_file, repos))
 
         # Mark if this is a changeset review
         changeset = get_changeset_data(self.env, review['review_id'])
         data.update({'changeset': changeset[1],
                      'repo': changeset[0]})
 
-        # mimeview = Mimeview(self.env)
-        # content = node.get_content().read(mimeview.max_preview_size)  # We get the raw data without keyword substitution
-        # if not is_binary(content):
-        #     if mime_type != 'text/plain':
-        #         plain_href = req.href.peerReviewBrowser(node.path, rev=node.rev, format='txt')
-        #         add_link(req, 'alternate', plain_href, 'Plain Text', 'text/plain')
-
         if data['changeset']:
             # This simulates a parent review by creating some temporary data
             # not backed by the database. If it's a new file, parent information is omitted
             data.update(self.changeset_data(data, r_file, repos))
-
 
         if data['parent_review']:
             # A followup review with diff viewer
@@ -234,7 +229,7 @@ class PeerReviewPerform(Component):
             node = get_existing_node(self.env, repos, r_file['path'], repos.youngest_rev)
         return node
 
-    def parent_data(self, review, r_file, repos):
+    def parent_data(self, req, review, r_file, repos):
         """Create a dictionary with data about parent review.
 
         The dictionary is used to update the 'data' dict.
@@ -252,7 +247,7 @@ class PeerReviewPerform(Component):
             # If this is a file added to the review we don't have a parent file
             if par_file_id:
                 par_review = PeerReviewModel(self.env, review['parent_id'])  # Raises 'ResourceNotFound' on error
-                par_review.date = format_date(par_review['created'])
+                par_review.date = user_time(req, format_date, to_datetime(par_review['created']))
                 par_file = ReviewFileModel(self.env, par_file_id)
                 lines = [c.line_num for c in Comment.select_by_file_id(self.env, par_file['file_id'])]
                 par_file.comments = list(set(lines))  # remove duplicates

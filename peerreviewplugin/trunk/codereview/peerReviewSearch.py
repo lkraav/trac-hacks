@@ -15,8 +15,7 @@ import itertools
 
 from codereview.model import PeerReviewModel
 from trac.core import *
-from trac.util import format_date
-from trac.util.datefmt import to_datetime, to_utimestamp, utc
+from trac.util.datefmt import format_date, to_datetime, to_utimestamp, user_time, utc
 from trac.web.chrome import add_stylesheet, add_script, add_script_data, Chrome, INavigationContributor
 from trac.web.main import IRequestHandler
 
@@ -136,9 +135,9 @@ class PeerReviewSearch(Component):
 
         for rev in rev_model.list_matching_objects(exact_match=False):
             tempArray = [rev['review_id'], rev['owner'], rev['status'],
-                         format_date(rev['created']), rev['name']]
+                         user_time(req, format_date, to_datetime(rev['created'])), rev['name']]
             if rev['closed']:
-                tempArray.append(format_date(rev['closed']))
+                tempArray.append(user_time(req, format_date, to_datetime(rev['closed'])))
             else:
                 tempArray.append('')
             if date:

@@ -16,7 +16,8 @@ import itertools
 from trac.core import Component, implements
 from trac.perm import IPermissionRequestor
 from trac.resource import get_resource_url, IResourceManager, resource_exists, Resource, ResourceNotFound
-from trac.util import as_int, format_date
+from trac.util import as_int
+from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import Markup, html as tag
 from trac.util.translation import _
 from trac.web.chrome import add_ctxtnav, add_stylesheet, Chrome,\
@@ -141,9 +142,9 @@ class PeerReviewMain(Component):
         for rev in all_reviews:
             # Reviews created by me
             if rev['owner'] == req.authname:
-                rev.date = format_date(rev['created'])
+                rev.date = user_time(req, format_date, to_datetime(rev['created']))
                 if rev['closed']:
-                    rev.finish_date = format_date(rev['closed'])
+                    rev.finish_date = user_time(req, format_date, to_datetime(rev['closed']))
                 else:
                     rev.finish_date = ''
                 rev.rev_files = files[rev['review_id']]
@@ -171,9 +172,9 @@ class PeerReviewMain(Component):
             rev = PeerReviewModel(self.env, item['review_id'])
             if not review_is_finished(self.env.config, rev):
                 rev.reviewer = item
-                rev.date = format_date(rev['created'])
+                rev.date = user_time(req, format_date, to_datetime(rev['created']))
                 if rev['closed']:
-                    rev.finish_date = format_date(rev['closed'])
+                    rev.finish_date = user_time(req, format_date, to_datetime(rev['closed']))
                 else:
                     rev.finish_date = ''
                 rev.rev_files = files[rev['review_id']]

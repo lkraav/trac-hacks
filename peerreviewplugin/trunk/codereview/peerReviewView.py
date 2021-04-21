@@ -27,6 +27,7 @@ from trac.core import Component, implements, TracError
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
 from trac.util import format_date
+from trac.util.datefmt import format_datetime, to_datetime, user_time
 from trac.util.html import html as tag
 from trac.util.text import CRLF, obfuscate_email_address
 from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor, web_context
@@ -321,9 +322,9 @@ class PeerReviewView(Component):
         """Get a PeerReviewModel for the given review id and prepare some additional data used by the template"""
         review = PeerReviewModel(self.env, review_id)
         review.html_notes = format_to_html(self.env, web_context(req), review['notes'])
-        review.date = format_date(review['created'])
+        review.date = user_time(req, format_date, to_datetime(review['created']))
         if review['closed']:
-            review.finish_date = format_date(review['closed'])
+            review.finish_date = user_time(req, format_date, to_datetime(review['closed']))
         else:
             review.finish_date = ''
         return review
