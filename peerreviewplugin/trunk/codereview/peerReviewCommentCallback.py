@@ -63,7 +63,10 @@ class PeerReviewCommentHandler(Component):
         if not (req.perm.has_permission('CODE_REVIEW_MGR') or
                 req.perm.has_permission('CODE_REVIEW_DEV')):
             data['invalid'] = 4
-            return 'peerreview_comment_callback.html', data, None
+            if hasattr(Chrome, 'jenv'):
+                return 'peerreview_comment_callback_jinja.html', data
+            else:
+                return 'peerreview_comment_callback.html', data, None
 
         if req.method == 'POST':
             if req.args.get('addcomment'):
@@ -75,7 +78,10 @@ class PeerReviewCommentHandler(Component):
                 # We shouldn't end here but in case just drop out.
                 if self.review_is_closed(req):
                     data['invalid'] = 'closed'
-                    return 'peerreview_comment_callback.html', data, None
+                    if hasattr(Chrome, 'jenv'):
+                        return 'peerreview_comment_callback_jinja.html', data
+                    else:
+                        return 'peerreview_comment_callback.html', data, None
 
                 txt = req.args.get('comment')
                 comment = ReviewCommentModel(self.env)
@@ -120,8 +126,10 @@ class PeerReviewCommentHandler(Component):
             data['invalid'] = 5
         else:
             data['invalid'] = 5
-
-        return 'peerreview_comment_callback.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'peerreview_comment_callback_jinja.html', data
+        else:
+            return 'peerreview_comment_callback.html', data, None
 
     def review_is_closed(self, req):
         fileid = req.args.get('IDFile')
@@ -278,10 +286,10 @@ class PeerReviewCommentHandler(Component):
                 <td style="width:${width}px"></td>
                 <td valign="top" style="width:${factor}px" id="${comment.IDComment}TreeButton">
                     <img py:if="childrenHTML" src="${href.chrome('hw/images/minus.gif')}" id="${comment.IDComment}collapse"
-                         onclick="collapseComments($comment.IDComment);" style="cursor: pointer;" />
+                         onclick="collapseComments(${comment.IDComment});" style="cursor: pointer;" />
                     <img py:if="childrenHTML" src="${href.chrome('hw/images/plus.gif')}" style="display: none;cursor:pointer;"
                          id="${comment.IDComment}expand"
-                         onclick="expandComments($comment.IDComment);" />
+                         onclick="expandComments(${comment.IDComment});" />
                 </td>
                 <td colspan="2">
                 <div class="comment-text">
@@ -335,7 +343,7 @@ class PeerReviewCommentHandler(Component):
                          onclick="collapseComments(${comment.IDComment});" style="cursor: pointer;" />
                     <img src="${href.chrome('hw/images/plus.gif')}" style="display: none;cursor:pointer;"
                          id="${comment.IDComment}expand"
-                         onclick="expandComments($comment.IDComment);" />
+                         onclick="expandComments(${comment.IDComment});" />
                     # endif
                 </td>
                 <td colspan="2">
@@ -402,7 +410,7 @@ class PeerReviewCommentHandler(Component):
         if hasattr(Chrome, 'jenv'):
             chrome = Chrome(self.env)
             template = chrome.jenv.from_string(self.comment_template_jinja)
-            return chrome.render_template_string(template, tdata, True)
+            return chrome.render_template_string(template, tdata, True) + children_html
         else:
             tbl = MarkupTemplate(self.comment_template, lookup='lenient')
             return tbl.generate(**tdata).render(encoding=None) + children_html
