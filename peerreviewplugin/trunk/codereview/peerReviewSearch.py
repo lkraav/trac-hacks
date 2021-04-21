@@ -1,5 +1,7 @@
 #
 # Copyright (C) 2005-2006 Team5
+# Copyright (C) 2016-2021 Cinc
+#
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -15,7 +17,7 @@ from codereview.model import PeerReviewModel
 from trac.core import *
 from trac.util import format_date
 from trac.util.datefmt import to_datetime, to_utimestamp, utc
-from trac.web.chrome import INavigationContributor, add_stylesheet, add_script, add_script_data
+from trac.web.chrome import add_stylesheet, add_script, add_script_data, Chrome, INavigationContributor
 from trac.web.main import IRequestHandler
 
 from peerReviewMain import add_ctxt_nav_items
@@ -87,7 +89,10 @@ class PeerReviewSearch(Component):
                                   'authorSelected': '',
                                   'nameSelected': ''})
         add_ctxt_nav_items(req)
-        return 'peerReviewSearch.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'peerreview_search_jinja.html', data
+        else:
+            return 'peerreview_search.html', data, None
 
     # Performs the search
 
