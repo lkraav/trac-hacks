@@ -15,6 +15,10 @@
 
 import copy
 import re
+try:
+    from functools import cmp_to_key
+except ImportError:
+    pass
 from codereview.tracgenericclass.util import from_any_timestamp, get_string_from_dictionary, \
     to_any_timestamp, to_list, get_timestamp_db_type, list_available_tables, \
     db_get_config_property
@@ -26,6 +30,16 @@ from trac.util.datefmt import utc
 from trac.util.translation import _
 from trac.wiki.model import WikiPage
 from trac.wiki.web_ui import WikiModule
+
+
+is_py3 = False
+try:
+    cmp
+except NameError:
+    # Python 3
+    is_py3 = True
+    def cmp(a, b):
+        return (a > b) - (a < b)
 
 
 class IConcreteClassProvider(Interface):
@@ -1232,8 +1246,10 @@ class GenericClassModelProvider(Component):
                     field['rows'] = config.getint(name + '.rows')
                 fields.append(field)
 
-            fields.sort(lambda x, y: cmp(x['order'], y['order']))
-
+            if is_py3:
+                fields.sort(key=cmp_to_key(lambda x, y: cmp(x['order'], y['order'])))
+            else:
+                fields.sort(lambda x, y: cmp(x['order'], y['order']))
             self.all_custom_fields[realm] = fields
 
         return self.all_custom_fields[realm]

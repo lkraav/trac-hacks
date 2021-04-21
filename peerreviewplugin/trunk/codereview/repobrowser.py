@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2005-2006 Team5
 # Copyright (C) Cinc
@@ -11,14 +12,18 @@
 
 from __future__ import generators
 import re
-
-from trac import util
+try:
+    from functools import cmp_to_key
+except ImportError:
+    pass
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.resource import ResourceNotFound
 from trac.util import embedded_numbers
-from trac.util.html import html as tag
+from trac.util.datefmt import format_datetime, http_date, pretty_timedelta
+from trac.util.html import escape, html as tag
+from trac.util.text import pretty_size
 from trac.util.translation import _
 from trac.versioncontrol.api import NoSuchChangeset, RepositoryManager
 from trac.versioncontrol.web_ui.util import *
@@ -26,11 +31,15 @@ from trac.web import IRequestHandler, RequestDone
 from trac.web.chrome import add_link, Chrome, web_context
 from trac.wiki import format_to_html
 
+from .compat import is_py3, iteritems
+
+
 try:
     cmp
 except NameError:
     def cmp(a, b):
         return (a > b) - (a < b)
+
 
 IMG_RE = re.compile(r"\.(gif|jpg|jpeg|png)(\?.*)?$", re.IGNORECASE)
 CHUNK_SIZE = 4096
@@ -125,7 +134,7 @@ class PeerRepoBrowser(Component):
 
         # Repositories may be hidden
         filtered_repos = {}
-        for rname, info in all_repos.iteritems():
+        for rname, info in iteritems(all_repos):
             try:
                 if not info['hidden'] == u'1':
                     filtered_repos[rname] = info
@@ -190,7 +199,7 @@ class PeerRepoBrowser(Component):
             add_link(req, 'up', path_links[-2]['href'], 'Parent directory')
 
         if node:
-            props = [{'name': util.escape(name), 'value': util.escape(value)}
+            props = [{'name': escape(name), 'value': escape(value)}
                      for name, value in node.get_properties().items()
                      if name not in hidden_properties]
         else:
@@ -204,7 +213,7 @@ class PeerRepoBrowser(Component):
             'reponame': repo.reponame,  # for included path_links.html
             'revision': rev or repo.get_youngest_rev(),
             'props': props,
-            'log_href': util.escape(req.href.log(path, rev=rev or None)),
+            'log_href': escape(req.href.log(path, rev=rev or None)),
             'path_links': path_links,
             'dir': node and node.isdir and self._render_directory(req, repo, node, rev, cur_repo),
             'file': node and node.isfile and self._render_file(req, context, repo, node, rev, cur_repo),
@@ -263,10 +272,10 @@ class PeerRepoBrowser(Component):
                     'fullpath': entry.path,
                     'is_dir': int(entry.isdir),
                     'content_length': entry.content_length,
-                    'size': util.pretty_size(entry.content_length),
+                    'size': pretty_size(entry.content_length),
                     'rev': entry.created_rev,
                     'permission': 1,  # FIXME
-                    'log_href': util.escape(req.href.log(repo, entry.path, rev=rev)),
+                    'log_href': escape(req.href.log(repo, entry.path, rev=rev)),
                     'browser_href': req.href(browse_url, entry.path, rev=rev, repo=repo)
                     })
 
@@ -285,7 +294,10 @@ class PeerRepoBrowser(Component):
             else:
                 return neg * _natural_order(a['name'].lower(),
                                             b['name'].lower())
-        info.sort(cmp_func)
+        if is_py3:
+            info.sort(key=cmp_to_key(cmp_func))
+        else:
+            info.sort(cmp_func)
 
         return {'order': order, 'desc': desc and 1 or None,
                 'items': info, 'changes': changes}
@@ -314,7 +326,7 @@ class PeerRepoBrowser(Component):
             req.send_header('Content-Type',
                             format == 'txt' and 'text/plain' or mime_type)
             req.send_header('Content-Length', node.content_length)
-            req.send_header('Last-Modified', util.http_date(node.last_modified))
+            req.send_header('Last-Modified', http_date(node.last_modified))
             req.end_headers()
 
             while 1:
@@ -357,9 +369,9 @@ class PeerRepoBrowser(Component):
                 'max_file_size': preview_data['max_file_size'],
                 'annotate': False,
                 'rev': node.rev,
-                'changeset_href': util.escape(req.href.changeset(node.rev)),
-                'date': util.format_datetime(changeset.date),
-                'age': util.pretty_timedelta(changeset.date),
+                'changeset_href': escape(req.href.changeset(node.rev)),
+                'date': format_datetime(changeset.date),
+                'age': pretty_timedelta(changeset.date),
                 'author': changeset.author or 'anonymous',
                 'message': msg
             }
