@@ -36,7 +36,7 @@
                     <th>Description</th>
                 </tr>
             </thead>
-            # for key, val in all_repos.iteritems():
+            # for key, val in iteritems(all_repos):
             <tr>
                 <td><a class="link_repo_idx" href="${browse_url+'?repo='+val.name}">${val.name if val.name else '(default)'}</a></td>
                 <td>${wiki_to_oneliner(context('wiki'), val.description)}</td>

@@ -12,11 +12,8 @@
 # Works with peerreview_new.html
 
 import itertools
-import time
-from pkg_resources import get_distribution, parse_version
-from trac import util
 from trac.core import Component, implements, TracError
-from trac.util.text import CRLF
+from trac.util.text import CRLF, to_unicode
 from trac.web.chrome import INavigationContributor, add_script, add_script_data, \
     add_warning, add_notice, add_stylesheet, Chrome
 from trac.web.main import IRequestHandler
@@ -173,7 +170,7 @@ class NewReviewModule(Component):
                     # Get the current file and repo revision
                     repo = RepositoryManager(self.env).get_repository(f['repo'])
                     node, display_rev, context = get_node_from_repo(req, repo, f['path'], None)
-                    f.curchangerevision = unicode(node.created_rev)
+                    f.curchangerevision = to_unicode(node.created_rev)
                     f.curreporev = repo.youngest_rev
                     # We use the current repo revision here so on POST that revision is used for creating
                     # the file entry in the database. The POST handler parses the string for necessary information.
@@ -284,7 +281,7 @@ class NewReviewModule(Component):
             rfile['repo'] = segment[4]
             repo = RepositoryManager(self.env).get_repository(rfile['repo'])
             node, display_rev, context = get_node_from_repo(req, repo, rfile['path'], rfile['revision'])
-            rfile['changerevision'] = unicode(node.created_rev)
+            rfile['changerevision'] = to_unicode(node.created_rev)
             rfile['hash'] = self._hash_from_file_node(node)
             rfile.insert()
         return id_

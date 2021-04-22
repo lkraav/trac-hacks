@@ -119,7 +119,8 @@ class PeerRepoBrowser(Component):
         # display_rev = lambda rev: rev
 
         data = {'browse_url': req.href(browse_url_base),
-                'is_admin_browser': is_admin_browser
+                'is_admin_browser': is_admin_browser,
+                'iteritems': iteritems
                 }
 
         repoman = RepositoryManager(self.env)
@@ -244,7 +245,7 @@ class PeerRepoBrowser(Component):
         req.perm.assert_permission('BROWSER_VIEW')
 
         order = req.args.get('order', 'name').lower()
-        desc = req.args.has_key('desc')
+        desc = 'desc' in req.args
 
         info = []
 

@@ -28,6 +28,7 @@ from trac import util
 from trac.core import *
 from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import Markup
+from trac.util.text import to_unicode
 from trac.web.chrome import Chrome, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki import format_to_html
@@ -207,7 +208,7 @@ class PeerReviewCommentHandler(Component):
                     filename = filename.replace('\\', '/').replace(':', '/')
                     filename = os.path.basename(filename)
                     if sys.version_info[0] > 2 or (sys.version_info[0] == 2 and sys.version_info[1] >= 3):
-                        filename = unicodedata.normalize('NFC', unicode(filename, 'utf-8')).encode('utf-8')
+                        filename = unicodedata.normalize('NFC', to_unicode(filename, 'utf-8')).encode('utf-8')
                     attachments_dir = os.path.join(os.path.normpath(self.env.path), 'attachments')
                     commonprefix = os.path.commonprefix([attachments_dir, self.path])
                     assert commonprefix == attachments_dir
@@ -249,8 +250,7 @@ class PeerReviewCommentHandler(Component):
 
         comment_html = ""
         first = True
-        keys = comments.keys()
-        keys.sort()
+        keys = sorted(comments.keys())
         for key in keys:
             if comments[key].IDParent not in comments:
                 comment_html += self.build_comment_html(req, comments[key], 0, linenum, fileid, first, data)
@@ -381,8 +381,7 @@ class PeerReviewCommentHandler(Component):
             return ""
 
         children_html = ""
-        keys = comment.Children.keys()
-        keys.sort()
+        keys = sorted(comment.Children.keys())
         for key in keys:
             child = comment.Children[key]
             children_html += self.build_comment_html(req, child, nodesIn + 1, linenum, fileid, False, data)
