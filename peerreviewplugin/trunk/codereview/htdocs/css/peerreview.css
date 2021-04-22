@@ -1,22 +1,27 @@
 
+/* tables */
 .peerreview-content .listing{
-  width: 96%;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 0.5em;
+  width: unset;
+  margin: 0.3em 3em;
 }
 
+.peerreview-content .listing th{
+  font-size: 90%;
+}
+
+
+/* file lists in tables */
 .peer-file-list {
   margin: 0.1em;
   padding-left: 1.25em;
   font-size: 95%;
 }
-
 .peer-file-list li{
   list-style-type: none;
   list-style-image: url(../../common/file.png);
   margin-bottom: 0.5em;
 }
+/* end of file lists in tables */
 
 p.help{
   color: #666;
@@ -24,7 +29,7 @@ p.help{
 }
 
 table.review-table thead th {
-  font-size: 150%;
+  font-size: 125%;
   padding: .25em;
   background-color: #f7f7f7;
 }
@@ -291,7 +296,7 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 }
 
 /* View review page */
-.workflow-actions{
+.workflow-actions, .peer-form{
   margin: 0.5em 3em;
 }
 

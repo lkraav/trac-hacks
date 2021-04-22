@@ -255,6 +255,7 @@ class ResourceWorkflowSystem(Component):
                 <form class="workflow-actions" method="post" action="$action" name="resource_workflow_form">
                     $form_token
                     <fieldset>
+                        <legend>$legend</legend>
                         <input name="id" type="hidden" value="$resource_id" />
                         <input name="res_realm" type="hidden" value="$realm" />
                         <input name="redirect" value="$redirect" type="hidden" />
@@ -266,6 +267,7 @@ class ResourceWorkflowSystem(Component):
                         <div class="buttons" $display>
                             <input type="submit" id="resource_workflow_form_submit_button" value="Perform Action" />
                         </div>
+                        <p class="help">$help</p>
                     </fieldset>
                 </form> """
 
@@ -280,7 +282,7 @@ class ResourceWorkflowSystem(Component):
 
         form_token = u'<input type="hidden" name="__FORM_TOKEN" value="{ftoken}" />'.format(ftoken=req.form_token)
 
-        tdata = {'action': base_href+'/workflowtransition',
+        tdata = {'action': base_href + '/workflowtransition',
                  'resource_id': resource.id,
                  'cur_state': rws['state'],
                  'ctrls': "",
@@ -288,6 +290,10 @@ class ResourceWorkflowSystem(Component):
                  'redirect': '',
                  'display': '',
                  'form_token': form_token if hasattr(Chrome, 'jenv') else ''}
+        if data:
+            tdata['redirect'] = data.get('redirect', '')
+            tdata['legend'] = data.get('legend', '')
+            tdata['help'] = data.get('help', '')
 
         tmpl = Template(form_tmpl)
         if len(sorted_actions) > 0:
@@ -340,8 +346,6 @@ class ResourceWorkflowSystem(Component):
                     ctrls += Template(ctrl_tmpl).safe_substitute(cdata)
 
             tdata['ctrls'] = ctrls
-            if data and data.get('redirect'):
-                tdata['redirect'] = data.get('redirect')
 
             if hasattr(Chrome, 'jenv'):
                 return TracHTMLSanitizer().sanitize(tmpl.safe_substitute(tdata))

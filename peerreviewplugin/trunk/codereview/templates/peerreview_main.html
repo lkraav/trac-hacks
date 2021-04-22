@@ -11,11 +11,11 @@
     </head>
 
     <body>
-        <div id="content" class="trac-content borderless">
+        <div id="content" class="trac-content borderless peerreview-content">
             <h1>My Code Reviews</h1>
 
             <h2>This is a list of open code reviews currently assigned to you.</h2>
-            <form action="" method="get">
+            <form class="peer-form" action="" method="get">
                 <fieldset>
                     <label><input type="checkbox" value="1" name="allassigned" checked="${allassigned or None}"/>
                         Show my finished reviews.</label>
@@ -81,7 +81,7 @@
             </table>
 
             <h2>This is a list of code reviews created by you.</h2>
-            <form action="" method="get">
+            <form class="peer-form" action="" method="get">
                 <fieldset>
                     <label><input type="checkbox" value="1" name="allcreated" checked="${allcreated or None}"/>
                         Show closed reviews.</label>

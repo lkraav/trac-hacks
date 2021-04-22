@@ -29,6 +29,7 @@ from trac.resource import Resource
 from trac.util.datefmt import format_date, format_datetime, to_datetime, user_time
 from trac.util.html import html as tag
 from trac.util.text import CRLF, obfuscate_email_address
+from trac.util.translation import _
 from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
@@ -221,7 +222,7 @@ class PeerReviewView(Component):
             data['reviewer_workflow'] = wflow
         # Actions for the author of a review. The author may approve, disapprove or close a review.
         # The possible actions are defined in trac.ini as a workflow in [peerreview-resource_workflow]
-        data['workflow'] = self.prepare_workflow_for_author(req, review)
+        data['workflow'] = self.prepare_workflow_for_author(req, review, data)
 
         # For downloading in docx format
         self.add_docx_export_link(req, review_id)
@@ -272,12 +273,14 @@ class PeerReviewView(Component):
                 if not data['is_finished'] and not data['review_done']:  # even author isn't allowed to change
                     data['canivote'] = True
                 res = Resource(realm, str(reviewer['reviewer_id']))  # id must be a string
-                wf_data = {'redirect': req.href.peerreviewview(review['review_id'])}
+                wf_data = {'redirect': req.href.peerreviewview(review['review_id']),
+                           'legend': _("Set review progress"),
+                           'help': _("Setting the current state helps the review author to track progress.")}
                 return ResourceWorkflowSystem(self.env).get_workflow_markup(req, self.workflow_base_href,
                                                                             realm, res, wf_data)
         return
 
-    def prepare_workflow_for_author(self, req, review):
+    def prepare_workflow_for_author(self, req, review, data):
         """
         :param req: Request object
         :param review: PeerReviewModel object representing the current review
@@ -287,7 +290,10 @@ class PeerReviewView(Component):
         # The possible actions are defined in trac.ini as a workflow in [peerreview-resource_workflow]
         realm = 'peerreview'
         res = Resource(realm, str(review['review_id']))  # Must be a string (?)
-        wf_data = {'redirect': req.href.peerreviewview(review['review_id'])}
+
+        wf_data = {'redirect': req.href.peerreviewview(review['review_id']),
+                   'legend': _("Set state of review (author or manager only)"),
+                   'help': _("Closing a review means it is marked as obsolete and <strong>all associated data will be unavailable</strong>.")}
         return ResourceWorkflowSystem(self.env).get_workflow_markup(req, self.workflow_base_href, realm, res, wf_data)
 
     def add_docx_export_link(self, req, review_id):

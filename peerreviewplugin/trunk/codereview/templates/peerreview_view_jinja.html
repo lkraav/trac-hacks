@@ -17,6 +17,11 @@
         </title>
     # block head
     ${ super() }
+        <script>
+      jQuery(function($) {
+        $(".foldable").enableFolding(false, true);
+      });
+    </script>
     # endblock head
     </head>
     # import "peer_functions_jinja.html" as review_info with context
@@ -87,7 +92,7 @@
             </div>
             # endif
 
-            <h2>Files associated with this code review</h2>
+            <h3>Files associated with this code review</h3>
             # if parent_review:
             <p>The files will be compared with those from review
                 <a href="${href.peerreviewview(parent_review['review_id'])}">${review['name']} (#${parent_review['review_id']})</a>.
@@ -142,14 +147,16 @@
             </table>
             <p class="help">The status of the listed files will be set when the review author sets the final status
                 of the review.</p>
-            <h2>Users assigned to this code review</h2>
 
+            <div class="collapsed">
+                <h3 class="foldable">Users assigned to this code review</h3>
+                <div>
             # if review['owner'] == req.authname or manager:
             <table class="listing dirlist" id="userlist">
                 <thead>
                     <tr>
                         <th style="width:90%">User name</th>
-                        <th>Status</th>
+                        <th>Review progress</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -191,10 +198,12 @@
                 </tbody>
             </table>
             # endif
+                </div>
+            </div>
 
             ## Ticket creation in Trac
             # if (manager or review['owner'] == req.authname) and review_done and show_ticket:
-                <h2>Prepare ticket</h2>
+                <h3>Prepare ticket</h3>
                 <form class="workflow-actions" action="${req.href.newticket()}" method="post" target="_blank" id="prepare-ticket">
                     ${jmacros.form_token_input()}
                     <input type="hidden" name="preview" value="" />
@@ -232,32 +241,19 @@
                 </p>
             # endif
 
+            <div>
+            <h3 class="foldable">Workflow actions</h3>
+                <div id="peer-workflow">
             # if canivote:
-                <h2>Workflow actions for reviewer</h2>
-
                 ${reviewer_workflow}
-                # if not is_finished:
-                <p class="help">Setting the correct state helps the review author to track progress.</p>
-                # endif
             # endif
 
             # if manager or review['owner'] == req.authname:
                 # if not is_finished:
-                # if manager:
-                <h2>Workflow actions for author or manager</h2>
-                # else:
-                <h2>Workflow actions for author</h2>
-                # endif
                 ${workflow}
-                    <p class="help">
-                        Closing a review means it is marked as obsolete and <strong>all associated data will be unavailable</strong>.
-                    </p>
                 # endif
                 # if is_finished and manager:
-                    # if manager:
-                    <h2>Workflow actions for manager</h2>
-                    # endif
-                    ${workflow}
+                ${workflow}
                 # endif
                 <hr />
                 <form class="workflow-actions" action="" method="post">
@@ -278,28 +274,30 @@
                                    value="Modify" name="modify"/>
                             # endif
                         </div>
+                        # if manager:
+                        <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
+                            a new code review.
+                            Comments will not be copied. When the new review is created <strong>this one will be closed
+                            automatically</strong> which means it will be practically discarded.
+                        </p>
+                        # endif
+                        # if review['status'] != 'closed':
+                        <p class="help">
+                            When creating a <strong>Followup Review</strong> all the data of this review will be
+                            used for prefilling the fields of a new code review. Comments will not be copied. During
+                            the new review it is possible to view the changes between file data at different revisions.
+                        </p>
+                        # endif
+                        # if review['status'] != 'closed' and not is_finished:
+                        <p class="help">
+                            A followup review can't be created at the moment because this review is not in a
+                            terminal state. Terminal states are: <strong>$finished_states_str</strong>.
+                        </p>
+                        # endif
                     </fieldset>
                 </form>
-                # if manager:
-                <p class="help">When resubmitting all the data of this review will be used for prefilling the fields of
-                    a new code review.
-                    Comments will not be copied. When the new review is created <strong>this one will be closed
-                    automatically</strong> which means it will be practically discarded.
-                </p>
-                # endif
-                # if review['status'] != 'closed':
-                <p class="help">
-                    When creating a <strong>Followup Review</strong> all the data of this review will be
-                    used for prefilling the fields of a new code review. Comments will not be copied. During
-                    the new review it is possible to view the changes between file data at different revisions.
-                </p>
-                # endif
-                # if review['status'] != 'closed' and not is_finished:
-                <p class="help">
-                    A followup review can't be created at the moment because this review is not in a
-                    terminal state. Terminal states are: <strong>$finished_states_str</strong>.
-                </p>
-                # endif
+                </div>
+            </div>
             # endif
         </div>
     # endblock content
