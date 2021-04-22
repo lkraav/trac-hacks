@@ -192,6 +192,7 @@ class PeerReviewMain(Component):
         data['assigned_reviews'] = assigned_to_me
         data['cycle'] = itertools.cycle
 
+        add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
         add_ctxt_nav_items(req)
 

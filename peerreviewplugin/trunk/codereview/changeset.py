@@ -100,6 +100,7 @@ class PeerChangeset(Component):
         chrome = Chrome(self.env)
         template = chrome.load_template('user_list.html', None)
 
+        # TODO: template.generate not for Jinja2
         peerreview_div = '<div class="collapsed"><h3 class="foldable">%s</h3>' \
                          '<div id="peer-codereview">' \
                          '%s' \

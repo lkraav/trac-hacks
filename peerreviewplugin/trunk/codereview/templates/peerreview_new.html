@@ -12,7 +12,7 @@
     </head>
 
     <body>
-        <div id="content" py:with="modify = req.args.get('modify', 0)">
+        <div id="content" py:with="modify = req.args.get('modify', 0)" class="trac-content borderless">
             <h1 py:if="not followup and not modify">Create a New Code Review</h1>
             <h1 py:if="followup">Create a New Followup Code Review</h1>
             <h1 py:if="modify">Modify an existing Code Review</h1>

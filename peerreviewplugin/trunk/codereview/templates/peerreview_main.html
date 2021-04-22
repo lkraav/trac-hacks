@@ -11,7 +11,7 @@
     </head>
 
     <body>
-        <div id="content">
+        <div id="content" class="trac-content borderless">
             <h1>My Code Reviews</h1>
 
             <h2>This is a list of open code reviews currently assigned to you.</h2>
@@ -48,15 +48,15 @@
                 <!--! if there are no reviews open for you, state this in the table -->
                 <tr py:if="not assigned_reviews">
                     <td>There are no code reviews assigned to you.</td>
-                    <td/>
-                    <td/>
-                    <td/>
-                    <td/>
-                    <td/>
-                    <td/>
-                    <td/>
-                    <td/>
-                    <td/>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>
                 <tr py:for="item in assigned_reviews" class="${cls.next()}">
                     <!--! Set up the table with the appropriate values and then links to view the review -->
@@ -70,9 +70,11 @@
                     <td>${item.date}</td>
                     <td>${item.finish_date}</td>
                     <td>
-                        <p py:for="file in item.rev_files" class="path">
-                            <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>
-                        </p>
+                        <ul class="peer-file-list">
+                            <li py:for="file in item.rev_files" class="peer-path">
+                                <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>
+                            </li>
+                        </ul>
                     </td>
                 </tr>
                 </tbody>
@@ -107,13 +109,13 @@
                     <!--! if there are no reviews open for you, state this in the table -->
                     <tr py:if="not myreviews">
                         <td>You have no code reviews currently open.</td>
-                        <td/>
-                        <td/>
-                        <td/>
-                        <td/>
-                        <td/>
-                        <td/>
-                        <td/>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
                     </tr>
                     <tr py:for="item in myreviews" class="${cls.next()}">
                         <!--! Set up the table with the appropriate values and then links to view the review -->
@@ -125,9 +127,11 @@
                         <td>${item.date}</td>
                         <td>${item.finish_date}</td>
                         <td>
-                            <p py:for="file in item.rev_files" class="path">
-                                <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>
-                            </p>
+                            <ul class="peer-file-list">
+                                <li py:for="file in item.rev_files" class="peer-path">
+                                    <a href="${href.peerReviewPerform(IDFile=file['file_id'])}">${file['path']} @ ${file['revision']}</a>
+                                </li>
+                            </ul>
                         </td>
                     </tr>
                 </tbody>
