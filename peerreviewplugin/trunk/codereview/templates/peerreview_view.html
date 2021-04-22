@@ -123,7 +123,7 @@
                         <td>There are no users included in this code review.</td>
                     </tr>
                     <tr py:if="reviewer" py:for="item in reviewer" class="${cls.next()}">
-                        <td>${item['reviewer']}</td>
+                        <td>${authorinfo(item['reviewer'])}</td>
                         <td>${item['status']}</td>
                     </tr>
                 </tbody>
@@ -140,7 +140,7 @@
                         <td>There are no users included in this code review.</td>
                     </tr>
                     <tr py:if="reviewer" py:for="item in reviewer" class="${cls.next()}">
-                        <td>${item['reviewer']}</td>
+                        <td>${authorinfo(item['reviewer'])}</td>
                     </tr>
                 </tbody>
             </table>

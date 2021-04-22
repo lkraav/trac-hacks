@@ -71,7 +71,7 @@
                             Author -
                             <select size="1" name="Author" id="author">
                                 <option>Select...</option>
-                                <option py:for="item in users" value="${item}">${item}</option>
+                                <option py:for="item in users" value="${item}">${authorinfo(item)}</option>
                             </select>
                         </label>
                     </div>
@@ -101,7 +101,7 @@
                         <py:for each="item in results">
                             <tr py:if="item[2] != ''" class="${cls.next()}">
                                 <td><a href="${href.peerreviewview(item[0])}">${item[0]}</a></td>
-                                <td><a href="${href.peerreviewview(item[0])}">${item[1]}</a></td>
+                                <td><a href="${href.peerreviewview(item[0])}">${authorinfo(item[1])}</a></td>
                                 <td><a href="${href.peerreviewview(item[0])}">${item[2]}</a></td>
                                 <td><a href="${href.peerreviewview(item[0])}">${item[4]}</a></td>
                                 <td><a href="${href.peerreviewview(item[0])}">${item[3]}</a></td>
@@ -109,7 +109,7 @@
                             </tr>
                                 <tr py:if="item[2] == ''">
                                 <td>${item[0]}</td>
-                                <td>${item[1]}</td>
+                                <td>${authorinfo(item[1])}</td>
                                 <td>${item[2]}</td>
                                 <td>${item[4]}</td>
                                 <td>${item[3]}</td>

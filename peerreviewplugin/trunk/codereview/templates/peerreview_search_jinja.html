@@ -85,7 +85,7 @@
                             <select size="1" name="Author" id="author">
                                 <option>Select...</option>
                                 # for item in users:
-                                <option value="${item}">${item}</option>
+                                <option value="${item}">${authorinfo(item)}</option>
                                 # endfor
                             </select>
                         </label>
@@ -117,7 +117,7 @@
                         # if item[2] == '':
                         <tr>
                             <td>${item[0]}</td>
-                            <td>${item[1]}</td>
+                            <td>${authorinfo(item[1])}</td>
                             <td>${item[2]}</td>
                             <td>${item[4]}</td>
                             <td>${item[3]}</td>
@@ -126,7 +126,7 @@
                         # else:
                         <tr class="${loop.cycle('even', 'odd')}">
                             <td><a href="${href.peerreviewview(item[0])}">${item[0]}</a></td>
-                            <td><a href="${href.peerreviewview(item[0])}">${item[1]}</a></td>
+                            <td><a href="${href.peerreviewview(item[0])}">${authorinfo(item[1])}</a></td>
                             <td><a href="${href.peerreviewview(item[0])}">${item[2]}</a></td>
                             <td><a href="${href.peerreviewview(item[0])}">${item[4]}</a></td>
                             <td><a href="${href.peerreviewview(item[0])}">${item[3]}</a></td>

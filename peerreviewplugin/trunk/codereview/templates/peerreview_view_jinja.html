@@ -163,7 +163,7 @@
                 # if reviewer:
                 # for item in reviewer:
                     <tr class="${loop.cycle('even', 'odd')}">
-                        <td>${item['reviewer']}</td>
+                        <td>${authorinfo(item['reviewer'])}</td>
                         <td>${item['status']}</td>
                     </tr>
                 # endfor
@@ -187,7 +187,7 @@
                 # if reviewer:
                 # for item in reviewer:
                 <tr class="${loop.cycle('even', 'odd')}">
-                    <td>${item['reviewer']}</td>
+                    <td>${authorinfo(item['reviewer'])}</td>
                 </tr>
                 # endfor
                 # else:

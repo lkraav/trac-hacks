@@ -61,7 +61,7 @@
                 <tr py:for="item in assigned_reviews" class="${cls.next()}">
                     <!--! Set up the table with the appropriate values and then links to view the review -->
                     <td><a href="${href.peerreviewview(item['review_id'])}">${item['review_id']}</a></td>
-                    <td>${item['owner']}</td>
+                    <td>${authorinfo(item['owner'])}</td>
                     <td><a href="${href.peerreviewview(item['review_id'])}">${item['name']}</a></td>
                     <td>${item['status']}</td>
                     <td>${item.reviewer['status']}</td>

@@ -77,12 +77,12 @@
                 <tr class="${loop.cycle('even', 'odd')}">
                     <!--! Set up the table with the appropriate values and then links to view the review -->
                     <td><a href="${href.peerreviewview(item['review_id'])}">${item['review_id']}</a></td>
-                    <td>${item['owner']}</td>
+                    <td>${authorinfo(item['owner'])}</td>
                     <td><a href="${href.peerreviewview(item['review_id'])}">${item['name']}</a></td>
                     <td>${item['status']}</td>
                     <td>${item.reviewer['status']}</td>
                     <td>${item.num_comments}</td>
-                    <td ${{"class": 'comment-notread'} if item.num_notread}|htmlattr}>${item.num_notread}</td>
+                    <td ${{"class": 'comment-notread' if item.num_notread}|htmlattr}>${item.num_notread}</td>
                     <td>${item.date}</td>
                     <td>${item.finish_date}</td>
                     <td>
