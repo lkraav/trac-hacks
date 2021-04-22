@@ -222,7 +222,7 @@ def create_changeset_review(self, req):
     id_ = review['review_id']
 
     # Create reviewer entries
-    user = req.args.get('user', [])
+    user = req.args.getlist('user')
     if not type(user) is list:
         user = [user]
     for name in user:

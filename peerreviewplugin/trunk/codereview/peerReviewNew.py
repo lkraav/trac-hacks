@@ -254,7 +254,7 @@ class NewReviewModule(Component):
 
         # loop here through all the reviewers
         # and create new reviewer structs based on them
-        user = req.args.get('user', [])
+        user = req.args.getlist('user')
         if not type(user) is list:
             user = [user]
         for name in user:
@@ -267,7 +267,7 @@ class NewReviewModule(Component):
 
         # loop here through all included files
         # and create new file structs based on them
-        files = req.args.get('file', [])
+        files = req.args.getlist('file')
         if not type(files) is list:
             files = [files]
         for item in files:
@@ -304,9 +304,7 @@ class NewReviewModule(Component):
         review['project'] = req.args.get('project')
         review.save_changes(req.authname)
 
-        user = req.args.get('user')
-        if not type(user) is list:
-            user = [user]
+        user = req.args.getlist('user')
         data = {}
         add_users_to_data(self.env,review['review_id'], data)
         # Handle new users if any
@@ -329,9 +327,7 @@ class NewReviewModule(Component):
                     PeerReviewerModel.delete_by_review_id_and_name(self.env, review['review_id'], name)
 
         # Handle file removal
-        new_files = req.args.get('file')
-        if not type(new_files) is list:
-            new_files = [new_files]
+        new_files = req.args.getlist('file')
         old_files = []
         rfiles = {}
         for f in ReviewFileModel.select_by_review(self.env, review['review_id']):

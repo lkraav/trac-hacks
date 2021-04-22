@@ -49,7 +49,7 @@ def from_any_timestamp(ts):
     return from_utimestamp(ts)
 
 
-def to_list(params=[]):
+def to_list(params):
     result = []
 
     for i in params:

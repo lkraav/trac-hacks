@@ -166,9 +166,7 @@ class PeerReviewFileAdmin(Component):
         incl = req.args.get('includeext', '')
         exclpath = req.args.get('excludepath', '')
         follow_externals = req.args.get('follow_ext', False)
-        sel = req.args.get('sel', [])  # For removal
-        if type(sel) is not list:
-            sel = [sel]
+        sel = req.args.getlist('sel')  # For removal
 
         all_proj = ReviewDataModel.all_file_project_data(self.env)
 
