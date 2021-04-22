@@ -307,7 +307,6 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 .workflow-actions dt{
   font-weight: bold;
   padding-right: .25em;
-
 }
 
 .workflow-actions dd{
@@ -333,3 +332,16 @@ table.peer-status-tbl {
   margin-top: 0.5em;
   width: 75%;
 }
+
+/* Changeset page */
+/* Review info returned from changeset review creation. */
+#peer-review-info dt.property {
+	font-weight: bold;
+	clear: left;
+	float: left;
+	text-align: right;
+	width: 7.75em;
+}
+#peer-review-info dd { margin-left: 8.5em }
+#peer-review-info .review { padding: 1em 0 1px }
+#overview .review { padding: 1em 0 1px }

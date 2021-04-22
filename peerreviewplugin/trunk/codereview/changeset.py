@@ -125,8 +125,8 @@ class PeerChangeset(Component):
     def create_review_info(self, req, review):
         _rev_info = u"""
         <dl id="peer-review-info">
-            <dt class="property" style="margin-top: 1em">{review_id_label}</dt>
-            <dd style="margin-top: 1em"><a href="{review_url}" title="{reviewer_id_title}">#{review_id}</a>
+            <dt class="property review">{review_id_label}</dt>
+            <dd class="review"><a href="{review_url}" title="{reviewer_id_title}">#{review_id}</a>
               <small><em>{reviewer_id_help}</em></small>
             </dd>
             <dt class="property">{status_label}</dt>
@@ -136,8 +136,9 @@ class PeerChangeset(Component):
         </dl>
         """
         def create_user_list():
+            chrome = Chrome(self.env)
             if reviewer:
-                usr = [u"<li>%s</li>" % item['reviewer'] for item in reviewer]
+                usr = [u"<li>%s</li>" % chrome.authorinfo(req, item['reviewer']) for item in reviewer]
                 li = u"".join(usr)
             else:
                 li = '<li class="even">{msg}</li>'.format(msg=_("There are no users included in this code review."))
