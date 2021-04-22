@@ -98,7 +98,12 @@ class PeerChangeset(Component):
             'cycle': itertools.cycle
         }
         chrome = Chrome(self.env)
-        template = chrome.load_template('user_list.html', None)
+        if hasattr(Chrome, 'jenv'):
+            template = chrome.load_template('peerreviewuser_jinja.html')
+            rendered = chrome.render_template_string(template, data)
+        else:
+            template = chrome.load_template('user_list.html', None)
+            rendered = template.generate(**data).render()
 
         # TODO: template.generate not for Jinja2
         peerreview_div = '<div class="collapsed"><h3 class="foldable">%s</h3>' \
@@ -106,7 +111,7 @@ class PeerChangeset(Component):
                          '%s' \
                          '</div>' \
                          '</div>' % \
-                         (_('Codereview'), _form.format(**data) % template.generate(**data).render())
+                         (_('Codereview'), _form.format(**data) % rendered)
 
         return peerreview_div
 
