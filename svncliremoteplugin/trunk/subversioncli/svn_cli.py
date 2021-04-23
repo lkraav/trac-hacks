@@ -15,9 +15,9 @@ from xml.sax.handler import ContentHandler
 from io import BytesIO
 from pkg_resources import parse_version
 
-from svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_copy_info,\
+from .svn_client import get_blame_annotations, get_change_rev, get_changeset_info, get_copy_info,\
     get_file_content, get_history, get_properties_list
-from datetime_z import parse_datetime
+from .datetime_z import parse_datetime
 from threading import RLock
 from trac.config import ChoiceOption
 from trac.core import Component, implements, TracError
@@ -29,10 +29,30 @@ from trac.versioncontrol import Changeset, Node, Repository, \
                                 IRepositoryConnector, InvalidRepository, \
                                 NoSuchChangeset, NoSuchNode
 from trac.versioncontrol.cache import CachedRepository
-from util import add_rev, call_cmd_to_unicode, join_path
+from .util import add_rev, call_cmd_to_unicode, join_path
+
+
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
 
 
 NUM_REV_INFO = 500
+
+try:
+    basestring
+except NameError:
+    # Python 3
+    basestring = str
+    from functools import reduce
+    xrange = range
 
 
 def _get_svn_info(repos, rev, path=''):
@@ -209,7 +229,7 @@ class SubversionCliConnector(Component):
     def __init__(self):
         self._version = None
         try:
-            ver = subprocess.check_output(['svn', '--version', '-q'])
+            ver = to_unicode(subprocess.check_output(['svn', '--version', '-q']))
         except OSError as e:
             self.error = e
             self.log.warning("Subversion client can not be started. %s." % e)
@@ -490,7 +510,7 @@ class SubversionCliRepository(Repository):
                     return changes[idx][:2]
                 else:
                     return changes[idx + 1][:2]
-            elif change is 'copy':
+            elif change == 'copy':
                 copy = True
         else:
             return changes[0][:2]
@@ -513,7 +533,7 @@ class SubversionCliRepository(Repository):
         revision is returned, otherwise the Node corresponding to the youngest
         revision is returned.
         """
-        # self.log.info('  ## In get_node()')
+        # self.log.info('  ## In get_node() for path "%s"' % path)
         path = path or ''
 
         if path and path != '/' and path[-1] == '/':
@@ -612,12 +632,16 @@ class SubversionCliRepository(Repository):
         # self.log.info('## In normalize_path "%s"' % path)
         # always start the path with a '/'
 
-        # Remove leading "/" and trailing '/', except for the root
+        # Note: there is a normalize method in CopyHandler(). Unify them.
+        #
+        # Remove trailing '/', except for the root
         if path:
             if not self.relative_url:
-                return path and path.strip('/') or '/'
+                if path[0] != '/':
+                    path = '/' + path
+                return path and ('/' + path.strip('/')) or '/'
             else:
-                return path and path.replace(self.relative_url, '', 1).strip('/') or '/'
+                return path and ('/' + path.replace(self.relative_url, '', 1).strip('/')) or '/'
         else:
             return path  # None or ''. This is different to sfn_fs.py
 
@@ -696,6 +720,7 @@ class SubversionCliNode(Node):
                 self.size = file_info[0]
                 self.kind = Node.FILE
 
+        # This handles subtree repos
         path = repos.normalize_path(path)
         self.log = log
         # This is used for creating the correct links on the changeset page
@@ -1088,7 +1113,7 @@ class SubversionCliChangeset(Changeset):
                     #
                     # See changeset 18045 for an example
                     #
-                    for key, val in copied_dirs.iteritems():
+                    for key, val in iteritems(copied_dirs):
                         # key: destination dir path, val: source dir path
                         if path.startswith(key):
                             base_path = base_path.replace(key, val)
@@ -1101,8 +1126,9 @@ class SubversionCliChangeset(Changeset):
                               (self.rev, prev_repo_rev, changes))
                 self.log.info('  ## Unknown change for %s in rev %s' % (path, base_rev))
                 path += u'UNKNOWN_CHANGE_FIX_NEEDED'
-            # We have to normalize the path here for Trac
-            yield self.repos.normalize_path(path), kind, change, self.repos.normalize_path(base_path), base_rev
+            base_path = self.repos.normalize_path(base_path)[1:] if base_path else base_path
+            # We have to prepare the path here for Trac by removing the leading '/'
+            yield self.repos.normalize_path(path)[1:], kind, change, base_path, base_rev
 
 
 # ############################################################### #
@@ -1192,7 +1218,7 @@ class FileContentStream(object):
         mtime = to_datetime(node.last_modified, utc)
         shortdate = self._format_shortdate(mtime)
         longdate = self._format_longdate(mtime)
-        created_rev = unicode(node.created_rev)
+        created_rev = to_unicode(node.created_rev)
         # Note that the `to_unicode` has a small probability to mess-up binary
         # properties, see #4321.
         #author = to_unicode(self._get_revprop(core.SVN_PROP_REVISION_AUTHOR,
@@ -1218,7 +1244,7 @@ class FileContentStream(object):
             return data.get(match, match)
 
         values = {}
-        for name, aliases in self.KEYWORD_GROUPS.iteritems():
+        for name, aliases in iteritems(self.KEYWORD_GROUPS):
             if any(kw in keywords for kw in aliases):
                 values.update((kw, data[name]) for kw in aliases)
         for keyword in keywords:
@@ -1230,7 +1256,7 @@ class FileContentStream(object):
 
         if values:
             return dict((key, to_utf8(value))
-                        for key, value in values.iteritems())
+                        for key, value in iteritems(values))
         else:
             return None
 

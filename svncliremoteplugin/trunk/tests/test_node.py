@@ -43,7 +43,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(11187, node.created_rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
 
     def test_get_file_node_193(self):
         """Test getting a node for a file which was copied numerous times without editing."""
@@ -56,7 +56,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(193, node.created_rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
 
     def test_get_file_node_200_file_1(self):
         """Test getting a node for a file which was copied numerous times without editing."""
@@ -69,7 +69,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(200, node.created_rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
 
     def test_get_file_node_200_file_2(self):
         """Test getting a node for a file which was copied numerous times without editing."""
@@ -82,7 +82,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(200, node.created_rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
         self.assertEqual(847,node.size)
 
     def test_get_file_node_size_0(self):
@@ -95,7 +95,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(15133, node.created_rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
         self.assertEqual(0, node.size)
 
     def test_get_file_node_copied(self):
@@ -113,7 +113,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(399, node.created_rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
         self.assertEqual(72, node.size)
 
     def test_get_dir_node(self):
@@ -125,7 +125,7 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(11198, node.created_rev)
         self.assertFalse(node.isfile)
         self.assertTrue(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
 
     def test_get_entries(self):
         """Test getting contents of a directory"""
@@ -139,17 +139,17 @@ class TestSvnCliNode(unittest.TestCase):
         self.assertEqual(11198, node.created_rev)  # created revision is different from tree
         self.assertFalse(node.isfile)
         self.assertTrue(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
         #
         # Check the method
         #
-        expected = {'customfieldadminplugin/0.11/customfieldadmin/__init__.py': {'created_rev': 11198, 'kind': 'file'},
-                    'customfieldadminplugin/0.11/customfieldadmin/admin.py': {'created_rev': 11198, 'kind': 'file'},
-                    'customfieldadminplugin/0.11/customfieldadmin/api.py': {'created_rev': 11198, 'kind': 'file'},
-                    'customfieldadminplugin/0.11/customfieldadmin/htdocs': {'created_rev': 5253, 'kind': 'dir'},
-                    'customfieldadminplugin/0.11/customfieldadmin/locale': {'created_rev': 11187, 'kind': 'dir'},
-                    'customfieldadminplugin/0.11/customfieldadmin/templates': {'created_rev': 11187, 'kind': 'dir'},
-                    'customfieldadminplugin/0.11/customfieldadmin/tests': {'created_rev': 11198, 'kind': 'dir'}
+        expected = {'/customfieldadminplugin/0.11/customfieldadmin/__init__.py': {'created_rev': 11198, 'kind': 'file'},
+                    '/customfieldadminplugin/0.11/customfieldadmin/admin.py': {'created_rev': 11198, 'kind': 'file'},
+                    '/customfieldadminplugin/0.11/customfieldadmin/api.py': {'created_rev': 11198, 'kind': 'file'},
+                    '/customfieldadminplugin/0.11/customfieldadmin/htdocs': {'created_rev': 5253, 'kind': 'dir'},
+                    '/customfieldadminplugin/0.11/customfieldadmin/locale': {'created_rev': 11187, 'kind': 'dir'},
+                    '/customfieldadminplugin/0.11/customfieldadmin/templates': {'created_rev': 11187, 'kind': 'dir'},
+                    '/customfieldadminplugin/0.11/customfieldadmin/tests': {'created_rev': 11198, 'kind': 'dir'}
                     }
         entries = list(node.get_entries())
         self.assertEqual(7, len(entries))
@@ -240,17 +240,17 @@ class TestSvnCliNodeSubtree(unittest.TestCase):
         self.assertEqual(11198, node.created_rev)  # created revision is different from tree
         self.assertFalse(node.isfile)
         self.assertTrue(node.isdir)
-        self.assertEqual(path, node.path)
+        self.assertEqual('/' + path, node.path)
         #
         # Check the method
         #
-        expected = {'0.11/customfieldadmin/__init__.py': {'created_rev': 11198, 'kind': 'file'},
-                    '0.11/customfieldadmin/admin.py': {'created_rev': 11198, 'kind': 'file'},
-                    '0.11/customfieldadmin/api.py': {'created_rev': 11198, 'kind': 'file'},
-                    '0.11/customfieldadmin/htdocs': {'created_rev': 5253, 'kind': 'dir'},
-                    '0.11/customfieldadmin/locale': {'created_rev': 11187, 'kind': 'dir'},
-                    '0.11/customfieldadmin/templates': {'created_rev': 11187, 'kind': 'dir'},
-                    '0.11/customfieldadmin/tests': {'created_rev': 11198, 'kind': 'dir'}
+        expected = {'/0.11/customfieldadmin/__init__.py': {'created_rev': 11198, 'kind': 'file'},
+                    '/0.11/customfieldadmin/admin.py': {'created_rev': 11198, 'kind': 'file'},
+                    '/0.11/customfieldadmin/api.py': {'created_rev': 11198, 'kind': 'file'},
+                    '/0.11/customfieldadmin/htdocs': {'created_rev': 5253, 'kind': 'dir'},
+                    '/0.11/customfieldadmin/locale': {'created_rev': 11187, 'kind': 'dir'},
+                    '/0.11/customfieldadmin/templates': {'created_rev': 11187, 'kind': 'dir'},
+                    '/0.11/customfieldadmin/tests': {'created_rev': 11198, 'kind': 'dir'}
                     }
         entries = list(node.get_entries())
         self.assertEqual(7, len(entries))

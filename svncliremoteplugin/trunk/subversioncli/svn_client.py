@@ -8,7 +8,7 @@
 #
 import subprocess
 
-from util import add_rev, call_cmd_to_unicode, join_path
+from .util import add_rev, call_cmd_to_unicode, join_path
 from trac.core import TracError
 from trac.util.text import to_unicode
 from trac.versioncontrol import Changeset
@@ -228,8 +228,9 @@ class CopyHandler(ContentHandler):
     def get_copy_path_entries(self):
         return self.dict_of_path_entries
 
+    # Note: there is a normalize method in SvnCLiRepo. Unify them.
     def normalize_path(self, path):
-        return path.lstrip('/') or '/'
+        return '/' + path.strip('/') or '/'
 
     # Called when an element starts
     def startElement(self, tag, attributes):

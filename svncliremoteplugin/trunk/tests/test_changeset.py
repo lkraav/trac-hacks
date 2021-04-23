@@ -85,12 +85,22 @@ class TestSvnCliChangeset(unittest.TestCase):
         # In the 'svn log' the file shows up as just edited but not as copied. An older
         # version does not exist in the new path. So the Trac diff must use the old path in trunk
         # which means we need some special handling..
-        expected = [(u'simplemultiprojectplugin/tags/smp-0.7.3', 'dir', 'copy', u'simplemultiprojectplugin/trunk', 18042),
-                    (u'simplemultiprojectplugin/tags/smp-0.7.3/setup.cfg', 'file', 'edit', u'simplemultiprojectplugin/trunk/setup.cfg', 17989),
+        expected = [(u'simplemultiprojectplugin/tags/smp-0.7.3',
+                     'dir', 'copy',
+                     u'simplemultiprojectplugin/trunk', 18042),
+                    (u'simplemultiprojectplugin/tags/smp-0.7.3/setup.cfg',
+                     'file', 'edit',
+                     u'simplemultiprojectplugin/trunk/setup.cfg', 17989),
                     (u'simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/query.py', 'file', 'add', None, -1),
-                    (u'simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/smp_model.py', 'file', 'copy', u'simplemultiprojectplugin/trunk/simplemultiproject/smp_model.py', 18044),
-                    (u'simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/tests/test_environment_setup.py', 'file', 'copy', u'simplemultiprojectplugin/trunk/simplemultiproject/tests/test_environment_setup.py', 18043),
-                    (u'simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/tests/test_smpproject.py', 'file', 'copy', u'simplemultiprojectplugin/trunk/simplemultiproject/tests/test_smpproject.py', 18044)
+                    (u'simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/smp_model.py',
+                     'file', 'copy',
+                     u'simplemultiprojectplugin/trunk/simplemultiproject/smp_model.py', 18044),
+                    (u'simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/tests/test_environment_setup.py',
+                     'file', 'copy',
+                     u'simplemultiprojectplugin/trunk/simplemultiproject/tests/test_environment_setup.py', 18043),
+                    (u'simplemultiprojectplugin/tags/smp-0.7.3/simplemultiproject/tests/test_smpproject.py',
+                     'file', 'copy',
+                     u'simplemultiprojectplugin/trunk/simplemultiproject/tests/test_smpproject.py', 18044)
                     ]
         rev = 18045
         changeset = SubversionCliChangeset(self.repos, rev)
@@ -263,7 +273,7 @@ class TestSvnCliChangeset(unittest.TestCase):
 
         self.assertEqual(9, len(res['changes']))
         self.assertEqual(9, len(set(res['files'])))
-        self.assertEqual(u'htgroupsplugin', res['location'])
+        self.assertEqual(u'/htgroupsplugin', res['location'])
         # files with changes after processing changeset data in _render_html()
         if not pre_1_2:
             self.assertEqual(5, res['diff_files'])
@@ -273,12 +283,14 @@ class TestSvnCliChangeset(unittest.TestCase):
         # Filtering is done in render_html()
         self.assertEqual(9, res['filestats']['edit'])
         for file in res['files']:
-            self.assertIn(file, (u'htgroupsplugin', u'htgroupsplugin/0.9',
-                                 u'htgroupsplugin/0.9/README.txt', u'htgroupsplugin/0.9/TracHtgroups.egg-info',
-                                 u'htgroupsplugin/0.9/TracHtgroups.egg-info/trac_plugin.txt',
-                                 u'htgroupsplugin/0.9/htgroups', u'htgroupsplugin/0.9/htgroups/__init__.py',
-                                 u'htgroupsplugin/0.9/htgroups/htgroups.py',
-                                 u'htgroupsplugin/0.9/setup.py'))
+            self.assertIn(file, (u'/htgroupsplugin', u'/htgroupsplugin/0.9',
+                                 u'/htgroupsplugin/0.9/README.txt',
+                                 u'/htgroupsplugin/0.9/TracHtgroups.egg-info',
+                                 u'/htgroupsplugin/0.9/TracHtgroups.egg-info/trac_plugin.txt',
+                                 u'/htgroupsplugin/0.9/htgroups',
+                                 u'/htgroupsplugin/0.9/htgroups/__init__.py',
+                                 u'/htgroupsplugin/0.9/htgroups/htgroups.py',
+                                 u'/htgroupsplugin/0.9/setup.py'))
 
     def test_changeset_properties_file_399(self):
         """Check file in a changeset only containing property changes.
@@ -322,7 +334,7 @@ class TestSvnCliChangeset(unittest.TestCase):
 
         self.assertEqual(3, len(res['changes']))
         self.assertEqual(3, len(set(res['files'])))
-        self.assertEqual(u'htgroupsplugin', res['location'])
+        self.assertEqual(u'/htgroupsplugin', res['location'])
         # files with changes after processing changeset data in _render_html()
         if not pre_1_2:
             self.assertEqual(1, res['diff_files'])
@@ -332,7 +344,7 @@ class TestSvnCliChangeset(unittest.TestCase):
         # Filtering is done in render_html()
         self.assertEqual(3, res['filestats']['edit'])
         for file in res['files']:
-            self.assertIn(file, (u'htgroupsplugin', u'htgroupsplugin/0.9', u'htgroupsplugin/0.9/README.txt'))
+            self.assertIn(file, (u'/htgroupsplugin', u'/htgroupsplugin/0.9', u'/htgroupsplugin/0.9/README.txt'))
 
     def test_timeline_broken_changeset_17976(self):
         """Test get_timeline_events() with interval containing a broken changeset."""
