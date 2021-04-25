@@ -296,7 +296,7 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 }
 
 /* View review page */
-.workflow-actions, .peer-form{
+.workflow-actions, .peer-form, .peer-div{
   margin: 0.5em 3em;
 }
 
@@ -311,6 +311,10 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 
 .workflow-actions dd{
   margin-left: 2em;
+}
+table#userlist {
+  margin: 0 0;
+  width: 30%
 }
 
 /* Timeline */
@@ -345,3 +349,21 @@ table.peer-status-tbl {
 #peer-review-info dd { margin-left: 8.5em }
 #peer-review-info .review { padding: 1em 0 1px }
 #overview .review { padding: 1em 0 1px }
+ul#userlist {
+  list-style-type: none;
+  padding: unset;
+}
+ul#userlist li{
+  display: inline-flex;
+}
+ul#userlist li .ui-icon{
+  margin-right: 0.5em;
+}
+
+/* wiki syntax provider */
+a.peer-wiki .approved{
+  color: limegreen;
+}
+a.peer-wiki .disapproved{
+  color: red;
+}

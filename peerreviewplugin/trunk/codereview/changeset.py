@@ -16,13 +16,20 @@ from codereview.repobrowser import get_node_from_repo
 from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
 from trac.util.translation import _
-from trac.versioncontrol.api import RepositoryManager
+from trac.versioncontrol.api import Node, RepositoryManager
 from trac.web.chrome import Chrome
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import add_script, add_script_data, add_stylesheet
+from trac.web.chrome import add_script, add_script_data, add_stylesheet, web_context
+from trac.wiki.formatter import format_to_oneliner
 
 
 class PeerChangeset(Component):
+    """Create review for a changeset from the changeset page.
+
+    The created review holds the files from the changeset.
+
+    '''Note''': This plugin may be disabled without side effects.
+    """
     implements(IRequestFilter, IRequestHandler)
 
     # IRequestFilter methods
@@ -126,7 +133,7 @@ class PeerChangeset(Component):
         _rev_info = u"""
         <dl id="peer-review-info">
             <dt class="property review">{review_id_label}</dt>
-            <dd class="review"><a href="{review_url}" title="{reviewer_id_title}">#{review_id}</a>
+            <dd class="review">{review_wiki}
               <small><em>{reviewer_id_help}</em></small>
             </dd>
             <dt class="property">{status_label}</dt>
@@ -138,7 +145,7 @@ class PeerChangeset(Component):
         def create_user_list():
             chrome = Chrome(self.env)
             if reviewer:
-                usr = [u"<li>%s</li>" % chrome.authorinfo(req, item['reviewer']) for item in reviewer]
+                usr = [u'<li><span class="ui-icon ui-icon-person"></span>%s</li>' % chrome.authorinfo(req, item['reviewer']) for item in reviewer]
                 li = u"".join(usr)
             else:
                 li = '<li class="even">{msg}</li>'.format(msg=_("There are no users included in this code review."))
@@ -157,10 +164,11 @@ class PeerChangeset(Component):
             'review_url': get_resource_url(self.env, res, req.href),
             'review_id': review['review_id'],
             'status_label': _("Status:"),
-            'review_id_label': _("Review ID:"),
+            'review_id_label': _("Review:"),
             'reviewers_label': _("Reviewers:"),
             'reviewer_id_help': _("(click to open review)"),
-            'reviewer_id_title': _("Open Review #%s") % review['review_id']
+            'review_wiki': format_to_oneliner(self.env, web_context(req),
+                                              "[review:{r_id} Review {r_id}]".format(r_id=review['review_id']))
         }
 
         if req.args.get('peer_create'):
@@ -245,17 +253,19 @@ def create_changeset_review(self, req):
     for item in changeset.get_changes():
         rfile = ReviewFileModel(self.env)
         rfile['review_id'] = id_
-        rfile['path'] = item[path]
+        # Changeset changes are without leading '/'. A Node path includes it.
+        rfile['path'] = u'/' + item[path]
         rfile['revision'] = rev
         rfile['line_start'] = 0
         rfile['line_end'] = 0
         rfile['repo'] = reponame
         node, display_rev, context = get_node_from_repo(req, repo, rfile['path'], rfile['revision'])
-        rfile['changerevision'] = rev
-        rfile['hash'] = hash_from_file_node(node)
-        rfile.insert()
+        if node and node.kind == Node.FILE:
+            rfile['changerevision'] = rev
+            rfile['hash'] = hash_from_file_node(node)
+            rfile.insert()
 
-    # MArk that this is a changeset review
+    # Mark that this is a changeset review
     dm = ReviewDataModel(self.env)
     dm['review_id'] = id_
     dm['type'] = 'changeset'

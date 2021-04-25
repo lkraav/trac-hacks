@@ -42,10 +42,9 @@ def select_by_path(env, path):
 class PeerReviewBrowser(Component):
     """Show information about file review status in Trac source code browser.
 
-    [[BR]]
     The file review status is only shown when displaying a source file.
 
-    '''Note''': This plugin may be disabled without sideeffects.
+    '''Note''': This plugin may be disabled without side effects.
     """
     implements(IHTMLPreviewAnnotator, IRequestFilter, IRequestHandler)
 
@@ -84,15 +83,11 @@ class PeerReviewBrowser(Component):
 
         #  We only handle the browser
         if path and req.path_info.startswith('/browser/') and data:
-            if rev:
-                is_head = 'HEAD'
-            else:
-                is_head = rev
             add_stylesheet(req, 'hw/css/peerreview.css')
             add_script_data(req,
                             {'peer_repo': data.get('reponame', ''),
                              'peer_rev': data.get('created_rev', ''),
-                             'peer_is_head': is_head,
+                             'peer_is_head': 0 if rev else 1,
                              'peer_path': path,
                              'peer_status_url': req.href.peerreviewstatus(),
                              'peer_is_dir': data.get('dir', None) != None,
@@ -116,7 +111,7 @@ class PeerReviewBrowser(Component):
         <td><a href="${review_href}">${review_id}</a></td><td>${chg_rev}</td><td>${hash}</td><td>${status}</td>
         </tr>
         """
-        tbl_tmpl = """<h2>%s</h2><p>%s</p>
+        tbl_tmpl = """<h3>%s</h3>
         <table class="listing peer-status-tbl">
         <thead>
             <tr>
@@ -127,24 +122,27 @@ class PeerReviewBrowser(Component):
             %%s
         </tbody>
         </table>
-        """ % (_('Status Codereview'), _('Reviews:'))
-        not_head_tmpl = "<h2>%s</h2><p>%s</p>" %\
+        """ % (_('Status Codereview'),)
+        not_head_tmpl = "<h3>%s</h3><p>%s</p>" %\
                         (_('Status Codereview'), _('Codereview status is only available for HEAD revision.'))
 
         if req.args.get('peer_is_dir') == 'true':
             return ''
 
-        if req.args.get('peer_is_head') == 'HEAD':
-            return not_head_tmpl
-
         repo = req.args.get('peer_repo')
         path = req.args.get('peer_path', '')
 
         if repo:
-            path = path[len(repo) + 1:]  # path starts with slash and reponame
+            # path starts with slash and reponame, like /reponame/my/path/to/file.txt
+            # All path information in the database is with leading '/'.
+            path = path[len(repo) + 1:]
         rev = req.args.get('peer_rev')
 
-        res = '<div id="peer-msg" class="system-message warning">%s</div>' % _('No review for this file revision yet.')
+        # if req.args.getint('peer_is_head') == 0:
+        #     return not_head_tmpl
+
+        res = '<div id="peer-msg" class="system-message warning">%s</div>' %\
+              _('No review for this file revision yet.')
         trows = ''
         with self.env.db_query as db:
             for row in db("SELECT review_id, changerevision, hash, status FROM peerreviewfile "
@@ -170,9 +168,9 @@ class PeerReviewBrowser(Component):
                         'bg_color': bg}
                 trows += Template(tr_tmpl).safe_substitute(data)
         if trows:
-            return tbl_tmpl % trows + res
+            return tbl_tmpl % trows  #  + res
         else:
-            return "<h2>%s</h2>" % _('Status Codereview') + res
+            return "<h3>%s</h3>" % _('Status Codereview') + res
 
     def match_request(self, req):
         return req.path_info == '/peerreviewstatus'

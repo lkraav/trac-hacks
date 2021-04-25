@@ -64,7 +64,7 @@ class PeerReviewMain(Component):
     def get_navigation_items(self, req):
         if 'CODE_REVIEW_DEV' in req.perm:
             yield ('mainnav', 'peerReviewMain',
-                   Markup('<a href="%s">Peer Review</a>') % req.href.peerReviewMain())
+                   Markup('<a href="%s">Codereview</a>') % req.href.peerReviewMain())
 
     # IPermissionRequestor methods
 
@@ -281,12 +281,18 @@ class PeerReviewMain(Component):
         res = Resource('peerreview', target)
         if resource_exists(self.env, res):
             review = PeerReviewModel(self.env, target)
-            if review_is_finished(self.env.config, review):
-                cls = 'closed'
+            if review['status'] == 'closed':
+                cls = 'peer-wiki closed'
             else:
-                cls = None
+                cls = 'peer-wiki'
+            status_map = {'approved': tag.span(u" \u2713", class_='approved'),
+                          'disapproved': tag.span(u" \u2717", class_='disapproved')}
+            try:
+                span = status_map[review['status']]
+            except KeyError:
+                span = ''
 
-            return tag.a(label,
+            return tag.a([label, span],
                          href=get_resource_url(self.env, res, formatter.href),
                          title=_(u"Review #%s (%s)") % (target, review['status']),
                          class_=cls

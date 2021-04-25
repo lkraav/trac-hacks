@@ -38,24 +38,6 @@ from trac.versioncontrol.diff import diff_blocks, get_diff_options
 
 class PeerReviewPerform(Component):
     """Perform a code review.
-
-    [[BR]]
-    Trac 0.12 comes with a very ancient version of jQuery. This plugin replaces that version with 1.11.2 on the
-    fly. Similar to Trac 1.0 you may specify your own jQuery in your config file.
-
-    {{{#!ini
-    [trac]
-    jquery_location = https://path/to/jquery.js
-    }}}
-    If not set the bundled version will be used.
-
-    The same can be done for the jQuery UI package and the theme to use.
-    {{{#!ini
-    [trac]
-    jquery_ui_location = https://path/to/jquery-ui.js
-    jquery_ui_theme_location = https://path/to/jquery-ui-theme.css
-    }}}
-    jQuery-ui 1.11.4 is bundled with this plugin.
     """
     implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
 

@@ -150,54 +150,39 @@
 
             <div class="collapsed">
                 <h3 class="foldable">Users assigned to this code review</h3>
-                <div>
-            # if review['owner'] == req.authname or manager:
-            <table class="listing dirlist" id="userlist">
-                <thead>
-                    <tr>
-                        <th style="width:90%">User name</th>
-                        <th>Review progress</th>
-                    </tr>
-                </thead>
-                <tbody>
-                # if reviewer:
-                # for item in reviewer:
-                    <tr class="${loop.cycle('even', 'odd')}">
-                        <td>${authorinfo(item['reviewer'])}</td>
-                        <td>${item['status']}</td>
-                    </tr>
-                # endfor
-                # else:
-                    <tr class="even">
-                        <td>There are no users included in this code review.</td>
-                    </tr>
-                # endif
-                </tbody>
-            </table>
-            # endif
+                <div class="peer-div">
+                    # if review['owner'] == req.authname or manager:
+                    <table class="listing dirlist" id="userlist">
+                        <thead>
+                            <tr>
+                                <th style="width:90%">User name</th>
+                                <th>Review progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        # if reviewer:
+                        # for item in reviewer:
+                            <tr class="${loop.cycle('even', 'odd')}">
+                                <td><span class="ui-icon ui-icon-person"></span>&nbsp;${authorinfo(item['reviewer'])}</td>
+                                <td>${item['status']}</td>
+                            </tr>
+                        # endfor
+                        # else:
+                            <tr class="even">
+                                <td>There are no users included in this code review.</td>
+                            </tr>
+                        # endif
+                        </tbody>
+                    </table>
+                    # endif
 
-            # if review['owner'] != req.authname and not manager:
-            <table class="listing dirlist" id="userlist">
-                <thead>
-                    <tr>
-                        <th>User name</th>
-                    </tr>
-                </thead>
-                <tbody>
-                # if reviewer:
-                # for item in reviewer:
-                <tr class="${loop.cycle('even', 'odd')}">
-                    <td>${authorinfo(item['reviewer'])}</td>
-                </tr>
-                # endfor
-                # else:
-                <tr class="even">
-                    <td>There are no users included in this code review.</td>
-                </tr>
-                # endif
-                </tbody>
-            </table>
-            # endif
+                    # if review['owner'] != req.authname and not manager:
+                    <ul id="userlist">
+                        # for item in reviewer:
+                        <li><span class="ui-icon ui-icon-person"></span>${authorinfo(item['reviewer'])}</li>
+                        # endfor
+                    </ul>
+                    # endif
                 </div>
             </div>
 

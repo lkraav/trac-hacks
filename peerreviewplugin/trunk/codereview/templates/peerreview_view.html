@@ -7,6 +7,11 @@
     <xi:include href="layout.html"/>
     <head>
         <title>Code Review Details - ${review['name']}</title>
+        <script>
+          jQuery(function($) {
+            $(".foldable").enableFolding(false, true);
+          });
+        </script>
     </head>
     <xi:include href="peer_functions.html"/>
     <body>
@@ -109,8 +114,8 @@
                 of the review.</p>
 
             <div class="collapsed">
-            <h3>Users assigned to this code review</h3>
-                <div>
+            <h3 class="foldable">Users assigned to this code review</h3>
+                <div class="peer-div">
             <table py:if="review['owner'] == req.authname or manager" class="listing dirlist" id="userlist">
                 <thead>
                     <tr>
@@ -129,18 +134,13 @@
                 </tbody>
             </table>
 
-            <table py:if="review['owner'] != req.authname and not manager" class="listing dirlist" id="userlist">
-                <thead>
-                    <tr>
-                        <th>User name</th>
-                    </tr>
-                </thead>
+            <table py:if="review['owner'] != req.authname and not manager" class="" id="userlist">
                 <tbody py:with="cls=cycle(('odd', 'even'))">
                     <tr py:if="not reviewer" class="even">
                         <td>There are no users included in this code review.</td>
                     </tr>
                     <tr py:if="reviewer" py:for="item in reviewer" class="${cls.next()}">
-                        <td>${authorinfo(item['reviewer'])}</td>
+                        <td style="width: 1em"><span class="ui-icon ui-icon-person"></span></td><td>${authorinfo(item['reviewer'])}</td>
                     </tr>
                 </tbody>
             </table>

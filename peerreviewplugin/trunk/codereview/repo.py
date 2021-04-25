@@ -8,18 +8,21 @@
 #
 # Author: Cinc
 #
-
 import hashlib
 import os
 import posixpath
-from trac.versioncontrol.api import NoSuchNode, RepositoryManager
+from trac.versioncontrol.api import Node, NoSuchNode, RepositoryManager
 from .model import ReviewFileModel
+
 
 __author__ = 'Cinc'
 __license__ = "BSD"
 
 
 def hash_from_file_node(node):
+    if node.kind != Node.FILE:
+        raise ValueError('Node is a directory. Must be a file.')
+
     content = node.get_content()
     blocksize = 4096
     hasher = hashlib.sha256()

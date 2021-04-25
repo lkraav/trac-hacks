@@ -26,11 +26,11 @@ from trac.config import BoolOption, ListOption
 from trac.core import Component, implements, TracError
 from trac.mimeview.api import Mimeview
 from trac.resource import Resource
-from trac.util.datefmt import format_date, format_datetime, to_datetime, user_time
+from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import html as tag
 from trac.util.text import CRLF, obfuscate_email_address
 from trac.util.translation import _
-from trac.web.chrome import add_link, add_stylesheet, Chrome, INavigationContributor, web_context
+from trac.web.chrome import add_link, add_script, add_stylesheet, Chrome, INavigationContributor, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to, format_to_html
 
@@ -231,10 +231,12 @@ class PeerReviewView(Component):
         add_stylesheet(req, 'common/css/browser.css')
         add_stylesheet(req, 'common/css/ticket.css')
         add_stylesheet(req, 'hw/css/peerreview.css')
+        Chrome(self.env).add_jquery_ui(req)  # For user icons
         add_ctxt_nav_items(req)
         if hasattr(Chrome, 'jenv'):
             return 'peerreview_view_jinja.html', data
         else:
+            add_script(req, 'common/js/folding.js')
             return 'peerreview_view.html', data, None
 
     def add_parent_data(self, req, review, data):
