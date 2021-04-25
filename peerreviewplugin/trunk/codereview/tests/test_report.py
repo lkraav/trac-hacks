@@ -93,7 +93,7 @@ codereview=1
         self.env.shutdown()
 
     def test_get_active_navigation_item(self):
-        self.assertEqual('peerReviewMain', self.plugin.get_active_navigation_item(self.req))
+        self.assertEqual('peerreviewmain', self.plugin.get_active_navigation_item(self.req))
 
     def test_get_navigation_items(self):
         self.assertIsNone(self.plugin.get_navigation_items(self.req))

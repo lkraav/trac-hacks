@@ -94,7 +94,7 @@ class NewReviewModule(Component):
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
-        return 'peerReviewMain'
+        return 'peerreviewmain'
 
     def get_navigation_items(self, req):
         return []
@@ -102,7 +102,14 @@ class NewReviewModule(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        return req.path_info == '/peerReviewNew'
+
+        if req.path_info == '/peerreviewnew':
+            return True
+        elif req.path_info == '/peerReviewNew':
+            self.env.log.info("Legacy URL 'peerReviewNew' called from: %s", req.get_header('Referer'))
+            return True
+        return False
+
 
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_DEV')

@@ -30,10 +30,10 @@ from .util import review_is_finished
 
 
 def add_ctxt_nav_items(req):
-    add_ctxtnav(req, _("My Code Reviews"), req.href.peerReviewMain(), title=_("My Code Reviews"))
-    add_ctxtnav(req, _("Create a Code Review"), req.href.peerReviewNew(), title=_("Create a Code review"))
+    add_ctxtnav(req, _("My Code Reviews"), req.href.peerreviewmain(), title=_("My Code Reviews"))
+    add_ctxtnav(req, _("Create a Code Review"), req.href.peerreviewnew(), title=_("Create a Code review"))
     add_ctxtnav(req, _("Report"), req.href.peerreviewreport(), title=_("Show Codereview Reports"))
-    add_ctxtnav(req, _("Search Code Reviews"), req.href.peerReviewSearch(), _("Search Code Reviews"))
+    add_ctxtnav(req, _("Search Code Reviews"), req.href.peerreviewsearch(), _("Search Code Reviews"))
 
 
 class PeerReviewMain(Component):
@@ -59,12 +59,12 @@ class PeerReviewMain(Component):
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
-        return 'peerReviewMain'
+        return 'peerreviewmain'
 
     def get_navigation_items(self, req):
         if 'CODE_REVIEW_DEV' in req.perm:
-            yield ('mainnav', 'peerReviewMain',
-                   Markup('<a href="%s">Codereview</a>') % req.href.peerReviewMain())
+            yield ('mainnav', 'peerreviewmain',
+                   Markup('<a href="%s">Codereview</a>') % req.href.peerreviewmain())
 
     # IPermissionRequestor methods
 
@@ -101,7 +101,12 @@ class PeerReviewMain(Component):
 
 
     def match_request(self, req):
-        return req.path_info == '/peerReviewMain' or req.path_info == "/preview_render"
+        if req.path_info == '/peerreviewmain' or req.path_info == "/preview_render":
+            return True
+        elif req.path_info == '/peerReviewMain':
+            self.env.log.info("Legacy URL 'peerReviewMain' called from: %s", req.get_header('Referer'))
+            return True
+        return False
 
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_DEV')
@@ -214,11 +219,11 @@ class PeerReviewMain(Component):
         then it's OK to not define this method.
         """
         if resource.realm == 'peerreviewfile':
-            return href('peerReviewPerform', IDFile=resource.id)
+            return href('peerreviewperform', IDFile=resource.id)
         elif resource.realm == 'peerreview':
             return href.peerreviewview(resource.id)
 
-        return href('peerReviewMain')
+        return href('peerreviewmain')
 
     def get_resource_realms(self):
         yield 'peerreview'

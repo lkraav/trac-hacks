@@ -60,7 +60,7 @@ class PeerReviewPerform(Component):
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
-        return 'peerReviewMain'
+        return 'peerreviewmain'
 
     def get_navigation_items(self, req):
         return []
@@ -68,7 +68,12 @@ class PeerReviewPerform(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        return req.path_info == '/peerReviewPerform'
+        if req.path_info == '/peerreviewperform':
+            return True
+        elif req.path_info == '/peerReviewPerform':
+            self.env.log.info("Legacy URL 'peerReviewPerform' called from: %s", req.get_header('Referer'))
+            return True
+        return False
 
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_DEV')
@@ -146,13 +151,13 @@ class PeerReviewPerform(Component):
         else:
             path, file_id = rev_files[idx - 1].split(':')
             path = os.path.basename(path)
-            add_ctxtnav(req, _("Previous File"), req.href.peerReviewPerform(IDFile=file_id), title=_("File %s") % path)
+            add_ctxtnav(req, _("Previous File"), req.href.peerreviewperform(IDFile=file_id), title=_("File %s") % path)
         if idx == len(rev_files)-1:
             add_ctxtnav(req, _("Next File"))
         else:
             path, file_id = rev_files[idx + 1].split(':')
             path = os.path.basename(path)
-            add_ctxtnav(req, _("Next File"), req.href.peerReviewPerform(IDFile=file_id), title=_("File %s") % path)
+            add_ctxtnav(req, _("Next File"), req.href.peerreviewperform(IDFile=file_id), title=_("File %s") % path)
 
     def create_script_data(self, req, data):
         r_file = data['review_file']

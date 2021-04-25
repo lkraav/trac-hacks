@@ -34,7 +34,7 @@ class PeerReviewReport(Component):
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
-        return 'peerReviewMain'
+        return 'peerreviewmain'
 
     def get_navigation_items(self, req):
         return

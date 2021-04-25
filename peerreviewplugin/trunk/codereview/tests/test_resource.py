@@ -119,18 +119,18 @@ class TestResource(unittest.TestCase):
         resource = Resource('wiki', 'WikiStart')
         self.assertEqual('', self.plugin.get_resource_description(resource))
 
-    def test_resourece(self):
+    def test_resource(self):
         resource = Resource('peerreview', 1)
-        self.assertEqual("<Resource u'peerreview:1'>", str(resource))
+        self.assertEqual("<Resource 'peerreview:1'>", str(resource).replace("u'", "'"))
         res = Resource('peerreview', 1)
         resource = Resource(res, 2)  # This creates a copy
-        self.assertEqual("<Resource u'peerreview:2'>", str(resource))
+        self.assertEqual("<Resource 'peerreview:2'>", str(resource).replace("u'", "'"))
 
         resource = Resource('peerreviewfile', 1)
-        self.assertEqual("<Resource u'peerreviewfile:1'>", str(resource))
+        self.assertEqual("<Resource 'peerreviewfile:1'>", str(resource).replace("u'", "'"))
         res = Resource('peerreviewfile', 1)
         resource = Resource(res, 2)  # This creates a copy
-        self.assertEqual("<Resource u'peerreviewfile:2'>", str(resource))
+        self.assertEqual("<Resource 'peerreviewfile:2'>", str(resource).replace("u'", "'"))
 
     def test_resource_exists_peerreview(self):
         for num in range(1, 5):
@@ -162,7 +162,7 @@ class TestResource(unittest.TestCase):
         self.assertEqual('foo/peerreviewview/1' , self.plugin.get_resource_url(resource, href))
 
         resource = Resource('peerreviewfile', 1)
-        self.assertEqual('foo/peerReviewPerform?IDFile=1' , self.plugin.get_resource_url(resource, href))
+        self.assertEqual('foo/peerreviewperform?IDFile=1' , self.plugin.get_resource_url(resource, href))
 
 def test_suite():
     suite = unittest.TestSuite()

@@ -152,7 +152,7 @@ class PeerReviewView(Component):
     # INavigationContributor
 
     def get_active_navigation_item(self, req):
-        return 'peerReviewMain'
+        return 'peerreviewmain'
 
     def get_navigation_items(self, req):
         return []
@@ -177,11 +177,11 @@ class PeerReviewView(Component):
 
         if req.method == 'POST':
             if req.args.get('resubmit'):
-                req.redirect(req.href.peerReviewNew(resubmit=review_id))
+                req.redirect(req.href.peerreviewnew(resubmit=review_id))
             elif req.args.get('followup'):
-                req.redirect(req.href.peerReviewNew(resubmit=review_id, followup=1))
+                req.redirect(req.href.peerreviewnew(resubmit=review_id, followup=1))
             elif req.args.get('modify'):
-                req.redirect(req.href.peerReviewNew(resubmit=review_id, modify=1))
+                req.redirect(req.href.peerreviewnew(resubmit=review_id, modify=1))
 
         changeset = get_changeset_data(self.env, review_id)
         data = {'review_files': self.get_files_for_review_id(req, review_id, True),
@@ -359,7 +359,7 @@ ${review_notes}
 
         try:
             for f in data['review_files']:
-                txt += u"||[/peerReviewPerform?IDFile=%s %s]|| %s ||%s" % \
+                txt += u"||[/peerreviewperform?IDFile=%s %s]|| %s ||%s" % \
                        (f['file_id'], f['path'], f.num_comments, CRLF)
         except KeyError:
             pass

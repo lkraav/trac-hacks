@@ -124,8 +124,8 @@
                 # endif
                 # for item in review_files:
                 <tr class="${loop.cycle('even', 'odd')}" id="${item['file_id']}">
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
-                    <td><a href="${href.peerReviewPerform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
+                    <td><a href="${href.peerreviewperform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
+                    <td><a href="${href.peerreviewperform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
                     <td>${item['repo'] if item['repo'] else '(default)'}</td>
                     <td>${item['changerevision']}</td>
                     <td>${item['revision']}</td>

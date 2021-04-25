@@ -29,12 +29,17 @@ class PeerReviewSearch(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
-        return req.path_info == '/peerReviewSearch'
+        if req.path_info == '/peerreviewsearch':
+            return True
+        elif req.path_info == '/peerReviewSearch':
+            self.env.log.info("Legacy URL 'peerReviewSearch' called from: %s", req.get_header('Referer'))
+            return True
+        return False
 
     # INavigationContributor methods
 
     def get_active_navigation_item(self, req):
-        return 'peerReviewMain'
+        return 'peerreviewmain'
 
     def get_navigation_items(self, req):
         return []

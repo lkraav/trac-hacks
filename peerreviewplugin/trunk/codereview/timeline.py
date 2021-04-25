@@ -111,7 +111,7 @@ class PeerReviewTimeline(Component):
             for f in files:
                 ul.append(tag.li(
                                  tag.a('%s @ %s' % (f['path'], f['changerevision']),
-                                       href='peerReviewPerform?IDFile=%s' % f['file_id']
+                                       href='peerreviewperform?IDFile=%s' % f['file_id']
                                        )
                                 )
                           )
