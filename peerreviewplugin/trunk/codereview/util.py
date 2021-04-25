@@ -8,6 +8,9 @@
 #
 # Author: Cinc
 #
+from trac.resource import Resource
+from trac.wiki.formatter import format_to_oneliner
+from trac.web.chrome import web_context
 
 from .model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
 
@@ -75,3 +78,18 @@ def review_is_locked(config, review, authname=""):
 
     lock_states = config.getlist("peerreview", "reviewer_locked_states")
     return review['status'] in lock_states
+
+def get_changeset_html(env, req, num_changeset, reponame):
+    """Create html for use in templates from changeset and repository information
+
+    We use Tracs formatting functions to get proper Trac links with correct titles and rendering.
+    """
+    if num_changeset:
+        resource_repo = Resource('repository', reponame)
+        changeset_html = format_to_oneliner(env,
+                                            web_context(req,
+                                                        Resource('changeset', num_changeset, parent=resource_repo)),
+                                            '[changeset:%s %s]' % (num_changeset, num_changeset))
+    else:
+        changeset_html = ''
+    return changeset_html

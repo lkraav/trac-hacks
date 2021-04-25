@@ -48,7 +48,7 @@ function getInlineCommentMarkup(LineNum, diff_view, parent_comment){
           };
       }
       else{
-          markup += '<td id="CTD'+LineNum+'">'+comment+'</td>';
+          markup += '<td id="CTD'+LineNum+'" class="peer-comment-td">'+comment+'</td>';
       };
   }
   return $('<tr>',

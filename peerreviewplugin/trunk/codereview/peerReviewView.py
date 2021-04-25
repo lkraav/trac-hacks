@@ -20,7 +20,7 @@ from codereview.model import Comment, get_users, \
 from codereview.peerReviewMain import add_ctxt_nav_items
 from codereview.tracgenericworkflow.api import IWorkflowOperationProvider, IWorkflowTransitionListener, \
     ResourceWorkflowSystem
-from codereview.util import review_is_finished, review_is_locked
+from codereview.util import get_changeset_html, review_is_finished, review_is_locked
 from string import Template
 from trac.config import BoolOption, ListOption
 from trac.core import Component, implements, TracError
@@ -32,7 +32,7 @@ from trac.util.text import CRLF, obfuscate_email_address
 from trac.util.translation import _
 from trac.web.chrome import add_link, add_script, add_stylesheet, Chrome, INavigationContributor, web_context
 from trac.web.main import IRequestHandler
-from trac.wiki.formatter import format_to, format_to_html
+from trac.wiki.formatter import format_to_html, format_to_oneliner
 
 
 class PeerReviewView(Component):
@@ -191,7 +191,8 @@ class PeerReviewView(Component):
                 'review': self.get_review_by_id(req, review_id),
                 'reviewer': list(PeerReviewerModel.select_by_review_id(self.env, review_id)),
                 'repo': changeset[0],
-                'changeset': changeset[1]
+                'changeset': changeset[1],
+                'changeset_html': get_changeset_html(self.env, req, changeset[1], changeset[0])
                 }
 
         # check to see if the user is a manager of this page or not

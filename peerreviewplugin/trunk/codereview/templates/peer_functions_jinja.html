@@ -20,7 +20,7 @@
             </tr>
             <tr>
                 <th>Author:</th>
-                <td>${authorinfo(review['owner'])}</td>
+                <td><span class="ui-icon ui-icon-person"></span>&nbsp;${authorinfo(review['owner'])}</td>
             </tr>
             <tr>
                 <th>Creation Date:</th>
@@ -34,7 +34,7 @@
             <tr>
                 <th>Changeset:</th>
                 <td>
-                    <a href="${href.changeset(changeset, repo)}" title="Show changeset ${changeset}">${changeset}</a>
+                    ${changeset_html}
                 </td>
             </tr>
             <tr>

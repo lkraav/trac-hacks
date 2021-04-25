@@ -216,15 +216,20 @@ table.code th.performCodeReview{
 
 .comment-text{
   background-color: #fff;
-  border-left: 1px solid #C0C0C0;
+  border: 1px solid #C0C0C0;
   text-align: left;
   padding: 0.25em;
   margin-right: 5px;
 }
 
+.comment-text p{
+  margin: 0.25em;
+}
+
 .comment-reply{
   text-align: right;
   padding: 0.5em 0.25em;
+  font-size: 80%;
 }
 
 .comment-table .border-col{
@@ -235,10 +240,15 @@ table.code th.performCodeReview{
 /* Reset background color set by syntax highlighter */
 table.comment-table td{
   background-color: transparent;
+  white-space: unset;
 }
 
 table.code tbody tr.comment-tr:hover td{
   background-color: transparent;
+}
+
+table.code td.peer-comment-td{
+  white-space: unset;
 }
 
 table.trac-diff tbody tr.comment-tr:hover td{
@@ -260,6 +270,12 @@ td .peer-comment{
   margin: 0.75em;
   padding: 0.5em;
   font-family: inherit;
+}
+
+div.peer-comment .refresh{
+  font-size: 80%;
+  text-align: right;
+  margin: 0em 0em 0.5em 0em;
 }
 
 td .comment-tree-div .comment-author{
@@ -352,12 +368,13 @@ table.peer-status-tbl {
 ul#userlist {
   list-style-type: none;
   padding: unset;
-}
-ul#userlist li{
-  display: inline-flex;
+  margin-top: 0em;
 }
 ul#userlist li .ui-icon{
   margin-right: 0.5em;
+}
+table#userlist .user-icon{
+  width: 1.5em;
 }
 
 /* wiki syntax provider */

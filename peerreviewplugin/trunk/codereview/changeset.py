@@ -145,11 +145,13 @@ class PeerChangeset(Component):
         def create_user_list():
             chrome = Chrome(self.env)
             if reviewer:
-                usr = [u'<li><span class="ui-icon ui-icon-person"></span>%s</li>' % chrome.authorinfo(req, item['reviewer']) for item in reviewer]
+                usr = [u'<tr><td class="user-icon"><span class="ui-icon ui-icon-person"></span></td><td>%s</td></tr>' % chrome.authorinfo(req,
+                                                                                                      item['reviewer'])
+                       for item in reviewer]
                 li = u"".join(usr)
             else:
-                li = '<li class="even">{msg}</li>'.format(msg=_("There are no users included in this code review."))
-            return u'<ul id="userlist">{li}</ul>'.format(li=li)
+                li = '<tr><td>{msg}</td></tr>'.format(msg=_("There are no users included in this code review."))
+            return u'<table id="userlist">{li}</table>'.format(li=li)
 
         if 'CODE_REVIEW_VIEW' not in req.perm:
             no_perm_tmpl = """<dl id="peer-review-info"><dt class="property" style="margin-top: 1em">Review:</dt>
