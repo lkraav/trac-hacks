@@ -56,7 +56,7 @@ class PeerChangeset(Component):
             if data and 'changes' in data and data['changes']:
                 cset = data.get('new_rev', '')
                 f_data = {}
-                if 'CODE_REVIEW_DEV' in req.perm and cset:
+                if 'CODE_REVIEW_VIEW' in req.perm and cset:
                     f_data = self.file_dict_from_changeset(req, cset, data.get('reponame', ''))
 
                 add_stylesheet(req, 'hw/css/peerreview.css')
@@ -65,9 +65,12 @@ class PeerChangeset(Component):
                          'peer_changeset_url': req.href.peerreviewchangeset(),
                          'peer_comment_url': req.href.peercomment(),
                          'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif'),
+                         'peer_perm_dev': 0,
                          }
                 if f_data:
                     jdata['peer_file_comments'] = f_data
+                if 'CODE_REVIEW_DEV' in req.perm:
+                    jdata['peer_perm_dev'] = 1
 
                 add_script_data(req, jdata)
                 add_script(req, "hw/js/peer_trac_changeset.js")
@@ -198,6 +201,8 @@ class PeerChangeset(Component):
         if 'CODE_REVIEW_VIEW' not in req.perm:
             no_perm_tmpl = """<dt class="property" style="margin-top: 1em">Review:</dt>
             <dd style="margin-top: 1em"><span>{msg}</span></dd>"""
+            # TODO: this kind of information disclosure (you learn that a review exists) should be
+            #       removed. Same for the permission msg when creating reviews
             return no_perm_tmpl.format(msg=_("You don't have permission to view code review information."))
 
         res = Resource('peerreview', review['review_id'])

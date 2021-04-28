@@ -76,7 +76,7 @@ class PeerReviewPerform(Component):
         return False
 
     def process_request(self, req):
-        req.perm.require('CODE_REVIEW_DEV')
+        req.perm.require('CODE_REVIEW_VIEW')
 
         fileid = req.args.get('IDFile')
         if not fileid:

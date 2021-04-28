@@ -240,7 +240,7 @@ jQuery(document).ready(function($) {
         $('#CTD' + line).load(url);
       }
       else{
-      if($.isNumeric(line))
+      if($.isNumeric(line) && peer_perm_dev == 1)
         $(this).replaceWith('<th data-line="' + line + '"><a href="javascript:addComment(' + line + ', ' + fileid + ', -1)">' + line + '</a></th>')
       }
     });

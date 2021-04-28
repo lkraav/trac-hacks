@@ -62,12 +62,12 @@ class PeerReviewCommentHandler(Component):
     def process_request(self, req):
         data = {'invalid': 0}
 
-        if not (req.perm.has_permission('CODE_REVIEW_MGR') or
-                req.perm.has_permission('CODE_REVIEW_DEV')):
-            data['invalid'] = 4
+        if not 'CODE_REVIEW_VIEW' in req.perm:
             writeResponse(req, "", 403)
 
         if req.method == 'POST':
+            if not 'CODE_REVIEW_DEV' in req.perm:
+                writeResponse(req, "", 403)
             if req.args.get('addcomment'):
                 fileid = req.args.get('fileid')
                 # This shouldn't happen but still...

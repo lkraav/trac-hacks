@@ -187,7 +187,7 @@
             </py:if>
 
             <div>
-                <h3 class="foldable">Workflow actions</h3>
+                <h3 py:if="'CODE_REVIEW_DEV' in req.perm" class="foldable">Workflow actions</h3>
                 <div id="peer-workflow">
 
             <py:if test="canivote">

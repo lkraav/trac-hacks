@@ -226,7 +226,9 @@
             # endif
 
             <div>
+                # if 'CODE_REVIEW_DEV' in req.perm:
             <h3 class="foldable">Workflow actions</h3>
+                # endif
                 <div id="peer-workflow">
             # if canivote:
                 ${reviewer_workflow}

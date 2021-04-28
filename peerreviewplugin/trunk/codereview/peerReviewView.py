@@ -169,13 +169,14 @@ class PeerReviewView(Component):
             return True
 
     def process_request(self, req):
-        req.perm.require('CODE_REVIEW_DEV')
+        req.perm.require('CODE_REVIEW_VIEW')
 
         review_id = req.args.get('Review')
         if review_id is None or not review_id.isdigit():
             raise TracError(u"Invalid review ID supplied - unable to load page.")
 
         if req.method == 'POST':
+            req.perm.require('CODE_REVIEW_DEV')
             if req.args.get('resubmit'):
                 req.redirect(req.href.peerreviewnew(resubmit=review_id))
             elif req.args.get('followup'):
