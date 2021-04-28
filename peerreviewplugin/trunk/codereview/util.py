@@ -12,7 +12,8 @@ from trac.resource import Resource
 from trac.wiki.formatter import format_to_oneliner
 from trac.web.chrome import web_context
 
-from .model import PeerReviewModel, PeerReviewerModel, ReviewFileModel
+from .model import PeerReviewModel, PeerReviewerModel, ReviewCommentModel, ReviewDataModel, ReviewFileModel
+
 
 __author__ = 'Cinc'
 __copyright__ = "Copyright 2016-2021"
@@ -93,3 +94,20 @@ def get_changeset_html(env, req, num_changeset, reponame):
     else:
         changeset_html = ''
     return changeset_html
+
+def get_files_for_review_id(env, req, review_id, comments=False):
+    """Get all file objects belonging to the given review id. Provide the number of comments if asked for.
+
+    :param review_id: id of review as an int
+    :param req: Request object
+    :param comments: if True add information about comments as attributes to the file objects
+    :return: list of ReviewFileModels
+    """
+    rev_files = list(ReviewFileModel.select_by_review(env, review_id))
+    if comments:
+        for file_ in rev_files:
+            file_.comment_data = list(ReviewCommentModel.select_by_file_id(env, file_['file_id']))
+            file_.num_comments = len(file_.comment_data)
+            my_comment_data = ReviewDataModel.comments_for_file_and_owner(env, file_['file_id'], req.authname)
+            file_.num_notread = file_.num_comments - len([c_id for c_id, t, dat in my_comment_data if t == 'read'])
+    return rev_files

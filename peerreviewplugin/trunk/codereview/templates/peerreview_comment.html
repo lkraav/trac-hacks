@@ -1,0 +1,55 @@
+<div xmlns:py="http://genshi.edgewall.org/" py:strip="">
+<py:if test="create_add_comment_dlg">
+    <div id="add-comment-dlg">
+    <form action="${href.peerReviewCommentCallback()}" method="POST" id="add-comment-form">
+        <input type="hidden" name="ftoken" value="${form_token}" id="form-token"/>
+        <div>
+            <textarea rows="6" id="comment-txt" name="comment"></textarea>
+            <div id="commentchange" class="ticketdraft" style="display: none">
+                <p class="help">Preview:</p>
+                <div class="notes-preview comment searchable">
+
+                </div>
+            </div>
+        </div>
+        <div class="buttons">
+            <input type="hidden" name="fileid" value="-1" id="comment-fileid"/>
+            <input type="hidden" name="parentid" value="-1" id="comment-parentid"/>
+            <input type="hidden" name="line" value="" id="comment-line" />
+            <input type="hidden" name="path" value="" id="comment-path" />
+            <input type="hidden" name="addcomment" value="addcomment"/>
+            <input type="submit" name="submitcomment" value="Add Comment" id="addcomment"/>
+        </div>
+    </form>
+</div>
+</py:if>
+
+<py:if test="not create_add_comment_dlg">
+    <div class="peer-comment">
+        <div class="peer-loading" id="comment-loading-${lineNum}" style="display: none">Loading...</div>
+        <p class="refresh"><a id="comment-refresh-${'P' + lineNum}"
+                              href="javascript:refreshComment('${path}', ${fileID}, ${lineNum})">Refresh</a></p>
+
+        <py:choose test="invalid">
+          <div py:when="0" id="${fileID+'_'+lineNum}" class="comment-tree-div">
+              ${commentHTML}
+              <div py:if="not is_finished and not review_locked and not not_allowed" class="buttons">
+                  <input type="button" name="addcomment" value="Add New Comment"
+                         id="${'addcomment-view'+lineNum}"/>
+                  <input type="hidden" name="fileid" value="" id="${'comment-fileid-view'+lineNum}"/>
+                  <input type="hidden" name="line" value="" id="${'comment-line-view'+lineNum}" />
+              </div>
+              <p py:if="is_finished or review_locked or not_allowed" class="help">
+                  This review is locked or you are not allowed to add any comments.
+              </p>
+          </div>
+
+          <span py:when="1">Invalid Parameters</span>
+          <span py:when="2">Comment Text Blank</span>
+          <span py:when="3">Invalid Action Type</span>
+          <span py:when="4">Invalid Permission</span>
+          <span py:when="closed">Review already closed</span>
+        </py:choose>
+    </div>
+</py:if>
+</div>

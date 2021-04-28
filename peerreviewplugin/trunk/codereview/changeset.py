@@ -13,6 +13,7 @@ from codereview.model import get_users, PeerReviewModel, PeerReviewerModel, \
 from codereview.peerReviewCommentCallback import writeJSONResponse, writeResponse
 from codereview.repo import hash_from_file_node
 from codereview.repobrowser import get_node_from_repo
+from codereview.util import get_files_for_review_id
 from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
 from trac.util.translation import _
@@ -53,12 +54,27 @@ class PeerChangeset(Component):
         # We only handle the changeset page
         if req.path_info.startswith('/changeset/'):
             if data and 'changes' in data and data['changes']:
+                cset = data.get('new_rev', '')
+                f_data = {}
+                if cset:
+                    review = get_review_for_changeset(self.env, cset, data.get('reponame', ''))
+                    if review:
+                        rfiles = get_files_for_review_id(self.env, req, review['review_id'], True)
+                        for rfile in rfiles:
+                            lines = set([comment['line_num'] for comment in rfile.comment_data])
+                            if lines:
+                                f_data[rfile['path']] = [rfile['file_id'], list(lines)]
+                            else:
+                                f_data[rfile['path']] = [rfile['file_id'], []]
+
                 add_stylesheet(req, 'hw/css/peerreview.css')
                 add_script_data(req,
                                 {'peer_repo': data.get('reponame', ''),
-                                 'peer_rev': data.get('new_rev', ''),
+                                 'peer_rev': cset,
                                  'peer_changeset_url': req.href.peerreviewchangeset(),
-                                 'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif')})
+                                 'peer_comment_url': req.href.peercomment(),
+                                 'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif'),
+                                 'peer_file_comments': f_data})
                 add_script(req, "hw/js/peer_trac_changeset.js")
                 add_script(req, "hw/js/peer_user_list.js")
                 Chrome(self.env).add_jquery_ui(req)
@@ -89,11 +105,19 @@ class PeerChangeset(Component):
     Really remove the user <strong id="user-rem-name"></strong> from the list?</p>
 </div>
 """
+        tmpl_permission = """
+        <div class="collapsed">
+          <h3 class="foldable">{title}</h3>
+          <div id="peer-codereview">
+             %s
+          </div>
+        </div>
+        """.format(title=_('Codereview'))
 
-        if 'CODE_REVIEW_DEV' not in req.perm:
+        if 'CODE_REVIEW_DEV' in req.perm:
             res = '<div id="peer-msg" class="system-message warning">%s</div>' % \
                   _("You don't have permission to create a code review.")
-            return self.review_tmpl % res
+            return tmpl_permission % res
 
         users = get_users(self.env)
         data = {
@@ -112,26 +136,22 @@ class PeerChangeset(Component):
             template = chrome.load_template('user_list.html', None)
             rendered = template.generate(**data).render()
 
-        # TODO: template.generate not for Jinja2
         peerreview_div = '<div class="collapsed"><h3 class="foldable">%s</h3>' \
-                         '<div id="peer-codereview">' \
-                         '%s' \
-                         '</div>' \
-                         '</div>' % \
-                         (_('Codereview'), _form.format(**data) % rendered)
-
+                         '<div id="peer-codereview">%s</div>' \
+                         '</div><div><p class="help">%s</p></div>' % \
+                         (_('Codereview'), _form.format(**data) % rendered,
+                          _("You need to create a review if you want to comment on files."))
         return peerreview_div
 
-    review_tmpl = """
-<div class="collapsed">
-  <h3 class="foldable">{title}</h3>
-  <div id="peer-codereview">%s</div>
-</div>
-""".format(title=_('Codereview'))
-
-    def create_review_info(self, req, review):
+    def create_review_info(self, req, review, create=False):
+        """Create html with inforamtion about the current changeset review.
+        :param req: Request object
+        :param review: Review object associated with this review
+        :param create: True if the review was just created and the page is updated,
+                       False if the page is normally loaded. There may be some
+                       presentation differences.
+        """
         _rev_info = u"""
-        <dl id="peer-review-info">
             <dt class="property review">{review_id_label}</dt>
             <dd class="review">{review_wiki}
               <small><em>{reviewer_id_help}</em></small>
@@ -140,8 +160,14 @@ class PeerChangeset(Component):
             <dd>{status}</dd>
             <dt class="property">{reviewers_label}</dt>
             <dd>{user_list}</dd>
-        </dl>
         """
+        review_tmpl = """
+        <div>
+            <dl id="peer-review-info">
+              %s
+            </dl>
+        </div>
+        """.format(title=_('Codereview'))
         def create_user_list():
             chrome = Chrome(self.env)
             if reviewer:
@@ -168,13 +194,13 @@ class PeerChangeset(Component):
             'status_label': _("Status:"),
             'review_id_label': _("Review:"),
             'reviewers_label': _("Reviewers:"),
-            'reviewer_id_help': _("(click to open review)"),
+            'reviewer_id_help': _("(click to open review page)"),
             'review_wiki': format_to_oneliner(self.env, web_context(req),
                                               "[review:{r_id} Review {r_id}]".format(r_id=review['review_id']))
         }
 
-        if req.args.get('peer_create'):
-            return self.review_tmpl % _rev_info.format(**data)
+        if create:
+            return review_tmpl % _rev_info.format(**data)
         else:
             return _rev_info.format(**data)
 
@@ -188,10 +214,12 @@ class PeerChangeset(Component):
 
             review = create_changeset_review(self, req)
             if not review:
-                writeResponse(req, '<div id="peer-msg" class="system-message warning">%s</div>' %
-                              _('Error while creating Review.'))
+                data = {'html': '<div id="peer-msg" class="system-message warning">%s</div>' %
+                                _('Error while creating Review.')}
+                writeJSONResponse(req, data)
             else:
-                writeResponse(req, self.create_review_info(req, review))
+                data = {'html': self.create_review_info(req, review, True)}
+                writeJSONResponse(req, data)
             return
 
         dm = ReviewDataModel(self.env)
@@ -207,7 +235,7 @@ class PeerChangeset(Component):
         else:
             review = PeerReviewModel(self.env, rev_data[-1]['review_id'])
             data = {'action': 'info',
-                    'html': self.create_review_info(req, review)}
+                    'html': self.create_review_info(req, review, False)}
             writeJSONResponse(req, data)
 
 
@@ -256,7 +284,7 @@ def create_changeset_review(self, req):
         rfile = ReviewFileModel(self.env)
         rfile['review_id'] = id_
         # Changeset changes are without leading '/'. A Node path includes it.
-        rfile['path'] = u'/' + item[path]
+        rfile['path'] = u'/' + item[path] if item[path][0] != '/' else item[path]
         rfile['revision'] = rev
         rfile['line_start'] = 0
         rfile['line_end'] = 0
@@ -274,6 +302,21 @@ def create_changeset_review(self, req):
     dm['data'] = "%s:%s" % (reponame, rev)
     dm.insert()
     return review
+
+
+def get_review_for_changeset(env, cs_num, repo_name):
+    """Get a PeerReview from the given repo:changset combination.
+     Return None if not found."""
+    dm = ReviewDataModel(env)
+    dm['type'] = 'changeset'
+    dm['data'] = "%s:%s" % (repo_name, cs_num)
+    rev_data = list(dm.list_matching_objects())
+
+    # Permission handling is done in the called methods so the proper message is created there.
+    if rev_data:
+        return PeerReviewModel(env, rev_data[-1]['review_id'])
+    else:
+        return None
 
 
 def get_changeset_data(env, review_id):

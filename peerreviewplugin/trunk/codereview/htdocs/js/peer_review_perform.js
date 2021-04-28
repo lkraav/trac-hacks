@@ -193,7 +193,7 @@ function markComment(line, file_id, comment_id, read_status, review_id){
             '__FORM_TOKEN': form_token
            },
             function(data){
-              var data = $.parseJSON(data);
+              /* var data = $.parseJSON(data); */
               /* Show or refresh comment dialog */
               getComments(data['line'], data['fileid'], true);
            });
@@ -230,7 +230,7 @@ jQuery(document).ready(function($) {
 
        var LineNum = $( "#comment-line" ).val();
        $.post("peerReviewCommentCallback", $("#add-comment-form").serialize(), function(data){
-          var data = $.parseJSON(data);
+          /* var data = $.parseJSON(data); */
           /* Show or refresh comment dialog */
           getComments(data['line'], data['fileid'], true);
        });

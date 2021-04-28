@@ -146,7 +146,7 @@ class TestCommentHelper(unittest.TestCase):
                                 'parentid': '1'})
         self.assertIsNone(self.plugin.process_request(req))
         # Check results.
-        comments = ReviewCommentModel.comments_by_file_id(self.env)
+        comments = ReviewCommentModel.comment_ids_by_file_id(self.env)
         self.assertEqual(2, len(comments[1]))  # comments is a dict but the keys are ints, val: list of comment ids
         for row in self.env.db_query("SELECT * FROM peerreviewcomment"):
             self.assertEqual(1, row[1])

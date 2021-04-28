@@ -35,13 +35,13 @@ from trac.wiki import format_to_html
 
 
 def writeJSONResponse(rq, data, httperror=200):
-    writeResponse(rq, json.dumps(data), httperror)
+    writeResponse(rq, json.dumps(data), httperror, content_type='application/json; charset=utf-8')
 
 
-def writeResponse(req, data, httperror=200):
+def writeResponse(req, data, httperror=200, content_type='text/plain; charset=utf-8'):
     data = data.encode('utf-8')
     req.send_response(httperror)
-    req.send_header('Content-Type', 'text/plain; charset=utf-8')
+    req.send_header('Content-Type', content_type)
     req.send_header('Content-Length', len(data))
     req.end_headers()
     req.write(data)
@@ -53,6 +53,8 @@ class PeerReviewCommentHandler(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
+        if req.path_info == '/peercomment':
+            return True
         return req.path_info == '/peerReviewCommentCallback'
 
     # This page should never be called directly.  It should only be called
@@ -72,8 +74,9 @@ class PeerReviewCommentHandler(Component):
 
         if req.method == 'POST':
             if req.args.get('addcomment'):
+                fileid = req.args.get('fileid')
                 # This shouldn't happen but still...
-                review = get_review_for_file(self.env, req.args.get('fileid'))
+                review = get_review_for_file(self.env, fileid)
                 if not_allowed_to_comment(self.env, review, req.perm, req.authname):
                     writeResponse(req, "", 403)
                     return
@@ -85,6 +88,8 @@ class PeerReviewCommentHandler(Component):
                     else:
                         return 'peerreview_comment_callback.html', data, None
 
+                rfile = ReviewFileModel(self.env, fileid)
+                data['path'] = rfile['path']
                 txt = req.args.get('comment')
                 comment = ReviewCommentModel(self.env)
                 comment['file_id'] = data['fileid'] = req.args.get('fileid')
@@ -99,6 +104,8 @@ class PeerReviewCommentHandler(Component):
             elif req.args.get('markread'):
                 data['fileid'] = req.args.get('fileid')
                 data['line'] = req.args.get('line')
+                rfile = ReviewFileModel(self.env, data['fileid'])
+                data['path'] = rfile['path']
                 if req.args.get('markread') == 'read':
                     rev_dat = ReviewDataModel(self.env)
                     rev_dat['file_id'] = data['fileid']
@@ -117,6 +124,21 @@ class PeerReviewCommentHandler(Component):
                         rev.delete()
                 writeJSONResponse(req, data)
                 return
+
+        if req.args.get('action') == 'commenttree':
+            self.get_comment_tree(req, data)
+            data['path'] = req.args.get('path', '')
+            if hasattr(Chrome, 'jenv'):
+                return 'peerreview_comment_jinja.html', data
+            else:
+                return 'peerreview_comment.html', data, None
+        elif req.args.get('action') == 'addcommentdlg':
+            data['create_add_comment_dlg'] = True
+            data['form_token'] = req.form_token
+            if hasattr(Chrome, 'jenv'):
+                return 'peerreview_comment_jinja.html', data
+            else:
+                return 'peerreview_comment.html', data, None
 
         actionType = req.args.get('actionType')
 
@@ -142,91 +164,11 @@ class PeerReviewCommentHandler(Component):
             return True
         return False
 
-    # Used to send a file that is attached to a comment
-    # This method is only left here to keep the file stuff for later
-    def getCommentFile_obsolete(self, req, data):
-        data['invalid'] = 6
-        short_path = req.args.get('fileName')
-        fileid = req.args.get('IDFile')
-        if not fileid or not short_path:
-            return
-
-        short_path = urllib.unquote(short_path)
-        self.path = os.path.join(self.env.path, 'attachments', 'CodeReview',
-                                 urllib.quote(fileid))
-        self.path = os.path.normpath(self.path)
-        attachments_dir = os.path.join(os.path.normpath(self.env.path),
-                                       'attachments')
-        commonprefix = os.path.commonprefix([attachments_dir, self.path])
-        assert commonprefix == attachments_dir
-        full_path = os.path.join(self.path, short_path)
-        req.send_header('Content-Disposition', 'attachment; filename=' + short_path)
-        req.send_file(full_path)
-
-    # Creates a comment based on the values from the request
-    # This method is only left here to keep the file upload stuff for later
-    def createComment_obsolete(self, req, data):
-        data['invalid'] = 5
-        struct = ReviewCommentStruct(None)
-        struct.IDParent = req.args.get('IDParent')
-        struct.IDFile = req.args.get('IDFile')
-        struct.LineNum = req.args.get('LineNum')
-        struct.Author = util.get_reporter_id(req)
-        struct.Text = req.args.get('Text')
-        struct.DateCreate = int(time.time())
-
-        if struct.IDFile is None or struct.LineNum is None or \
-                struct.Author is None or struct.Text is None:
-            return
-
-        if struct.IDFile == "" or struct.LineNum == "" or struct.Author == "":
-            return
-
-        if struct.Text == "":
-            return
-
-        if struct.IDParent is None or struct.IDParent == "":
-            struct.IDParent = "-1"
-
-        # If there was a file uploaded with the comment, place it in the correct spot
-        # The basic parts of this code were taken from the file upload portion of
-        # the trac wiki code
-
-        if 'FileUp' in req.args:
-            upload = req.args['FileUp']
-            if upload and upload.filename:
-                self.path = \
-                    os.path.join(self.env.path, 'attachments',
-                                 'CodeReview', urllib.quote(struct.IDFile))
-                self.path = os.path.normpath(self.path)
-                if hasattr(upload.file, 'fileno'):
-                    size = os.fstat(upload.file.fileno())[6]
-                else:
-                    size = upload.file.len
-                if size != 0:
-                    filename = urllib.unquote(upload.filename)
-                    filename = filename.replace('\\', '/').replace(':', '/')
-                    filename = os.path.basename(filename)
-                    if sys.version_info[0] > 2 or (sys.version_info[0] == 2 and sys.version_info[1] >= 3):
-                        filename = unicodedata.normalize('NFC', to_unicode(filename, 'utf-8')).encode('utf-8')
-                    attachments_dir = os.path.join(os.path.normpath(self.env.path), 'attachments')
-                    commonprefix = os.path.commonprefix([attachments_dir, self.path])
-                    assert commonprefix == attachments_dir
-                    if not os.access(self.path, os.F_OK):
-                        os.makedirs(self.path)
-                    path, targetfile = util.create_unique_file(os.path.join(self.path, filename))
-                    try:
-                        shutil.copyfileobj(upload.file, targetfile)
-                        struct.AttachmentPath = os.path.basename(path)
-                    finally:
-                        targetfile.close()
-        struct.save(self.env.get_db_cnx())
-
     # Returns a comment tree for the requested line number
     # in the requested file
     def get_comment_tree(self, req, data):
-        fileid = req.args.get('IDFile')
-        linenum = req.args.get('LineNum')
+        fileid = req.args.get('IDFile') or req.args.get('fileid')
+        linenum = req.args.get('LineNum') or req.args.get('line')
 
         if not fileid or not linenum:
             data['invalid'] = 1
@@ -376,18 +318,18 @@ class PeerReviewCommentHandler(Component):
         """
 
     # Recursively builds the comment html to send back.
-    def build_comment_html(self, req, comment, nodesIn, linenum, fileid, first, data):
-        if nodesIn > 50:
+    def build_comment_html(self, req, comment, indent, linenum, fileid, first, data):
+        if indent > 50:
             return ""
 
         children_html = ""
         keys = sorted(comment.Children.keys())
         for key in keys:
             child = comment.Children[key]
-            children_html += self.build_comment_html(req, child, nodesIn + 1, linenum, fileid, False, data)
+            children_html += self.build_comment_html(req, child, indent + 1, linenum, fileid, False, data)
 
         factor = 15
-        width = 5 + nodesIn * factor
+        width = 5 + indent * factor
 
         context = web_context(req)
         tdata = {'width': width,

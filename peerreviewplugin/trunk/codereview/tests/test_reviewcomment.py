@@ -48,7 +48,7 @@ class TestReviewCommentModel(unittest.TestCase):
 
     def test_comments_by_file_id(self):
         # this is a dict, key: file_id as int, val: list of comment ids
-        comments = ReviewCommentModel.comments_by_file_id(self.env)
+        comments = ReviewCommentModel.comment_ids_by_file_id(self.env)
         self.assertEqual(3, len(comments))
         self.assertEqual(2, len(comments[1]))
         self.assertEqual(3, len(comments[2]))

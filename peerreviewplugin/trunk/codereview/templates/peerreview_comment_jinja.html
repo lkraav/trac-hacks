@@ -1,0 +1,59 @@
+#if create_add_comment_dlg:
+            <div id="add-comment-dlg">
+                <form action="${href.peerReviewCommentCallback()}" method="POST" id="add-comment-form">
+                    <input type="hidden" name="__FORM_TOKEN" value="${form_token}" id="form-token"/>
+                    <div>
+                        <textarea rows="6" id="comment-txt" name="comment"></textarea>
+                        <div id="commentchange" class="ticketdraft" style="display: none">
+                            <p class="help">Preview:</p>
+                            <div class="notes-preview comment searchable">
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="buttons">
+                        <input type="hidden" name="fileid" value="-1" id="comment-fileid"/>
+                        <input type="hidden" name="parentid" value="-1" id="comment-parentid"/>
+                        <input type="hidden" name="line" value="" id="comment-line" />
+                        <input type="hidden" name="path" value="" id="comment-path" />
+                        <input type="hidden" name="addcomment" value="addcomment"/>
+                        <input type="submit" name="submitcomment" value="Add Comment" id="addcomment"/>
+                    </div>
+                </form>
+            </div>
+
+# else:
+<div class="peer-comment">
+    <div class="peer-loading" id="comment-loading-${lineNum}" style="display: none">Loading...</div>
+        <p class="refresh"><a id="comment-refresh-${'P' + lineNum}"
+                              href="javascript:refreshComment('${path}', ${fileID}, ${lineNum})">Refresh</a></p>
+        # if invalid == 0:
+          <div id="${fileID+'_'+lineNum}" class="comment-tree-div">
+              ${commentHTML}
+              # if not is_finished and not review_locked and not not_allowed:
+              <div class="comment-buttons">
+                  <input type="button" name="addcomment" value="Add New Comment"
+                         id="${'addcomment-view'+lineNum}" onClick="addComment(${lineNum}, ${fileID}, -1);"/>
+                  <input type="hidden" name="fileid" value="" id="${'comment-fileid-view'+lineNum}"/>
+                  <input type="hidden" name="line" value="" id="${'comment-line-view'+lineNum}" />
+              </div>
+              # endif
+              # if is_finished or review_locked or not_allowed:
+              <p class="help">
+                  This review is locked or you are not allowed to add any comments.
+              </p>
+              # endif
+          </div>
+        # elif invalid == 1:
+          <span>Invalid Parameters</span>
+        # elif invalid == 2:
+          <span>Comment Text Blank</span>
+        # elif invalid == 3:
+          <span>Invalid Action Type</span>
+        # elif invalid == 4:
+          <span>Invalid Permission</span>
+        # elif invalid == 'closed':
+          <span>Review already closed</span>
+        # endif
+    </div>
+# endif

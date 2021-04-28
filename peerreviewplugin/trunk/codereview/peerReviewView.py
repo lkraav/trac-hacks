@@ -20,7 +20,7 @@ from codereview.model import Comment, get_users, \
 from codereview.peerReviewMain import add_ctxt_nav_items
 from codereview.tracgenericworkflow.api import IWorkflowOperationProvider, IWorkflowTransitionListener, \
     ResourceWorkflowSystem
-from codereview.util import get_changeset_html, review_is_finished, review_is_locked
+from codereview.util import get_changeset_html, get_files_for_review_id, review_is_finished, review_is_locked
 from string import Template
 from trac.config import BoolOption, ListOption
 from trac.core import Component, implements, TracError
@@ -318,6 +318,8 @@ class PeerReviewView(Component):
         :param comments: if True add information about comments as attributes to the file objects
         :return: list of ReviewFileModels
         """
+        return get_files_for_review_id(self.env, req, review_id, comments)
+
         rev_files = list(ReviewFileModel.select_by_review(self.env, review_id))
         if comments:
             for file_ in rev_files:

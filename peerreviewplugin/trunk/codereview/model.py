@@ -409,7 +409,7 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
         return ReviewCommentModel(self.env, key['comment_id'], 'peerreviewcomment')
 
     @staticmethod
-    def comments_by_file_id(env):
+    def comment_ids_by_file_id(env):
         """Return a dict with file_id as key and a comment id list as value.
 
         @param env: Trac Environment object

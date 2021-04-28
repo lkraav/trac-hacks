@@ -133,7 +133,7 @@ class PeerReviewMain(Component):
             all_reviews = [rev for rev in r_tmpl.list_matching_objects() if rev['status'] != "closed"]
 
         # We need this for displaying information about comments
-        comments = ReviewCommentModel.comments_by_file_id(self.env)
+        comments = ReviewCommentModel.comment_ids_by_file_id(self.env)
         my_comment_data = ReviewDataModel.comments_for_owner(self.env, req.authname)
 
         # Add files

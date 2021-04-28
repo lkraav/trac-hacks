@@ -112,11 +112,11 @@ jQuery(document).ready(function($) {
         $("#create-review-submit").on('click', function(event){
             event.preventDefault ? event.preventDefault() : event.returnValue = false;
             $.post(peer_changeset_url, $('#create-peerreview-form').serialize(), function(data){
-                $('#create-peerreview-form').hide("fade", function(){
-                   $('#peer-codereview').html(data);
+                $('#peer-create-review').hide("fade", function(){
+                   $('#peer-create-review').after(data['html']);
                 });
             },
-            'html');
+            'json');
             return false;
         });
 
@@ -141,28 +141,141 @@ jQuery(document).ready(function($) {
     };
 
 
-    // Add review information to the overview data
-    function move_review_info(){
-        var html = $('#peer-review-info').html();
-        $('#overview').append(html);
-        $('#peer-create-review').empty();
+    /* Submit handler for comments */
+    function handle_add_comment(event){
+       $.post($(this).attr('action'), $(this).serialize(), function(data){
+          refreshComment(data['path'], data['fileid'], data['line'])
+       });
+       $("#add-comment-dlg").dialog('close');
+       return false;
+    }
+
+  window.markComment = function markComment(line, file_id, comment_id, read_status, review_id){
+    $.post(peer_comment_url,
+           {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': read_status,
+            'reviewid': review_id,
+            '__FORM_TOKEN': $('#form-token').val()
+           },
+            function(data){
+              /* Refresh comment dialog */
+              refreshComment(data['path'], data['fileid'], data['line'])
+           });
     };
 
+  window.markCommentRead = function markCommentRead(line, file_id, comment_id, review_id){
+        markComment(line, file_id, comment_id, 'read', review_id);
+    };
 
-  $('#overview').after('<div id="peer-create-review"></div>');
+  window.markCommentNotread = function markCommentNotread(line, file_id, comment_id, review_id){
+        markComment(line, file_id, comment_id, 'notread', review_id);
+    };
 
-  var data = 'peer_repo=' + peer_repo + '&peer_rev=' + peer_rev
-  $.get(peer_changeset_url, data, function(res){
-      $('#peer-create-review').html(res['html'])
-      if(res['action'] === 'create')
-      {
-          prepare_create_review();
+  /* USer wants to add a comment */
+  window.addComment = function addComment(line, fileid, parentid)
+    {
+        $("#comment-line").val(line);
+        $("#comment-parentid").val(parentid);
+        $("#comment-fileid").val(fileid);
+        $("#comment-txt").val("");
+        $("#commentchange").hide();
+        $('#add-comment-dlg').dialog({title: "Add Comment for Line " + line});
+        $('#add-comment-dlg').dialog('open');
+        $('#add-comment-dlg').dialog('moveToTop');
+    }
+
+  /* Refresh the specified comment */
+  window.refreshComment = function refreshComment(path, fileid, line){
+    /* Find the file entry */
+    let entry = $('li.entry h2:contains(' + path + ')');
+    let diff_table = entry.siblings('table.trac-diff');
+
+    let th = $(diff_table).find('th[data-line=' + line + ']')
+    if($(th).length == 1){
+        /* First comment in this line */
+        let style = $('select[name="style"]').val();
+        if (style === 'inline'){
+          $(th).parent().after('<tr class="comment-tr" id="CTR' + line + '"><td colspan="3" id="CTD' + line + '">Loading...</td></tr>')
+        }else{
+          $(th).parent().after('<tr class="comment-tr" id="CTR' + line + '"><td colspan="2"></td><td colspan="2" id="CTD' + line + '">Loading...</td></tr>')
+        }
+        $(th).replaceWith('<th>' + line + '</th>')
+    };
+
+    $(diff_table).find('#CTD' + line + ' #comment-loading-' + line).show();
+    var url = peer_comment_url + '?action=commenttree&fileid=' + fileid + '&line=' + line + '&path=' + path
+    $('#CTD' + line).load(url);
+  };
+
+  /* Add a table row for each comment */
+  function loadComments(path){
+    let fid_comments = peer_file_comments[path]
+    /* Find the file entry */
+    let entry = $('li.entry h2:contains(' + path + ')');
+    let diff_table = entry.siblings('table.trac-diff');
+
+    let style = $('select[name="style"]').val();
+    if (style === 'inline'){
+      var selector = 'tbody > tr th:nth-child(2)';
+    }
+    else{
+      var selector = 'tbody > tr th:nth-child(3)';
+    }
+
+    diff_table.find(selector).each(function(){
+      let line = parseInt($(this).text());
+      let fileid = fid_comments[0];
+      if(fid_comments[1].includes(line)){
+        $(diff_table).find('#CTD' + line).remove();
+        if (style === 'inline'){
+          $(this).parent().after('<tr class="comment-tr" id="CTR' + line + '"><td colspan="3" id="CTD' + line + '">Loading...</td></tr>')
+        }else{
+          $(this).parent().after('<tr class="comment-tr" id="CTR' + line + '"><td colspan="2"></td><td colspan="2" id="CTD' + line + '">Loading...</td></tr>')
+        }
+        let url = peer_comment_url + '?action=commenttree&fileid=' + fid_comments[0] + '&line=' + line + '&path=' + path
+        $('#CTD' + line).load(url);
       }
       else{
-          move_review_info();
-      };
+      if($.isNumeric(line))
+        $(this).replaceWith('<th data-line="' + line + '"><a href="javascript:addComment(' + line + ', ' + fileid + ', -1)">' + line + '</a></th>')
+      }
+    });
+  };
 
-      },
-      'json');
+  $('#overview').after('<div id="peer-create-review"></div><div id="peer-add-comment"></div>');
+
+  /* Get 'Codereview' section */
+  var data = 'peer_repo=' + peer_repo + '&peer_rev=' + peer_rev
+  $.get(peer_changeset_url, data, function(res){
+      if(res['action'] === 'create')
+      {
+        $('#peer-create-review').html(res['html']);
+        prepare_create_review();
+      }
+      else{
+        // Add review information to the overview data
+        $('#overview').append(res['html']);
+      };
+    },
+    'json');
+
+  /* Load add comments dialog */
+  $('#peer-add-comment').load(peer_comment_url + '?action=addcommentdlg', function(){
+       $("#add-comment-dlg").dialog({
+          title: "Add Comment",
+          width: 500,
+          autoOpen: false,
+          resizable: true,
+          dialogClass: 'top-dialog',
+       });
+    /* Submit for comment */
+    $('#add-comment-form').submit(handle_add_comment);
+  })
+
+  /* Add comments to diff */
+  if(peer_file_comments !== 'undefined'){
+    for(var key in peer_file_comments){
+      loadComments(key);
+    };
+  };
 
 });
