@@ -56,31 +56,47 @@ class PeerChangeset(Component):
             if data and 'changes' in data and data['changes']:
                 cset = data.get('new_rev', '')
                 f_data = {}
-                if cset:
-                    review = get_review_for_changeset(self.env, cset, data.get('reponame', ''))
-                    if review:
-                        rfiles = get_files_for_review_id(self.env, req, review['review_id'], True)
-                        for rfile in rfiles:
-                            lines = set([comment['line_num'] for comment in rfile.comment_data])
-                            if lines:
-                                f_data[rfile['path']] = [rfile['file_id'], list(lines)]
-                            else:
-                                f_data[rfile['path']] = [rfile['file_id'], []]
+                if 'CODE_REVIEW_DEV' in req.perm and cset:
+                    f_data = self.file_dict_from_changeset(req, cset, data.get('reponame', ''))
 
                 add_stylesheet(req, 'hw/css/peerreview.css')
-                add_script_data(req,
-                                {'peer_repo': data.get('reponame', ''),
-                                 'peer_rev': cset,
-                                 'peer_changeset_url': req.href.peerreviewchangeset(),
-                                 'peer_comment_url': req.href.peercomment(),
-                                 'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif'),
-                                 'peer_file_comments': f_data})
+                jdata = {'peer_repo': data.get('reponame', ''),
+                         'peer_rev': cset,
+                         'peer_changeset_url': req.href.peerreviewchangeset(),
+                         'peer_comment_url': req.href.peercomment(),
+                         'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif'),
+                         }
+                if f_data:
+                    jdata['peer_file_comments'] = f_data
+
+                add_script_data(req, jdata)
                 add_script(req, "hw/js/peer_trac_changeset.js")
                 add_script(req, "hw/js/peer_user_list.js")
                 Chrome(self.env).add_jquery_ui(req)
                 add_script(req, 'common/js/folding.js')
 
         return template, data, content_type
+
+    def file_dict_from_changeset(self, req, cset, reponame):
+        """
+
+        :param req:
+        :param cset:
+        :param reponame:
+        :return: a dict with key: file path, val: list [fileid, [line #, line #, ...]]
+                 note: the list contains line numbers.
+        """
+        f_data = {}
+        review = get_review_for_changeset(self.env, cset, reponame)
+        if review:
+            rfiles = get_files_for_review_id(self.env, req, review['review_id'], True)
+            for rfile in rfiles:
+                lines = set([comment['line_num'] for comment in rfile.comment_data])
+                if lines:
+                    f_data[rfile['path']] = [rfile['file_id'], list(lines)]
+                else:
+                    f_data[rfile['path']] = [rfile['file_id'], []]
+        return f_data
 
     # IRequestHandler methods
 
@@ -114,7 +130,7 @@ class PeerChangeset(Component):
         </div>
         """.format(title=_('Codereview'))
 
-        if 'CODE_REVIEW_DEV' in req.perm:
+        if 'CODE_REVIEW_DEV' not in req.perm:
             res = '<div id="peer-msg" class="system-message warning">%s</div>' % \
                   _("You don't have permission to create a code review.")
             return tmpl_permission % res
@@ -180,8 +196,8 @@ class PeerChangeset(Component):
             return u'<table id="userlist">{li}</table>'.format(li=li)
 
         if 'CODE_REVIEW_VIEW' not in req.perm:
-            no_perm_tmpl = """<dl id="peer-review-info"><dt class="property" style="margin-top: 1em">Review:</dt>
-            <dd style="margin-top: 1em"><p>{msg}</p></dd></dl>"""
+            no_perm_tmpl = """<dt class="property" style="margin-top: 1em">Review:</dt>
+            <dd style="margin-top: 1em"><span>{msg}</span></dd>"""
             return no_perm_tmpl.format(msg=_("You don't have permission to view code review information."))
 
         res = Resource('peerreview', review['review_id'])
@@ -215,10 +231,15 @@ class PeerChangeset(Component):
             review = create_changeset_review(self, req)
             if not review:
                 data = {'html': '<div id="peer-msg" class="system-message warning">%s</div>' %
-                                _('Error while creating Review.')}
+                                _('Error while creating Review.'),
+                        'success': 0}
                 writeJSONResponse(req, data)
             else:
-                data = {'html': self.create_review_info(req, review, True)}
+                f_data = self.file_dict_from_changeset(req, req.args.get('peer_rev'), req.args.get('peer_repo'))
+
+                data = {'html': self.create_review_info(req, review, True),
+                        'filedata': f_data,
+                        'success': 1}
                 writeJSONResponse(req, data)
             return
 

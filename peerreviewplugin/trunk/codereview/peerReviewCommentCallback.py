@@ -60,17 +60,12 @@ class PeerReviewCommentHandler(Component):
     # This page should never be called directly.  It should only be called
     # by JavaScript HTTPRequest calls.
     def process_request(self, req):
-        req.perm.require('CODE_REVIEW_DEV')
-
         data = {'invalid': 0}
 
         if not (req.perm.has_permission('CODE_REVIEW_MGR') or
                 req.perm.has_permission('CODE_REVIEW_DEV')):
             data['invalid'] = 4
-            if hasattr(Chrome, 'jenv'):
-                return 'peerreview_comment_callback_jinja.html', data
-            else:
-                return 'peerreview_comment_callback.html', data, None
+            writeResponse(req, "", 403)
 
         if req.method == 'POST':
             if req.args.get('addcomment'):

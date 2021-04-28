@@ -114,6 +114,11 @@ jQuery(document).ready(function($) {
             $.post(peer_changeset_url, $('#create-peerreview-form').serialize(), function(data){
                 $('#peer-create-review').hide("fade", function(){
                    $('#peer-create-review').after(data['html']);
+                   if(data['success'] == 1){
+                     for(var key in data['filedata']){
+                       loadComments(key, data['filedata'][key]);
+                     };
+                   };
                 });
             },
             'json');
@@ -207,8 +212,8 @@ jQuery(document).ready(function($) {
   };
 
   /* Add a table row for each comment */
-  function loadComments(path){
-    let fid_comments = peer_file_comments[path]
+  function loadComments(path, comment_info){
+    let fid_comments = comment_info
     /* Find the file entry */
     let entry = $('li.entry h2:contains(' + path + ')');
     let diff_table = entry.siblings('table.trac-diff');
@@ -258,23 +263,24 @@ jQuery(document).ready(function($) {
     },
     'json');
 
-  /* Load add comments dialog */
-  $('#peer-add-comment').load(peer_comment_url + '?action=addcommentdlg', function(){
-       $("#add-comment-dlg").dialog({
-          title: "Add Comment",
-          width: 500,
-          autoOpen: false,
-          resizable: true,
-          dialogClass: 'top-dialog',
-       });
-    /* Submit for comment */
-    $('#add-comment-form').submit(handle_add_comment);
-  })
 
   /* Add comments to diff */
-  if(peer_file_comments !== 'undefined'){
+  if(typeof peer_file_comments !== 'undefined'){
+      /* Load add comments dialog */
+      $('#peer-add-comment').load(peer_comment_url + '?action=addcommentdlg', function(){
+           $("#add-comment-dlg").dialog({
+              title: "Add Comment",
+              width: 500,
+              autoOpen: false,
+              resizable: true,
+              dialogClass: 'top-dialog',
+           });
+        /* Submit for comment */
+        $('#add-comment-form').submit(handle_add_comment);
+      })
+
     for(var key in peer_file_comments){
-      loadComments(key);
+      loadComments(key, peer_file_comments[key]);
     };
   };
 
