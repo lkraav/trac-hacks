@@ -10,25 +10,18 @@
 # Author: Team5
 #
 
-import os
-import shutil
-import sys
-import time
-import unicodedata
-import urllib
 import json
 from codereview.dbBackend import *
 from codereview.model import ReviewCommentModel, PeerReviewModel, ReviewDataModel, ReviewFileModel
 from codereview.util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
+from functools import partial
 try:
     from genshi.template.markup import MarkupTemplate
 except ImportError:
     pass  # We are Trac 1.4 and use Jinja2
-from trac import util
 from trac.core import *
 from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import Markup
-from trac.util.text import to_unicode
 from trac.web.chrome import Chrome, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki import format_to_html
@@ -212,7 +205,7 @@ class PeerReviewCommentHandler(Component):
             </tr>
             <tr>
                 <td style="width:${width}px"></td>
-                <td colspan="2" class="comment-author">Author: $comment.Author
+                <td colspan="2" class="comment-author">Author: ${authorinfo(comment.Author)}
                 <a py:if="comment.IDComment not in read_comments"
                    href="javascript:markCommentRead($line, $fileid, $comment.IDComment, ${review['review_id']})">Mark read</a>
                 <a py:if="comment.IDComment in read_comments"
@@ -264,7 +257,7 @@ class PeerReviewCommentHandler(Component):
             </tr>
             <tr>
                 <td style="width:${width}px"></td>
-                <td colspan="2" class="comment-author">Author: ${comment.Author}
+                <td colspan="2" class="comment-author">Author: ${authorinfo(comment.Author)}
                 # if comment.IDComment not in read_comments:
                 <a href="javascript:markCommentRead(${line}, ${fileid}, ${comment.IDComment}, ${review['review_id']})">Mark read</a>
                 # else:
@@ -326,6 +319,7 @@ class PeerReviewCommentHandler(Component):
         factor = 15
         width = 5 + indent * factor
 
+        chrome = Chrome(self.env)
         context = web_context(req)
         tdata = {'width': width,
                  'text': format_to_html(self.env, context, comment.Text,
@@ -341,11 +335,11 @@ class PeerReviewCommentHandler(Component):
                  'callback': req.href.peerReviewCommentCallback(),  # this is for attachments
                  'review': data['review'],
                  'is_locked': data['is_finished'] or data['review_locked'] or data.get('not_allowed', False),
-                 'read_comments': data['read_comments']
+                 'read_comments': data['read_comments'],
+                 'authorinfo': partial(chrome.authorinfo, req)
                  }
 
         if hasattr(Chrome, 'jenv'):
-            chrome = Chrome(self.env)
             template = chrome.jenv.from_string(self.comment_template_jinja)
             return chrome.render_template_string(template, tdata, True) + children_html
         else:
