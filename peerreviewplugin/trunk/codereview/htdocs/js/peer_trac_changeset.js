@@ -275,9 +275,6 @@ jQuery(document).ready(function($) {
     },
     'json');
 
-
-  /* Add comments to diff */
-  if(typeof peer_file_comments !== 'undefined'){
       /* Load add comments dialog */
       $('#peer-add-comment').load(peer_comment_url + '?action=addcommentdlg', function(){
            $("#add-comment-dlg").dialog({
@@ -291,6 +288,8 @@ jQuery(document).ready(function($) {
         $('#add-comment-form').submit(handle_add_comment);
       })
 
+  /* Add comments to diff */
+  if(typeof peer_file_comments !== 'undefined'){
     for(var key in peer_file_comments){
       loadComments(key, peer_file_comments[key]);
     };
