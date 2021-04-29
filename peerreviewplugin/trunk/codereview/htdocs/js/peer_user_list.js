@@ -27,17 +27,18 @@ jQuery(document).ready(function($) {
         };
     };
 
-    function removeuser(user_name){
-        $('#user-rem-name').text(user_name);
+    function removeuser(user_name, label){
+        $('#user-rem-name').text(label);
         $('#user-rem-confirm').data('username', user_name);
+        $('#user-rem-confirm').data('label', label);
         $('#user-rem-confirm').dialog('open');
         /* User is removed in click handler of dialog if necessary */
     };
 
     //takes a user from the table, adds them to the dropbox, and deletes from the table
-    function do_removeuser(txt) {
+    function do_removeuser(user, label) {
 
-         tline = '<option value="'+txt+'">'+txt+'</option>';
+         tline = '<option value="'+user+'">'+label+'</option>';
 
          if($('#Reviewers > #no-more-users').is(':visible')){
             $('#no-more-users').replaceWith(tline);
@@ -46,7 +47,7 @@ jQuery(document).ready(function($) {
             $('#Reviewers').append(tline);
          };
 
-         $('#myuserbody tr[id="'+txt+'id"]').remove();
+         $('#myuserbody tr[id="'+user+'id"]').remove();
          if($("#myuserbody tr").length == 0){
              $('#myuserbody').append('<tr id="no-users"><td>No users have been added to the code review.</td></tr>');
          };
@@ -54,14 +55,14 @@ jQuery(document).ready(function($) {
         colorTable('myuserbody');
     }
 
-    function create_remove_link(user){
+    function create_remove_link(user, label){
        return $('<a>', {href: "",
                                  'data-user': user,
-                                 text: user,
+                                 text: label,
                                  on:{
                                     click: function(event){
                                                event.preventDefault ? event.preventDefault() : event.returnValue = false;
-                                               removeuser($(this).data('user'));
+                                               removeuser($(this).data('user'), $(this).text());
                                                return false;}
                                     }
                                  });
@@ -70,9 +71,10 @@ jQuery(document).ready(function($) {
     //takes a user from the dropdown, adds them to the table, and deletes from the dropdown
     function adduser()
     {
-        var user = $("#Reviewers option:selected").text();
+        var user = $("#Reviewers option:selected").val();
+        var label = $("#Reviewers option:selected").text();
         var td = $('<td/>').append('<input type="hidden" name="user" value="'+user+'"/>',
-                                   create_remove_link(user));
+                                   create_remove_link(user, label));
         var tline = $("<tr/>",{
         id: user+"id"
         }).append(td);
@@ -98,32 +100,42 @@ jQuery(document).ready(function($) {
 
        $(this).click( function(event){
            event.preventDefault ? event.preventDefault() : event.returnValue = false;
-           removeuser($(this).data('user'));
+           removeuser($(this).data('user'), $(this).text());
            return false;
        });
     });
     $('#adduserbutton').on('click', function(event){
            event.preventDefault ? event.preventDefault() : event.returnValue = false;
-           adduser($(this).data('user'));
+           adduser();
            return false;
     });
 
     /* Confirmation dialog when removing users */
     $( "#user-rem-confirm" ).dialog({
           resizable: false,
-          height: 150,
+          height: 175,
           width: 500,
           modal: true,
           autoOpen: false,
-          buttons: {
-            "Remove User": function() {
-              $(this).dialog( "close" );
-              var username = $('#user-rem-confirm').data('username');
-              do_removeuser(username);
+          buttons: [
+            {
+              text: "Remove User",
+              click: function() {
+                                 $(this).dialog( "close" );
+                                 var username = $('#user-rem-confirm').data('username');
+                                 do_removeuser(username, $('#user-rem-confirm').data('label'));
+                                }
             },
-            Cancel: function() {
-              $(this).dialog( "close" );
+            {
+              text: "Cancel",
+              id: "peer-cancel",
+              click: function() {
+                                 $(this).dialog( "close" );
+                                }
             }
+          ],
+          open: function(event, ui){
+            $(this).parent().find('#peer-cancel').focus();
           }
     });
 });

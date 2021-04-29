@@ -14,6 +14,7 @@ from codereview.peerReviewCommentCallback import writeJSONResponse, writeRespons
 from codereview.repo import hash_from_file_node
 from codereview.repobrowser import get_node_from_repo
 from codereview.util import get_files_for_review_id
+from functools import partial
 from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
 from trac.util.translation import _
@@ -139,15 +140,16 @@ class PeerChangeset(Component):
             return tmpl_permission % res
 
         users = get_users(self.env)
+        chrome = Chrome(self.env)
         data = {
             'form-token': req.form_token,
             'reponame': req.args.get('peer_repo', ''),
             'rev': req.args.get('peer_rev', ''),
             'new': 'yes',
             'users': users,
-            'cycle': itertools.cycle
+            'cycle': itertools.cycle,
+            'authorinfo': partial(chrome.authorinfo, req)
         }
-        chrome = Chrome(self.env)
         if hasattr(Chrome, 'jenv'):
             template = chrome.load_template('peerreviewuser_jinja.html')
             rendered = chrome.render_template_string(template, data)

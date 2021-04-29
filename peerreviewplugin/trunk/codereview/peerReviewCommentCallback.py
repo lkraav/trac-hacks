@@ -201,13 +201,13 @@ class PeerReviewCommentHandler(Component):
 
     comment_template = u"""
             <table xmlns:py="http://genshi.edgewall.org/"
-                   style="width:400px"
+                   style="width:450px"
                    py:attrs="{'class': 'comment-table'} if comment.IDComment in read_comments else {'class': 'comment-table comment-notread'}"
                    id="${comment.IDParent}:${comment.IDComment}" data-child-of="$comment.IDParent">
             <tbody>
             <tr>
                 <td style="width:${width}px"></td>
-                <td colspan="3" style="width:${400-width}px"
+                <td colspan="3" style="width:${450-width}px"
                 class="border-col"></td>
             </tr>
             <tr>
@@ -253,13 +253,13 @@ class PeerReviewCommentHandler(Component):
             </table>
         """
     comment_template_jinja = u"""
-            <table style="width:400px"
+            <table style="width:450px"
                    class="${'comment-table' if comment.IDComment in read_comments else 'comment-table comment-notread'}"
                    id="${comment.IDParent}:${comment.IDComment}" data-child-of="${comment.IDParent}">
             <tbody>
             <tr>
                 <td style="width:${width}px"></td>
-                <td colspan="3" style="width:${400-width}px"
+                <td colspan="3" style="width:${450-width}px"
                 class="border-col"></td>
             </tr>
             <tr>

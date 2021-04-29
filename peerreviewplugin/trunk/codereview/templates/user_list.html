@@ -5,13 +5,13 @@
     <py:choose test="new">
         <span py:when="'yes'">
             <select id="Reviewers">
-                <option py:for="item in users" value="${item}">${item}</option>
+                <option py:for="item in users" value="${item}">${authorinfo(item)}</option>
             </select>
         </span>
         <span py:otherwise="">
             <span py:if="unassigned_users">
                 <select id="Reviewers">
-                    <option py:for="item in unassigned_users" value="$item">$item</option>
+                    <option py:for="item in unassigned_users" value="$item">${authorinfo(item)}</option>
                 </select>
             </span>
             <span py:if="not unassigned_users">
@@ -49,7 +49,7 @@
                 <tr py:for="item in assigned_users" id="${item}id" class="${cls.next()}">
                     <td value="$item">
                         <input type="hidden" name="user" value="$item"/>
-                        <a href="" data-user="$item" class="remove-user">$item</a>
+                        <a href="" data-user="$item" class="remove-user">${authorinfo(item)}</a>
                     </td>
                 </tr>
             </tbody>

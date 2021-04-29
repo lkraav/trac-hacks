@@ -4,7 +4,7 @@
         <span>
             <select id="Reviewers">
                 # for item in users:
-                <option value="${item}">${item}</option>
+                <option value="${item}">${authorinfo(item)}</option>
                 # endfor
             </select>
         </span>
@@ -14,7 +14,7 @@
             <span>
                 <select id="Reviewers">
                     # for item in unassigned_users:
-                    <option value="${item}">${item}</option>
+                    <option value="${item}">${authorinfo(item)}</option>
                     # endfor
                 </select>
             </span>
@@ -57,7 +57,7 @@
                 <tr id="${item}id" class="${loop.cycle('even', 'odd')}">
                     <td value="${item}">
                         <input type="hidden" name="user" value="${item}"/>
-                        <a href="" data-user="${item}" class="remove-user">${item}</a>
+                        <a href="" data-user="${item}" class="remove-user">${authorinfo(item)}</a>
                     </td>
                 </tr>
             # endfor
