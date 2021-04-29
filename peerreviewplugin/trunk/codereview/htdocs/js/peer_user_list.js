@@ -53,6 +53,7 @@ jQuery(document).ready(function($) {
          };
 
         colorTable('myuserbody');
+        select_options();
     }
 
     function create_remove_link(user, label){
