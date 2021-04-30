@@ -56,12 +56,14 @@ class PeerChangeset(Component):
         if req.path_info.startswith('/changeset/'):
             if data and 'changes' in data and data['changes']:
                 cset = data.get('new_rev', '')
+                reponame = data.get('reponame', '')
                 f_data = {}
+                review = get_review_for_changeset(self.env, cset, reponame)
                 if 'CODE_REVIEW_VIEW' in req.perm and cset:
-                    f_data = self.file_dict_from_changeset(req, cset, data.get('reponame', ''))
+                    f_data = self.file_dict_from_changeset(req, cset, reponame, review)
 
                 add_stylesheet(req, 'hw/css/peerreview.css')
-                jdata = {'peer_repo': data.get('reponame', ''),
+                jdata = {'peer_repo': reponame,
                          'peer_rev': cset,
                          'peer_changeset_url': req.href.peerreviewchangeset(),
                          'peer_comment_url': req.href.peercomment(),
@@ -79,19 +81,27 @@ class PeerChangeset(Component):
                 Chrome(self.env).add_jquery_ui(req)
                 add_script(req, 'common/js/folding.js')
 
+                for change in data['changes']:
+                    if change['change'] in ('add', 'copy', 'move'):
+                        change['comments'] = "Perform review on review page for 'Review %s'." % review['review_id']
+
         return template, data, content_type
 
-    def file_dict_from_changeset(self, req, cset, reponame):
-        """
+    def file_dict_from_changeset(self, req, cset, reponame, review=None):
+        """Get a dict with files belonging to this changeset when a review exists.
 
-        :param req:
-        :param cset:
-        :param reponame:
+        :param req: Request object. Needed internally to getz the authname
+        :param cset: this changeset revision. Not a changeset object of any kind.
+        :param reponame: name of the repository this changest belongs to.
+        :param review: Review object associated with this changeset. If this is None it will
+                       be queried here.
         :return: a dict with key: file path, val: list [fileid, [line #, line #, ...]]
                  note: the list contains line numbers.
+                 If there is no review already created for this changeset the dict is
+                 empty.
         """
         f_data = {}
-        review = get_review_for_changeset(self.env, cset, reponame)
+        review = review or get_review_for_changeset(self.env, cset, reponame)
         if review:
             rfiles = get_files_for_review_id(self.env, req, review['review_id'], True)
             for rfile in rfiles:
