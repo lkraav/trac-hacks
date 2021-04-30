@@ -12,10 +12,14 @@ jQuery(document).ready(function($) {
       resizable: false,
    });
 */
-  var data = 'peer_path=' + peer_path + '&peer_repo=' + peer_repo + '&peer_is_head=' + peer_is_head + '&peer_rev=' + peer_rev
-  data += '&peer_is_dir=' + peer_is_dir
-  $('#peer-status').load(peer_status_url, data, function(){
-
-
+  var data = {'peer_path': peer_path,
+              'peer_repo': peer_repo,
+              '&peer_is_head': peer_is_head,
+               'peer_rev': peer_rev,
+               'peer_is_dir': peer_is_dir
+             }
+  $.getJSON(peer_status_url, data, function(res){
+     $('#peer-status').html(res['statushtml'])
+     $('table#info tbody').append(res['hashhtml'])
   });
 });

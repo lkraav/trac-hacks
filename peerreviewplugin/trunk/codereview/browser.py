@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from .model import ReviewFileModel
-from .peerReviewCommentCallback import writeResponse
+from .peerReviewCommentCallback import writeJSONResponse, writeResponse
 from .peerReviewPerform import CommentAnnotator
+from .repo import hash_from_file_node
 from string import Template
 from trac.core import Component, implements
 from trac.util.html import tag
 from trac.mimeview.api import IHTMLPreviewAnnotator
 from trac.util.translation import _
+from trac.versioncontrol import RepositoryManager, ResourceNotFound
+from trac.versioncontrol.web_ui.util import get_existing_node
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import add_ctxtnav, add_script, add_script_data, add_stylesheet
 
@@ -82,6 +85,7 @@ class PeerReviewBrowser(Component):
                 return cursor.fetchone()[0] != 0
 
         #  We only handle the browser
+        split_path = req.path_info.split('/')
         if path and req.path_info.startswith('/browser/') and data:
             add_stylesheet(req, 'hw/css/peerreview.css')
             add_script_data(req,
@@ -90,7 +94,9 @@ class PeerReviewBrowser(Component):
                              'peer_is_head': 0 if rev else 1,
                              'peer_path': path,
                              'peer_status_url': req.href.peerreviewstatus(),
-                             'peer_is_dir': data.get('dir', None) != None,
+                             # Index page has no data['dir'] if only the repoindex page is shown and
+                             # no default repo is defined
+                             'peer_is_dir': data.get('dir', None) != None or len(split_path) == 2,
                              'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif')})
             add_script(req, "hw/js/peer_trac_browser.js")
             # add_script(req, "hw/js/peer_review_perform.js")
@@ -108,14 +114,16 @@ class PeerReviewBrowser(Component):
 
     def _create_status_tbl(self, req):
         tr_tmpl = """<tr${bg_color}>
-        <td><a href="${review_href}">${review_id}</a></td><td>${chg_rev}</td><td>${hash}</td><td>${status}</td>
+        <td><a href="${file_href}">${file_id}</a></td>
+        <td><a href="${review_href}">${review_id}</a></td>
+        <td>${chg_rev}</td><td>${hash}</td><td>${status}</td>
         </tr>
         """
         tbl_tmpl = """<h3>%s</h3>
         <table class="listing peer-status-tbl">
         <thead>
             <tr>
-                <th>Review</th><th>Change Revision</th><th>Hash</th><th>Status</th>
+                <th>File ID</th><th>Review</th><th>Change Revision</th><th>Hash</th><th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -145,7 +153,7 @@ class PeerReviewBrowser(Component):
               _('No review for this file revision yet.')
         trows = ''
         with self.env.db_query as db:
-            for row in db("SELECT review_id, changerevision, hash, status FROM peerreviewfile "
+            for row in db("SELECT review_id, changerevision, hash, status, file_id FROM peerreviewfile "
                           "WHERE path = %s AND repo = %s AND review_id != 0 "
                           "ORDER BY review_id", (path, repo)):
                 #  Colorize row with current file revision. Last review wins...
@@ -164,6 +172,8 @@ class PeerReviewBrowser(Component):
                         'chg_rev': row[1],
                         'hash': row[2],
                         'status': row[3],
+                        'file_id': row[4],
+                        'file_href': req.href.peerreviewperform(IDFile=row[4]),
                         'review_href': req.href.peerreviewview(row[0]),
                         'bg_color': bg}
                 trows += Template(tr_tmpl).safe_substitute(data)
@@ -176,7 +186,45 @@ class PeerReviewBrowser(Component):
         return req.path_info == '/peerreviewstatus'
 
     def process_request(self, req):
-        writeResponse(req, self._create_status_tbl(req))
+        tr = """<tr><td colspan="2"><strong>{label}</strong>&nbsp;{hash}</td></tr>"""
+        data = {'statushtml': self._create_status_tbl(req),
+                'hashhtml': tr.format(label="Hash:", hash=self.get_hash_for_file(req))}
+        writeJSONResponse(req, data)
+
+    def get_hash_for_file(self, req):
+        """Return the hash for the currently viewed file.
+
+        :param req: Request object. The arg dict holds file information like path, revision, ...
+        :return file hash string or an empty string. The hash is in hex
+        """
+        if req.args.get('peer_dir') == 'true':
+            return None
+
+        reponame = req.args.get('peer_repo')
+        path = req.args.get('peer_path', '')
+        if reponame:
+            # path starts with slash and reponame, like /reponame/my/path/to/file.txt
+            # All path information in the database is with leading '/'.
+            path = path[len(reponame) + 1:]
+        rev = req.args.get('peer_rev')
+        node = None
+        repos = RepositoryManager(self.env).get_repository(reponame)
+
+        try:
+            node = get_existing_node(req, repos, path, rev)
+        except ResourceNotFound:
+            # The file may be a SVN copy. If so the revision is the one from the
+            # source file, the path is the current (not source) path.
+            # Search the history. This probably breaks when several copies are made.
+            src_path, src_rev, chnge = range(3)
+            for item in repos.get_path_history(path, limit=1):  # this is a generator
+                if item[chnge] in ('copy', 'move'):
+                    node = get_existing_node(req, repos, item[src_path], item[src_rev])
+                    break
+        if node:
+            return hash_from_file_node(node)
+        else:
+            return ''
 
     # IHTMLPreviewAnnotator methods
 

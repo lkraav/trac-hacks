@@ -56,13 +56,13 @@
                     <thead>
                         <tr>
                             <th>Review Information</th>
-                            <th>Followup from</th>
+                            <th class="parent-info">Follow-up from</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>${review_info.render_info(review)}</td>
-                            <td>${review_info.render_info(parent_review)}</td>
+                            <td class="parent-info">${review_info.render_info(parent_review)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -106,19 +106,18 @@
                     <th>File Revision</th>
                     <th>Repo Revision</th>
                     # if parent_review:
-                    <th>Previous File Revision</th>
-                    <th>Previous Repo Revision</th>
+                    <th>Previous File Rev.</th>
+                    <th>Previous Repo Rev.</th>
                     # endif
                     <th>Line Numbers</th>
-                    <th># of Comments</th>
-                    <th># Not Read</th>
+                    <th>Comments / not read</th>
                     <th>Status</th>
                 </tr>
                 </thead>
                 <tbody>
                 # if not review_files:
-                <tr class="even" colspan="8">
-                    <td>There are no files included in this code review.</td>
+                <tr class="even">
+                    <td colspan="8">There are no files included in this code review.</td>
                 </tr>
                 # endif
                 # for item in review_files:
@@ -137,8 +136,7 @@
                     # else:
                     <td>${item['line_start']} - ${item['line_end']}</td>
                     # endif
-                    <td>${item.num_comments}</td>
-                    <td ${{"class": 'comment-notread' if item.num_notread}|htmlattr}>${item.num_notread}</td>
+                    <td><span>${item.num_comments}</span>&nbsp;&nbsp;/&nbsp;<span ${{"class": 'comment-notread' if item.num_notread}|htmlattr}>&nbsp;${item.num_notread}&nbsp;</span></td>
                     <td>${item['status']}</td>
                 </tr>
                 # endfor
@@ -277,7 +275,7 @@
                         # if review['status'] != 'closed' and not is_finished:
                         <p class="help">
                             A followup review can't be created at the moment because this review is not in a
-                            terminal state. Terminal states are: <strong>$finished_states_str</strong>.
+                            terminal state. Terminal states are: <strong>${finished_states_str}</strong>.
                         </p>
                         # endif
                     </fieldset>

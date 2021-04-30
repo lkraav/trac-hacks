@@ -48,9 +48,12 @@ def repo_path_exists(env, path, reponame=''):
 
 
 def get_node(repos, path, rev):
+    # TODO: from trac.versioncontrol.web_ui.util import get_existing_node is probably a better
+    #       way to do it...
+    rev = repos.normalize_rev(rev)
     try:
         return repos.get_node(path, rev)
-    except NoSuchNode as e:
+    except NoSuchNode:
         return None
 
 from .svn_externals import parse_externals

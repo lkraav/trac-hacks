@@ -305,6 +305,7 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 
 .comment-notread{
   background-color: #ffd;
+  border: 1px solid lightgrey;
 }
 
 #view-comment-dlg{
@@ -321,6 +322,15 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 }
 
 /* View review page */
+td.parent-info {
+  color: rgba(1, 1, 1, 0.5);
+  border-left: 2px solid #f0f0f0;
+}
+
+th.parent-info {
+  color: rgba(1, 1, 1, 0.5);
+}
+
 .workflow-actions, .peer-form, .peer-div{
   margin: 0.5em 3em;
 }
