@@ -226,9 +226,11 @@ jQuery(document).ready(function($) {
   /* Add a table row for each comment */
   function loadComments(path, comment_info){
     let fid_comments = comment_info
-    /* Find the file entry */
-    let entry = $('li.entry h2:contains(' + path + ')');
-    let diff_table = entry.siblings('table.trac-diff');
+    /* Find the file entry (actually the link in the h2) */
+    let entry = $('li.entry h2 > a').filter(function(index){
+          return $(this).text() === path;
+       });
+    let diff_table = entry.parent().siblings('table.trac-diff');
 
     let style = $('select[name="style"]').val();
     if (style === 'inline'){

@@ -105,11 +105,12 @@ class PeerChangeset(Component):
         if review:
             rfiles = get_files_for_review_id(self.env, req, review['review_id'], True)
             for rfile in rfiles:
+                path = rfile['path'].lstrip('/')  # Trac path doesn't start with '/'
                 lines = set([comment['line_num'] for comment in rfile.comment_data])
                 if lines:
-                    f_data[rfile['path']] = [rfile['file_id'], list(lines)]
+                    f_data[path] = [rfile['file_id'], list(lines)]
                 else:
-                    f_data[rfile['path']] = [rfile['file_id'], []]
+                    f_data[path] = [rfile['file_id'], []]
         return f_data
 
     # IRequestHandler methods
