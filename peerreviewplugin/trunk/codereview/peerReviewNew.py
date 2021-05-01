@@ -281,7 +281,7 @@ class NewReviewModule(Component):
             segment = item.split(',')
             rfile = ReviewFileModel(self.env)
             rfile['review_id'] = id_
-            rfile['path'] = segment[0]
+            rfile['path'] = '/' + segment[0].lstrip('/')  # We save the path with leading '/' for historical reasons
             rfile['revision'] = segment[1]  # If we create a followup review this is the current repo revision
             rfile['line_start'] = segment[2]
             rfile['line_end'] = segment[3]

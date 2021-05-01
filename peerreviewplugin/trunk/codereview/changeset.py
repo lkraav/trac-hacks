@@ -81,9 +81,12 @@ class PeerChangeset(Component):
                 Chrome(self.env).add_jquery_ui(req)
                 add_script(req, 'common/js/folding.js')
 
-                for change in data['changes']:
-                    if change['change'] in ('add', 'copy', 'move'):
-                        change['comments'] = "Perform review on review page for 'Review %s'." % review['review_id']
+                if review:
+                    # These are files which were copied, moved or added. Give the user a
+                    # hint how to perform a review until we have a proper diff view.
+                    for change in data['changes']:
+                        if change['change'] in ('add', 'copy', 'move'):
+                                change['comments'] = "Perform review on review page for 'Review %s'." % review['review_id']
 
         return template, data, content_type
 
@@ -105,7 +108,7 @@ class PeerChangeset(Component):
         if review:
             rfiles = get_files_for_review_id(self.env, req, review['review_id'], True)
             for rfile in rfiles:
-                path = rfile['path'].lstrip('/')  # Trac path doesn't start with '/'
+                path = rfile['path'].lstrip('/')  # Trac path doesn't start with '/'. Db path does.
                 lines = set([comment['line_num'] for comment in rfile.comment_data])
                 if lines:
                     f_data[path] = [rfile['file_id'], list(lines)]
@@ -322,8 +325,8 @@ def create_changeset_review(self, req):
     for item in changeset.get_changes():
         rfile = ReviewFileModel(self.env)
         rfile['review_id'] = id_
-        # Changeset changes are without leading '/'. A Node path includes it.
-        rfile['path'] = u'/' + item[path] if item[path][0] != '/' else item[path]
+        # Path must have leading '/' in the database for historical reasons.
+        rfile['path'] = u'/' + item[path].lstrip('/')
         rfile['revision'] = rev
         rfile['line_start'] = 0
         rfile['line_end'] = 0

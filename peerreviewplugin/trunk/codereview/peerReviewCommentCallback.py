@@ -77,7 +77,7 @@ class PeerReviewCommentHandler(Component):
                         return 'peerreview_comment_callback.html', data, None
 
                 rfile = ReviewFileModel(self.env, fileid)
-                data['path'] = rfile['path']
+                data['path'] = rfile['path'].lstrip('/')  # Trac path doesn't start with '/'. Db path does.
                 txt = req.args.get('comment')
                 comment = ReviewCommentModel(self.env)
                 comment['file_id'] = data['fileid'] = req.args.get('fileid')
