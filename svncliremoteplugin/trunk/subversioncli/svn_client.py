@@ -230,7 +230,7 @@ class CopyHandler(ContentHandler):
 
     # Note: there is a normalize method in SvnCLiRepo. Unify them.
     def normalize_path(self, path):
-        return '/' + path.strip('/') or '/'
+        return '' + path.strip('/') or '/'
 
     # Called when an element starts
     def startElement(self, tag, attributes):
@@ -371,6 +371,7 @@ def get_changeset_info(repos, rev):
         return [], None
 
 
+# TODO: what about Changeset.MOVE here?
 def get_history(repos, rev, path, limit=None):
     """Get the history for the given path at revision rev.
 

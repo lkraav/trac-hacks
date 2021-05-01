@@ -31,8 +31,7 @@ class TestRevisionLog(unittest.TestCase):
         self.assertEqual(rev, node.rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        # We make sure a node path starts with '/'
-        self.assertEqual('/' + path, node.path)
+        self.assertEqual(path, node.path)
         history = list(node.get_history())
         self.assertEqual(3, len(history))
 
@@ -46,8 +45,7 @@ class TestRevisionLog(unittest.TestCase):
         self.assertEqual(rev, node.rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        # We make sure a node path starts with '/'
-        self.assertEqual('/' + path, node.path)
+        self.assertEqual(path, node.path)
         history = list(node.get_history())
         self.assertEqual(18, len(history))
 
@@ -81,8 +79,7 @@ class TestRevisionLog(unittest.TestCase):
         self.assertEqual(rev, node.rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        # We make sure a node path starts with '/'
-        self.assertEqual('/' + path, node.path)
+        self.assertEqual(path, node.path)
         history = list(node.get_history())
         self.assertEqual(3, len(history))
 
@@ -101,8 +98,7 @@ class TestRevisionLog(unittest.TestCase):
         self.assertEqual(rev, node.rev)
         self.assertTrue(node.isfile)
         self.assertFalse(node.isdir)
-        # We make sure a node path starts with '/'
-        self.assertEqual('/' + path, node.path)
+        self.assertEqual(path, node.path)
         history = list(node.get_history())
         self.assertEqual(1, len(history))
 
@@ -134,7 +130,7 @@ class TestRevisionLogSubtree(unittest.TestCase):
     def test_revision_log(self):
         """Test getting a file node"""
         path = 'peerreviewplugin/trunk/codereview/changeset.py'
-        path_normalized = '/trunk/codereview/changeset.py'
+        path_normalized = 'trunk/codereview/changeset.py'
         rev = 18046
         node = SubversionCliNode(self.repos, path, rev, self.log)
         self.assertEqual(rev, node.rev)

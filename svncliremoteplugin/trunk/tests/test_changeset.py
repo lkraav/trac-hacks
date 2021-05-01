@@ -273,7 +273,7 @@ class TestSvnCliChangeset(unittest.TestCase):
 
         self.assertEqual(9, len(res['changes']))
         self.assertEqual(9, len(set(res['files'])))
-        self.assertEqual(u'/htgroupsplugin', res['location'])
+        self.assertEqual(u'htgroupsplugin', res['location'])
         # files with changes after processing changeset data in _render_html()
         if not pre_1_2:
             self.assertEqual(5, res['diff_files'])
@@ -283,14 +283,15 @@ class TestSvnCliChangeset(unittest.TestCase):
         # Filtering is done in render_html()
         self.assertEqual(9, res['filestats']['edit'])
         for file in res['files']:
-            self.assertIn(file, (u'/htgroupsplugin', u'/htgroupsplugin/0.9',
-                                 u'/htgroupsplugin/0.9/README.txt',
-                                 u'/htgroupsplugin/0.9/TracHtgroups.egg-info',
-                                 u'/htgroupsplugin/0.9/TracHtgroups.egg-info/trac_plugin.txt',
-                                 u'/htgroupsplugin/0.9/htgroups',
-                                 u'/htgroupsplugin/0.9/htgroups/__init__.py',
-                                 u'/htgroupsplugin/0.9/htgroups/htgroups.py',
-                                 u'/htgroupsplugin/0.9/setup.py'))
+            self.assertIn(file, (u'htgroupsplugin',
+                                 u'htgroupsplugin/0.9',
+                                 u'htgroupsplugin/0.9/README.txt',
+                                 u'htgroupsplugin/0.9/TracHtgroups.egg-info',
+                                 u'htgroupsplugin/0.9/TracHtgroups.egg-info/trac_plugin.txt',
+                                 u'htgroupsplugin/0.9/htgroups',
+                                 u'htgroupsplugin/0.9/htgroups/__init__.py',
+                                 u'htgroupsplugin/0.9/htgroups/htgroups.py',
+                                 u'htgroupsplugin/0.9/setup.py'))
 
     def test_changeset_properties_file_399(self):
         """Check file in a changeset only containing property changes.
@@ -334,7 +335,7 @@ class TestSvnCliChangeset(unittest.TestCase):
 
         self.assertEqual(3, len(res['changes']))
         self.assertEqual(3, len(set(res['files'])))
-        self.assertEqual(u'/htgroupsplugin', res['location'])
+        self.assertEqual(u'htgroupsplugin', res['location'])
         # files with changes after processing changeset data in _render_html()
         if not pre_1_2:
             self.assertEqual(1, res['diff_files'])
@@ -344,7 +345,42 @@ class TestSvnCliChangeset(unittest.TestCase):
         # Filtering is done in render_html()
         self.assertEqual(3, res['filestats']['edit'])
         for file in res['files']:
-            self.assertIn(file, (u'/htgroupsplugin', u'/htgroupsplugin/0.9', u'/htgroupsplugin/0.9/README.txt'))
+            self.assertIn(file, (u'htgroupsplugin', u'htgroupsplugin/0.9', u'htgroupsplugin/0.9/README.txt'))
+
+    def test_changeset_single_file_18266(self):
+        """Check single file in a changeset.
+
+        We want to see the change for a single file in the changeset.
+
+        We call a function in trac.versioncontrol.web_ui.changeset.py which is
+        responsible for generating the data for the changeset page.
+        """
+        path = 'peerreviewplugin/trunk/codereview/changeset.py'
+        rev = 18266
+        changeset = SubversionCliChangeset(self.repos, rev)
+        self.assertIsInstance(changeset, SubversionCliChangeset)
+        changes = list(changeset.get_changes())
+        self.assertEqual(7, len(changes))
+        cm = ChangesetModule(self.env)
+
+        # Data set in trac.versioncontrol.web_ui.changeset.py -> process_request()
+        data = {'repos': self.repos, 'reponame': self.repos.reponame,
+                'diff': {'style': u'inline',
+                         'options': {'contextall': 1, 'contextlines': 2,
+                         'ignorecase': 0,  'ignoreblanklines': 0,
+                         'ignorewhitespace': 1}
+                         },
+                'old_path': path, 'old_rev': 18265,
+                'new': 18266, 'new_rev': 18266, 'new_path': path}
+        req = MockRequest(self.env)
+        # restricted = True,because we query a path
+        if pre_1_2:
+            res = cm._render_html(req, self.repos, changeset, True, None, data)
+        else:
+            res = cm._render_html(req, self.repos, changeset, True, data)
+        # for key, val in res.items():
+        #     print(key, repr(val))
+        self.assertEqual(1, len(res['changes']))
 
     def test_timeline_broken_changeset_17976(self):
         """Test get_timeline_events() with interval containing a broken changeset."""

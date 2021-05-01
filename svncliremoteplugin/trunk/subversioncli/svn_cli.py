@@ -639,9 +639,9 @@ class SubversionCliRepository(Repository):
             if not self.relative_url:
                 if path[0] != '/':
                     path = '/' + path
-                return path and ('/' + path.strip('/')) or '/'
+                return path and path.strip('/') or '/'
             else:
-                return path and ('/' + path.replace(self.relative_url, '', 1).strip('/')) or '/'
+                return path and path.replace(self.relative_url, '', 1).strip('/') or '/'
         else:
             return path  # None or ''. This is different to sfn_fs.py
 
@@ -1126,9 +1126,9 @@ class SubversionCliChangeset(Changeset):
                               (self.rev, prev_repo_rev, changes))
                 self.log.info('  ## Unknown change for %s in rev %s' % (path, base_rev))
                 path += u'UNKNOWN_CHANGE_FIX_NEEDED'
-            base_path = self.repos.normalize_path(base_path)[1:] if base_path else base_path
+            base_path = self.repos.normalize_path(base_path).lstrip('/') if base_path else base_path
             # We have to prepare the path here for Trac by removing the leading '/'
-            yield self.repos.normalize_path(path)[1:], kind, change, base_path, base_rev
+            yield self.repos.normalize_path(path).lstrip('/'), kind, change, base_path, base_rev
 
 
 # ############################################################### #
