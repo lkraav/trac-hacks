@@ -282,6 +282,9 @@ class PeerReviewMain(Component):
     def get_wiki_syntax(self):
         return []
 
+    status_map = {'approved': tag.span(u" \u2713", class_='approved'),
+                  'disapproved': tag.span(u" \u2717", class_='disapproved')}
+
     def _format_review_link(self, formatter, ns, target, label):
         res = Resource('peerreview', target)
         if resource_exists(self.env, res):
@@ -290,10 +293,9 @@ class PeerReviewMain(Component):
                 cls = 'peer-wiki closed'
             else:
                 cls = 'peer-wiki'
-            status_map = {'approved': tag.span(u" \u2713", class_='approved'),
-                          'disapproved': tag.span(u" \u2717", class_='disapproved')}
+
             try:
-                span = status_map[review['status']]
+                span = self.status_map[review['status']]
             except KeyError:
                 span = ''
 
@@ -322,12 +324,17 @@ class PeerReviewMain(Component):
         res = Resource('peerreviewfile', target)
         if resource_exists(self.env, res):
             rfile = ReviewFileModel(self.env, target)
-            if rfile_is_finished(self.env.config, rfile):
-                cls = 'closed'
+            if rfile['status'] == 'closed':
+                cls = 'peer-wiki closed'
             else:
-                cls = None
+                cls = 'peer-wiki'
 
-            return tag.a(label,
+            try:
+                span = self.status_map[rfile['status']]
+            except KeyError:
+                span = ''
+
+            return tag.a([label, span],
                          href=get_resource_url(self.env, res, formatter.href),
                          title=_(u"File #%s (%s)") % (target, rfile['status']),
                          class_=cls
