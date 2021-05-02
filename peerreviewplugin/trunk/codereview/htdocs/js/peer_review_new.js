@@ -192,10 +192,12 @@ jQuery(document).ready(function($) {
     };
 
     function load_browser(url){
+      $('div#peer-spinner').show();
       $('#repo_browser').load(url, function(){
            create_browser_link();
            $('#repo_browser #switch_rev').on('keypress',switch_rev);
            $('#sel_repo').on('change', changeRepo);
+           $('div#peer-spinner').hide();
       });
     };
 

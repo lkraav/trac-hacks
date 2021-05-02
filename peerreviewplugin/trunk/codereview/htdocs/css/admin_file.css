@@ -26,9 +26,9 @@ table.dirlist td.name div {
 }
 
 div#peer-spinner {
-   position: absolute;
+   position: fixed;
    left: 50%;
-   top:40%;
+   top:50%;
    height:50px;
    width:50px;
    margin:0px auto;
