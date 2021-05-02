@@ -183,7 +183,7 @@ class PeerRepoBrowser(Component):
             except ResourceNotFound as e:  # NoSuchNode is converted to this exception by Trac
                 data['nonode'] = e.message
                 node = None
-                display_rev = rev
+            display_rev = repo.display_rev
         else:
             data['norepo'] = _("No source repository available.")
             if hasattr(Chrome, 'jenv'):

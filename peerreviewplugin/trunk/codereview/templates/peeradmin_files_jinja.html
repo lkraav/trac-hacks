@@ -23,23 +23,26 @@
         <h2>Manage Project File Information</h2>
             # if view == 'detail':
             <form class="mod" id="modprojinfo" method="post" action="">
+                ${jmacros.form_token_input()}
                 <fieldset>
                     <legend>Modify Project File List</legend>
                     <div class="field">
                         <label>Project Name:</label>
-                        <input type="text" class="form-control" maxlength="255" id="projname"
-                               name="projectname" value="$projectname" />
+                        <input type="text" class="form-control" size="125" id="projname"
+                               name="projectname" value="${projectname}" />
                     </div>
                     <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
                     <div class="field">
                         <label>Root Folder:</label>
                         <p class="help">You may browse repositories and folders here.</p>
+                        <div id="peer-spinner"></div>
                         <div id="repo_browser"></div>
-                        <input type="text" class="form-control" maxlength="255" id="rootfolder"
-                               name="rootfolder" value="$rootfolder" />
+                        <input type="text" class="form-control" size="125" id="rootfolder"
+                               name="rootfolder" value="${rootfolder}" />
                         <p class="help">The root folder in the repository holding all the project files.</p>
                         <label>
-                            <input type="checkbox" name="follow_ext" value="1" checked="${follow_externals == '1' or None}"/>
+                            <input type="checkbox" name="follow_ext" value="1"
+                                   ${{"checked": follow_externals == '1'}|htmlattr}/>
                             Follow externals
                         </label>
                         <p class="help">When selected files in folders referenced as Subversion externals will also be added to the
@@ -48,15 +51,15 @@
                     </div>
                     <div class="field">
                         <label>Allowed Extensions:</label>
-                        <input type="text" class="form-control" maxlength="255" id="includeext"
-                               name="includeext" value="$includeext" />
+                        <input type="text" class="form-control" size="125" id="includeext"
+                               name="includeext" value="${includeext}" />
                     </div>
                     <p class="help">File extensions used when collecting the projects files. Use commas for separating.
                         Example: <strong>.c, .h, .cpp</strong>.</p>
                     <div class="field">
                         <label>Ignored Extensions:</label>
-                        <input type="text" class="form-control" maxlength="255" id="excludeext"
-                               name="excludeext" value="$excludeext" />
+                        <input type="text" class="form-control" size="125" id="excludeext"
+                               name="excludeext" value="${excludeext}" />
                     </div>
                     <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
                         Example: <strong>.tmb, .zip</strong>.</p>
@@ -79,13 +82,14 @@
             # elif view == 'filelist':
 
                 <div>
-                    <p>List of Files for project <strong>$projectname</strong>.</p>
+                    <p>List of Files for project <strong>${projectname}</strong>.</p>
                 </div>
                 <div>
                     <p>${len(files)} files altogether.</p>
                 </div>
 
                 <form class="mod" id="filelistform" method="post" action="">
+                    ${jmacros.form_token_input()}
                     <fieldset>
                         <div class="buttons">
                             <input type="submit" name="back" value="${_('Back')}" />
@@ -110,8 +114,8 @@
                                 <td>${file.file_id}</td>
                                 <td><a href="${'%s/%s%s' % (href('browser'), file.repo, file.path)}">${file.path}</a></td>
                                 <td>${file.hash}</td>
-                                <td>${file.rev}</td>
-                                <td>${file.changerev}</td>
+                                <td>${display_rev(file.rev)}</td>
+                                <td>${display_rev(file.changerev)}</td>
                                 <td>${status}</td>
                             </tr>
                         # endfor
@@ -143,6 +147,7 @@
                 </div>
                 # if projects:
                 <form id="projinfo_table" method="post" action="">
+                    ${jmacros.form_token_input()}
                     <table class="listing" id="projinfolist">
                         <thead>
                         <tr>
@@ -166,7 +171,7 @@
                             </td>
                             <td class="owner">${proj[1].rootfolder}</td>
                             <td>${proj[1].repo}</td>
-                            <td>${proj[1].revision}</td>
+                            <td>${proj[1]['display_rev'](proj[1].revision)}</td>
                             <td class="includeext">${proj[1].includeext}</td>
                             <td class="extensions">${proj[1].excludeext}</td>
                             <td class="extensions">${proj[1].excludepath}</td>
@@ -186,20 +191,22 @@
                 # endif
 
                 <form action="" id="addprojinfo" method="post">
+                    ${jmacros.form_token_input()}
                     <fieldset>
                         <legend>Add Project File List</legend>
                         <div class="field">
                             <label>Project Name:</label>
-                            <input type="text" class="form-control" maxlength="255" id="projname"
-                                   name="projectname" value="$projectname" />
+                            <input type="text" class="form-control" size="125" id="projname"
+                                   name="projectname" value="${projectname}" />
                         </div>
                         <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
                         <div class="field">
                             <label>Root Folder:</label>
                             <p class="help">You may browse repositories and folders here.</p>
-                            <div id="repo_browser"></div>
-                            <input type="text" class="form-control" maxlength="255" id="rootfolder"
-                                   name="rootfolder" value="$rootfolder" />
+                            <div id="peer-spinner"></div>
+                            <div id="repo_browser">Loading repository browser...</div>
+                            <input type="text" class="form-control"  size="125" id="rootfolder"
+                                   name="rootfolder" value="${rootfolder}" />
                             <p class="help">The root folder in the repository holding all the project files.</p>
                             <label>
                                 <input type="checkbox" name="follow_ext" value="1"/>Follow externals</label>
@@ -209,15 +216,15 @@
                         </div>
                         <div class="field">
                             <label>Allowed Extensions:</label>
-                            <input type="text" class="form-control" maxlength="255" id="includeext"
-                                   name="includeext" value="$includeext" />
+                            <input type="text" class="form-control" size="125" id="includeext"
+                                   name="includeext" value="${includeext}" />
                         </div>
                         <p class="help">File extensions used when collecting the projects files. Use commas for separating.
                             Example: <strong>.c, .h, .cpp</strong>.</p>
                         <div class="field">
                             <label>Ignored Extensions:</label>
-                            <input type="text" class="form-control" maxlength="255" id="excludeext"
-                                   name="excludeext" value="$excludeext" />
+                            <input type="text" class="form-control" size="125" id="excludeext"
+                                   name="excludeext" value="${excludeext}" />
                         </div>
                         <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
                             Example: <strong>.tmb, .zip</strong>.</p>

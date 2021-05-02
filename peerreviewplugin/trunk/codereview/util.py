@@ -20,6 +20,24 @@ __copyright__ = "Copyright 2016-2021"
 __license__ = "BSD"
 
 
+def to_db_path(path):
+    """Convert a path comming from Trac for db storage.
+
+    A Trac path has no leading '/'. Files for reviews are stored with leading '/'
+    in the database.
+    """
+    return '/' + path.lstrip('/')
+
+
+def to_trac_path(path):
+    """Convert a file path from the review database for usage with Trac.
+
+    A Trac path has no leading '/'. Files for reviews are stored with leading '/'
+    in the database.
+    """
+    return path.lstrip('/')
+
+
 def get_review_for_file(env, file_id):
     rf = ReviewFileModel(env, file_id)
     if not rf:

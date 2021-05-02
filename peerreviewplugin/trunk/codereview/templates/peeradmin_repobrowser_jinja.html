@@ -25,7 +25,7 @@
     <div id="repo_idx">
         # if repo_gone:
         <div id="repo_gone" class="browser">
-            <div class="warning system-message"><p class="">The repository '$repo_gone' is not available anymore. You may select a new repository and root folder now.</p>
+            <div class="warning system-message"><p class="">The repository '${repo_gone}' is not available anymore. You may select a new repository and root folder now.</p>
             </div>
         </div>
         # endif
@@ -66,7 +66,7 @@
                 <label for="switch_rev"
                        title="${stickyrev and 'Hint: clear the field to view latest revision' or None}">
                     View revision:</label>
-                <input type="text" id="switch_rev" name="newrev" value="$stickyrev" size="6"/>
+                <input type="text" id="switch_rev" name="newrev" value="${stickyrev}" size="6"/>
             </div>
         </div>
 
@@ -108,22 +108,22 @@
                         # endif
                     # else:
                         <span class="${item.is_dir and 'dir' or 'file'}"
-                              title="Access Denied" href="">${item.name}</span>
+                              title="Access Denied">${item.name}</span>
                     # endif
                 </td>
                 <td class="size">${item.size}</td>
                 <td class="rev">
                     # if item.permission:
-                    <a title="View Revision Log" href="${item.log_href}">${item.rev}</a>
+                    <a title="View Revision Log" href="${item.log_href}">${display_rev(item.rev)}</a>
                     # else:
-                    ${item.rev}
+                    ${display_rev(item.rev)}
                     # endif
                 </td>
                 <td class="age">
                     <span title="${dir.changes[item.rev].date}">${dir.changes[item.rev] and dateinfo(dir.changes[item.rev].date) or '-'}</span>
                 </td>
                 <td class="author">
-                    ${dir.changes[item.rev].author}
+                    ${authorinfo_short(dir.changes[item.rev].author)}
                 </td>
                 <td class="change">
                     # if wiki_format_messages:
@@ -177,9 +177,9 @@
     </div>
     # endif
     <div>
-        <input type="hidden" value="$path" id="root_path"/>
-        <input type="hidden" value="$revision" id="fileRevVal" name="rev"/>
-        <input type="hidden" value="$reponame" id="reponame" name="reponame"/>
+        <input type="hidden" value="${path}" id="root_path"/>
+        <input type="hidden" value="${revision}" id="fileRevVal" name="rev"/>
+        <input type="hidden" value="${reponame}" id="reponame" name="reponame"/>
     </div>
 
 </div>

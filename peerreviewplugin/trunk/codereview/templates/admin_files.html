@@ -17,15 +17,15 @@
                     <legend>Modify Project File List</legend>
                     <div class="field">
                         <label>Project Name:</label>
-                        <input type="text" class="form-control" maxlength="255" id="projname"
+                        <input type="text" class="form-control" size="125" id="projname"
                                name="projectname" value="$projectname" />
                     </div>
                     <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
                     <div class="field">
                         <label>Root Folder:</label>
                         <p class="help">You may browse repositories and folders here.</p>
-                        <div id="repo_browser"></div>
-                        <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                        <div id="repo_browser">Loading repository browser...</div>
+                        <input type="text" class="form-control" size="125" id="rootfolder"
                                name="rootfolder" value="$rootfolder" />
                         <p class="help">The root folder in the repository holding all the project files.</p>
                         <label>
@@ -38,14 +38,14 @@
                     </div>
                     <div class="field">
                         <label>Allowed Extensions:</label>
-                        <input type="text" class="form-control" maxlength="255" id="includeext"
+                        <input type="text" class="form-control" size="125" id="includeext"
                                name="includeext" value="$includeext" />
                     </div>
                     <p class="help">File extensions used when collecting the projects files. Use commas for separating.
                         Example: <strong>.c, .h, .cpp</strong>.</p>
                     <div class="field">
                         <label>Ignored Extensions:</label>
-                        <input type="text" class="form-control" maxlength="255" id="excludeext"
+                        <input type="text" class="form-control" size="125" id="excludeext"
                                name="excludeext" value="$excludeext" />
                     </div>
                     <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.
@@ -99,8 +99,8 @@
                                 <td>${file.file_id}</td>
                                 <td><a href="${'%s/%s%s' % (href('browser'), file.repo, file.path)}">${file.path}</a></td>
                                 <td>${file.hash}</td>
-                                <td>${file.rev}</td>
-                                <td>${file.changerev}</td>
+                                <td>${display_rev(file.rev)}</td>
+                                <td>${display_rev(file.changerev)}</td>
                                 <td>${status}</td>
                             </tr>
                         </py:for>
@@ -153,7 +153,7 @@
                             </td>
                             <td class="owner">${proj[1].rootfolder}</td>
                             <td>${proj[1].repo}</td>
-                            <td>${proj[1].revision}</td>
+                            <td>${proj[1]['display_rev'](proj[1].revision)}</td>
                             <td class="includeext">${proj[1].includeext}</td>
                             <td class="extensions">${proj[1].excludeext}</td>
                             <td class="extensions">${proj[1].excludepath}</td>
@@ -174,7 +174,7 @@
                         <legend>Add Project File List</legend>
                         <div class="field">
                             <label>Project Name:</label>
-                            <input type="text" class="form-control" maxlength="255" id="projname"
+                            <input type="text" class="form-control" size="125" id="projname"
                                    name="projectname" value="$projectname" />
                         </div>
                         <p class="help">Files will be grouped by this name. There is no need to use a predefined project name here.</p>
@@ -182,7 +182,7 @@
                             <label>Root Folder:</label>
                             <p class="help">You may browse repositories and folders here.</p>
                             <div id="repo_browser"></div>
-                            <input type="text" class="form-control" maxlength="255" id="rootfolder"
+                            <input type="text" class="form-control" size="125" id="rootfolder"
                                    name="rootfolder" value="$rootfolder" />
                             <p class="help">The root folder in the repository holding all the project files.</p>
                             <label>
@@ -193,14 +193,14 @@
                         </div>
                         <div class="field">
                             <label>Allowed Extensions:</label>
-                            <input type="text" class="form-control" maxlength="255" id="includeext"
+                            <input type="text" class="form-control" size="125" id="includeext"
                                    name="includeext" value="$includeext" />
                         </div>
                         <p class="help">File extensions used when collecting the projects files. Use commas for separating.
                             Example: <strong>.c, .h, .cpp</strong>.</p>
                         <div class="field">
                             <label>Ignored Extensions:</label>
-                            <input type="text" class="form-control" maxlength="255" id="excludeext"
+                            <input type="text" class="form-control" size="125" id="excludeext"
                                    name="excludeext" value="$excludeext" />
                         </div>
                         <p class="help">File extensions ignored when collecting the projects files. Use commas for separating.

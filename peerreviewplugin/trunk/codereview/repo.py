@@ -13,6 +13,7 @@ import os
 import posixpath
 from trac.versioncontrol.api import Node, NoSuchNode, RepositoryManager
 from .model import ReviewFileModel
+from .util import to_db_path
 
 
 __author__ = 'Cinc'
@@ -65,7 +66,8 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
     :param env: Trac environment object
     :param repodict: dict holding info about known repositories
     :param dir_node: a trac directory node
-    :param fnodes: list of file info nodes. Info for found files will be appended.
+    :param fnodes: list of file info nodes. Info for found files will be appended. Note that the path
+                   in the info dict is with leading '/'.
     :param ignore_ext: list of file extensions to be ignored
     :param follow_ext: if True follow externals to folders in the same or another repository
 
@@ -135,13 +137,13 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
                     pass
         else:
             for p in excl_path:
-                if node.path.startswith(p):
+                if to_db_path(node.path).startswith(p):
                     break
             else:
                 if incl_ext:
                     if os.path.splitext(node.path)[1].lower() in incl_ext:
                         fnodes.append({
-                            'path': node.path,
+                            'path': to_db_path(node.path),
                             'rev': node.rev,
                             'change_rev':node.created_rev,
                             'hash': hash_from_file_node(node),
@@ -150,7 +152,7 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
                 else:
                     if os.path.splitext(node.path)[1].lower() not in ignore_ext:
                         fnodes.append({
-                            'path': node.path,
+                            'path': to_db_path(node.path),
                             'rev': node.rev,
                             'change_rev':node.created_rev,
                             'hash': hash_from_file_node(node),

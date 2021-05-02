@@ -15,6 +15,7 @@ from trac.config import ConfigSection
 from trac.core import Component, implements
 from trac.mimeview.api import Mimeview
 from trac.util.translation import _
+from trac.versioncontrol.api import RepositoryManager
 from trac.web.chrome import add_link, add_notice, add_script, add_script_data, add_stylesheet, add_warning, Chrome
 from .model import ReviewDataModel, ReviewFileModel
 from .repo import insert_project_files, repo_path_exists
@@ -251,6 +252,10 @@ class PeerReviewFileAdmin(Component):
             req.redirect(req.href.admin(cat, page))
 
         all_proj_lst = [[key, value] for key, value in all_proj.items()]
+        self.log.info('########### %s' % repr(all_proj_lst))
+        for prj in all_proj_lst:
+            repos = RepositoryManager(self.env).get_repository(prj[1]['repo'])  # This should be 'reponame' but...
+            prj[1]['display_rev'] = repos.display_rev
         data = {'view': 'detail' if path_info else 'list',
                 'projects': sorted(all_proj_lst, key=lambda item: item[0]),
                 'projectname': name,
@@ -282,6 +287,8 @@ class PeerReviewFileAdmin(Component):
                 'revision': rev or view_proj['revision'],
                 'follow_externals': follow_externals or view_proj['follow_externals']
             })
+            repos = RepositoryManager(self.env).get_repository(data['reponame'])
+            data['display_rev'] = repos.display_rev
             if req.args.get('filelist'):
                 data['view'] = 'filelist'
                 data['files'] = get_prj_file_list(self, path_info)
