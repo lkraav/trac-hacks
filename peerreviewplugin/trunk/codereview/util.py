@@ -98,17 +98,21 @@ def review_is_locked(config, review, authname=""):
     lock_states = config.getlist("peerreview", "reviewer_locked_states")
     return review['status'] in lock_states
 
-def get_changeset_html(env, req, num_changeset, reponame):
+def get_changeset_html(env, req, rev, repos):
     """Create html for use in templates from changeset and repository information
+
+    :param req: Request object
+    :param rev: changeset revision as a string
+    :param repos: Repository object for this changeset
 
     We use Tracs formatting functions to get proper Trac links with correct titles and rendering.
     """
-    if num_changeset:
-        resource_repo = Resource('repository', reponame)
+    if rev:
+        resource_repo = Resource('repository', repos.reponame)
         changeset_html = format_to_oneliner(env,
                                             web_context(req,
-                                                        Resource('changeset', num_changeset, parent=resource_repo)),
-                                            '[changeset:%s %s]' % (num_changeset, num_changeset))
+                                                        Resource('changeset', rev, parent=resource_repo)),
+                                            '[changeset:%s %s]' % (rev, rev))
     else:
         changeset_html = ''
     return changeset_html

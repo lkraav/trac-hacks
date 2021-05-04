@@ -20,6 +20,7 @@ from trac.util import as_int
 from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import Markup, html as tag
 from trac.util.translation import _
+from trac.versioncontrol.api import RepositoryManager
 from trac.web.chrome import add_ctxtnav, add_stylesheet, Chrome,\
     INavigationContributor, ITemplateProvider, web_context
 from trac.web.main import IRequestHandler
@@ -152,6 +153,10 @@ class PeerReviewMain(Component):
                     rev.finish_date = user_time(req, format_date, to_datetime(rev['closed']))
                 else:
                     rev.finish_date = ''
+                rm = RepositoryManager(self.env)
+                for file in files[rev['review_id']]:
+                    repos = rm.get_repository(file['repo'])
+                    file['short_rev'] = repos.display_rev(file['revision'])
                 rev.rev_files = files[rev['review_id']]
                 # Prepare number of comments for a review
                 rev.num_comments = 0

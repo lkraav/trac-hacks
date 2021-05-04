@@ -125,11 +125,12 @@
                     <td><a href="${href.peerreviewperform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
                     <td><a href="${href.peerreviewperform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
                     <td>${item['repo'] if item['repo'] else '(default)'}</td>
-                    <td>${item['changerevision']}</td>
-                    <td>${item['revision']}</td>
+                    <td>${item['display_rev'](item['changerevision'])}</td>
+                    <td>${item['display_rev'](item['revision'])}</td>
                     # if parent_review:
-                    <td>${file_map[item['file_id']]['changerevision'] or '---'}</td>
-                    <td>${file_map[item['file_id']]['revision'] or '---'}</td>
+                    #    set file = file_map[item['file_id']]
+                    <td>${file['display_rev'](file['changerevision']) if file['changerevision'] else '---'}</td>
+                    <td>${file['display_rev'](file['revision']) if file['revision'] else '---'}</td>
                     # endif
                     # if item['line_start'] == 0:
                     <td>1 - End of file</td>

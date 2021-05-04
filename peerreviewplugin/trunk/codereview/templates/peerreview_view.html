@@ -95,10 +95,12 @@
                     <td><a href="${href.peerreviewperform()}?IDFile=${item['file_id']}">${item['file_id']}</a></td>
                     <td><a href="${href.peerreviewperform()}?IDFile=${item['file_id']}">${item['path']}</a></td>
                     <td>${item['repo'] if item['repo'] else '(default)'}</td>
-                    <td>${item['changerevision']}</td>
-                    <td>${item['revision']}</td>
-                    <td py:if="parent_review">${file_map[item['file_id']]['changerevision'] or '---'}</td>
-                    <td py:if="parent_review">${file_map[item['file_id']]['revision'] or '---'}</td>
+                    <td>${item['display_rev'](item['changerevision'])}</td>
+                    <td>${item['display_rev'](item['revision'])}</td>
+                    <py:if test="parent_review" py:with="file=file_map[item['file_id']]">
+                        <td>${file['display_rev'](file['changerevision']) if file['changerevision'] else '---'}</td>
+                        <td>${file['display_rev'](file['revision']) if file['revision'] else '---'}</td>
+                    </py:if>
                     <td py:if="item['line_start'] != 0">${item['line_start']} -
                         ${item['line_end']}</td>
                     <td py:if="item['line_start'] == 0">1 - End of file

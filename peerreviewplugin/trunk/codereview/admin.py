@@ -252,7 +252,6 @@ class PeerReviewFileAdmin(Component):
             req.redirect(req.href.admin(cat, page))
 
         all_proj_lst = [[key, value] for key, value in all_proj.items()]
-        self.log.info('########### %s' % repr(all_proj_lst))
         for prj in all_proj_lst:
             repos = RepositoryManager(self.env).get_repository(prj[1]['repo'])  # This should be 'reponame' but...
             prj[1]['display_rev'] = repos.display_rev

@@ -107,16 +107,16 @@
                     <td class="size">${item.size}</td>
                     <td class="rev">
                         # if item.permission:
-                        <a title="View Revision Log" href="${item.log_href}">${item.rev}</a>
+                        <a title="View Revision Log" href="${item.log_href}">${display_rev(item.rev)}</a>
                         # else:
-                        ${item.rev}
+                        ${display_rev(item.rev)}
                         # endif
                     </td>
                     <td class="age">
                         <span title="${dir.changes[item.rev].date}">${dir.changes[item.rev] and dateinfo(dir.changes[item.rev].date) or '-'}</span>
                     </td>
                     <td class="author">
-                        ${dir.changes[item.rev].author}
+                        ${authorinfo_short(dir.changes[item.rev].author)}
                     </td>
                     <td class="change">
                         # if wiki_format_messages:

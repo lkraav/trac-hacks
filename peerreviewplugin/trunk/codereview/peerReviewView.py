@@ -30,6 +30,7 @@ from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import html as tag
 from trac.util.text import CRLF, obfuscate_email_address
 from trac.util.translation import _
+from trac.versioncontrol.api import RepositoryManager
 from trac.web.chrome import add_link, add_script, add_stylesheet, Chrome, INavigationContributor, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html, format_to_oneliner
@@ -184,16 +185,28 @@ class PeerReviewView(Component):
             elif req.args.get('modify'):
                 req.redirect(req.href.peerreviewnew(resubmit=review_id, modify=1))
 
-        changeset = get_changeset_data(self.env, review_id)
-        data = {'review_files': self.get_files_for_review_id(req, review_id, True),
+        # Add display_rev() function to files so we can properly display the revision
+        # during template processing
+        rm = RepositoryManager(self.env)
+        files = self.get_files_for_review_id(req, review_id, True)
+        for file in files:
+            repos = rm.get_repository(file['repo'])
+            file['display_rev'] = repos.display_rev
+
+        # If this is not a changeset review 'reponame' and 'changeset' are empty strings.
+        reponame, changeset = get_changeset_data(self.env, review_id)
+        repos = rm.get_repository(reponame)
+        short_rev = repos.display_rev(changeset) if repos else changeset
+        data = {'review_files': files,
                 'users': get_users(self.env),
                 'show_ticket': self.show_ticket,
                 'cycle': itertools.cycle,
                 'review': self.get_review_by_id(req, review_id),
                 'reviewer': list(PeerReviewerModel.select_by_review_id(self.env, review_id)),
-                'repo': changeset[0],
-                'changeset': changeset[1],
-                'changeset_html': get_changeset_html(self.env, req, changeset[1], changeset[0])
+                'repo': reponame,
+                'display_rev': repos.display_rev if repos else lambda x: x,
+                'changeset': changeset,
+                'changeset_html': get_changeset_html(self.env, req, short_rev, repos)
                 }
 
         # check to see if the user is a manager of this page or not
@@ -242,7 +255,7 @@ class PeerReviewView(Component):
             return 'peerreview_view.html', data, None
 
     def add_parent_data(self, req, review, data):
-        """Add inforamtion about parent review to dict 'data'. Do nothing if now parent."""
+        """Add inforamtion about parent review to dict 'data'. Do nothing if not parent."""
         def get_parent_file(curfile, par_files):
             fid = u"%s%s%s" % (curfile['path'], curfile['line_start'], curfile['line_end'])
             for parfile in par_files:
@@ -253,7 +266,15 @@ class PeerReviewView(Component):
 
         if review['parent_id'] != 0:
             data['parent_review'] = self.get_review_by_id(req, review['parent_id'])
-            data['parent_files'] = self.get_files_for_review_id(req, review['parent_id'], False)
+
+            # Add display_rev() function to files so we can properly display the revision
+            # during template processing
+            rm = RepositoryManager(self.env)
+            files = self.get_files_for_review_id(req, review['parent_id'], False)
+            for file in files:
+                repos = rm.get_repository(file['repo'])
+                file['display_rev'] = repos.display_rev
+            data['parent_files'] = files
 
             # Map files to parent files. Key is current file id, value is parent file object
             file_map = {}

@@ -19,7 +19,8 @@ import os
 from codereview.changeset import get_changeset_data
 from codereview.model import Comment, ReviewCommentModel, PeerReviewModel, ReviewFileModel
 from codereview.repo import file_data_from_repo
-from codereview.util import get_review_for_file, not_allowed_to_comment, review_is_finished, review_is_locked
+from codereview.util import get_changeset_html, get_review_for_file, not_allowed_to_comment,\
+    review_is_finished, review_is_locked
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
@@ -99,16 +100,18 @@ class PeerReviewPerform(Component):
                 'review_file': r_file,
                 'review': review,
                 'fullrange': True if int(r_file['line_start']) == 0 else False,
-                'node': self.get_current_file_node(r_file, repos)
+                'node': self.get_current_file_node(r_file, repos),
+                'display_rev': repos.display_rev
                 }
 
         # Add parent data if any
         data.update(self.parent_data(req, review, r_file, repos))
 
         # Mark if this is a changeset review
-        changeset = get_changeset_data(self.env, review['review_id'])
-        data.update({'changeset': changeset[1],
-                     'repo': changeset[0]})
+        reponame, changeset = get_changeset_data(self.env, review['review_id'])
+        data.update({'changeset': changeset,
+                     'repo': reponame,
+                     'changeset_html': get_changeset_html(self.env, req, repos.display_rev(changeset), repos)})
 
         if data['changeset']:
             # This simulates a parent review by creating some temporary data
@@ -444,12 +447,12 @@ def create_diff_data(req, data):
     info = {'diffs': diff,
             'new': {'path': node.path,
                     'rev': "%s (Review #%s)" % (node.rev, data['review']['review_id']),
-                    'shortrev': node.rev,
+                    'shortrev': data['display_rev'](node.rev),
                     'href': file_href
                     },
             'old': {'path': par_node.path if par_node else '',
                     'rev': "%s%s" % (par_rev, par_rev_info),
-                    'shortrev': par_rev,
+                    'shortrev': data['display_rev'](par_rev),
                     'href': par_href
                     },
             'props': []}

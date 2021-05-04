@@ -95,16 +95,16 @@
                             </td>
                             <td class="size">${item.size}</td>
                             <td class="rev">
-                                <py:if test="not item.permission">${item.rev}</py:if>
+                                <py:if test="not item.permission">${display_rev(item.rev)}</py:if>
                                 <py:if test="item.permission">
-                                    <a title="View Revision Log" href="${item.log_href}">${item.rev}</a>
+                                    <a title="View Revision Log" href="${item.log_href}">${display_rev(item.rev)}</a>
                                 </py:if>
                             </td>
                             <td class="age">
                                 <span title="${dir.changes[item.rev].date}">${dir.changes[item.rev] and dateinfo(dir.changes[item.rev].date) or '-'}</span>
                             </td>
                             <td class="author">
-                                ${dir.changes[item.rev].author}
+                                ${authorinfo_short(dir.changes[item.rev].author)}
                             </td>
                             <td class="change">
                                 <py:if test="wiki_format_messages">

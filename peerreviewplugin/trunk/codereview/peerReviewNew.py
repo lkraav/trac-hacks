@@ -173,9 +173,10 @@ class NewReviewModule(Component):
             popFiles = []
             # Set up the file information
             for f in rfiles:
+                repo = RepositoryManager(self.env).get_repository(f['repo'])
+                f['display_rev'] = repo.display_rev
                 if is_followup:
                     # Get the current file and repo revision
-                    repo = RepositoryManager(self.env).get_repository(f['repo'])
                     node, display_rev, context = get_node_from_repo(req, repo, f['path'], None)
                     f.curchangerevision = to_unicode(node.created_rev)
                     f.curreporev = repo.youngest_rev

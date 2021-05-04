@@ -107,10 +107,10 @@
                                 <td>${item['line_start']}</td>
                                 <td>${item['line_end']}</td>
 
-                                <td py:if="followup">${item.curchangerevision}</td>
-                                <td py:if="followup">${item.curreporev}</td>
-                                <td py:if="followup">${item['changerevision']}</td>
-                                <td>${item['revision']}</td>
+                                <td py:if="followup">${item['display_rev'](item.curchangerevision)}</td>
+                                <td py:if="followup">${item['display_rev'](item.curreporev)}</td>
+                                <td py:if="followup">${item['display_rev'](item['changerevision'])}</td>
+                                <td>${item['display_rev'](item['revision'])}</td>
 
                                 <td py:if="modify">${item.num_comments}</td>
                             </tr>

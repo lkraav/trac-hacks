@@ -79,9 +79,7 @@
                     <tbody>
                     # if changeset:
                     <tr>
-                        <td><em>This is a review for changeset
-                            <a href="${href.changeset(changeset, repo)}" title="Show changeset ${changeset}">${changeset}</a>.</em>
-                        </td>
+                        <td><em>This is a review for changeset ${changeset_html}</em></td>
                     </tr>
                     # endif
                     <tr>
@@ -107,14 +105,14 @@
                 <dt>Repo Revision:</dt>
                 <dd>
                     <a href="${href.browser(repo_url, rev=review_file['revision'])}"
-                       title="Show repository @ ${review_file['revision']}">${review_file['revision']}</a>
-                    <small><em>(click to show repository @ ${review_file['revision']})</em></small>
+                       title="Show repository @ ${review_file['revision']}">${display_rev(review_file['revision'])}</a>
+                    <small><em>(click to show repository @ ${display_rev(review_file['revision'])})</em></small>
                 </dd>
                 <dt>File Revision:</dt>
                 <dd>
                     <a href="${href.browser(repo_url, review_file['path'], rev=review_file['changerevision'])}"
-                       title="Show file in browser">${review_file['changerevision']}</a>
-                    <small><em>(click to show file @ ${review_file['revision']})</em></small>
+                       title="Show file in browser">${display_rev(review_file['changerevision'])}</a>
+                    <small><em>(click to show file @ ${display_rev(review_file['changerevision'])})</em></small>
                 </dd>
                 # if review_file['line_start'] != 0:
                     <dt>Start Line:</dt>
@@ -135,13 +133,13 @@
                     <dt>Repo Revision:</dt>
                     <dd>
                         <a href="${href.browser(repo_url, rev=par_file['revision'])}"
-                           title="Show repository @ ${par_file['revision']}">${par_file['revision']}</a>
-                        <small><em>(click to show repository @ ${par_file['revision']})</em></small>
+                           title="Show repository @ ${par_file['revision']}">${display_rev(par_file['revision'])}</a>
+                        <small><em>(click to show repository @ ${display_rev(par_file['revision'])})</em></small>
                     </dd>
                     <dt>File Revision:</dt>
                     <dd><a href="${href.browser(repo_url, par_file['path'], rev=par_file['changerevision'])}"
-                           title="Show file in browser">${par_file['changerevision']}</a>
-                        <small><em>(click to show file @ ${par_file['revision']})</em></small>
+                           title="Show file in browser">${display_rev(par_file['changerevision'])}</a>
+                        <small><em>(click to show file @ ${display_rev(par_file['revision'])})</em></small>
                     </dd>
                     <dt>Comments:</dt>
                     # if diff.options.contextall:

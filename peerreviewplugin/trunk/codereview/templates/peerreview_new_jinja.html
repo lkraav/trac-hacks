@@ -152,11 +152,11 @@
                                 <td>${item['line_start']}</td>
                                 <td>${item['line_end']}</td>
                                 # if followup:
-                                <td>${item.curchangerevision}</td>
-                                <td>${item.curreporev}</td>
-                                <td>${item['changerevision']}</td>
+                                <td>${item['display_rev'](item.curchangerevision)}</td>
+                                <td>${item['display_rev'](item.curreporev)}</td>
+                                <td>${item['display_rev'](item['changerevision'])}</td>
                                 # endif
-                                <td>${item['revision']}</td>
+                                <td>${item['display_rev'](item['revision'])}</td>
                                 # if modify:
                                 <td>${item.num_comments}</td>
                                 # endif
