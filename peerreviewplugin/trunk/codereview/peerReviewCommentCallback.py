@@ -129,10 +129,7 @@ class PeerReviewCommentHandler(Component):
                 return 'peerreview_comment.html', data, None
 
         actionType = req.args.get('actionType')
-
-        if actionType == 'getCommentTree':
-            self.get_comment_tree(req, data)
-        elif actionType == 'getCommentFile':
+        if actionType == 'getCommentFile':
             self.env.log.info("Trying to get comment file. Not implemented.")
             # self.getCommentFile_obsolete(req, data)
             data['invalid'] = 5

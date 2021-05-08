@@ -303,9 +303,8 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 }
 /* End inline comment */
 
-.comment-notread{
-  background-color: #ffd;
-  border: 1px solid lightgrey;
+.comment-notread .comment-text{
+  border-left: 6px solid #8df254
 }
 
 #view-comment-dlg{
@@ -319,6 +318,24 @@ table.trac-diff tr.comment-tr th, table.trac-diff tr.comment-tr td{
 
 .ui-widget-content a {
   color: #3C5FC8;
+}
+
+/* Perform review page */
+#FilePreview {
+ background:  #f7f7f7;
+}
+
+div#FilePreview .code :link, div#FilePreview .code :visited {
+ text-decoration: none;
+ color: #b00;
+ border-bottom: 1px dotted #bbb;
+}
+
+div#FilePreview .code :link:hover, div#FilePreview .code :visited:hover {
+ background-color: rgba(238, 238, 238, .5);
+ color: #500;
+ border-radius: .1em;
+ box-shadow: 0 0 0 .15em rgba(238, 238, 238, .5);
 }
 
 /* View review page */
@@ -405,6 +422,7 @@ a.peer-wiki .disapproved{
 }
 
 div#peer-spinner {
+   z-index: 1000;
    position: fixed;
    left: 50%;
    top:50%;

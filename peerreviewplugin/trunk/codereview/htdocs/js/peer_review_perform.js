@@ -6,6 +6,7 @@ function collapseComments(parentID)
     $('#'+parentID+'expand').show();
 };
 
+
 function expandComments(parentID)
 {
     $('table[data-child-of='+parentID+']').show();
@@ -13,166 +14,115 @@ function expandComments(parentID)
     $('#'+parentID+'expand').hide();
 };
 
-function createCommentDiv(type_char, LineNum){
-  var comment = '<div class="peer-comment">'
-  comment += '<p class="refresh"><a id="comment-refresh-'+type_char+LineNum+'" href="">Refresh</a></p>'
-  comment += '<p id="comment-loading-'+type_char+LineNum+'">Loading...</p>'
-  if(type_char === 'P'){
-    comment += '<div id="PL'+LineNum+'"></div></div>'
-  }
-  else{
-    comment += '<div id="CL'+LineNum+'"></div></div>'
-  };
-  return comment
-};
 
 function getInlineCommentMarkup(LineNum, diff_view, parent_comment){
   var markup = '<th></th>'
-  if(parent_comment){
-      /* Parent comment implies diff view */
+  if(diff_view){
       if(peer_diff_style === 'inline'){
-          markup += '<th></th><td id="PTD'+LineNum+'">'+createCommentDiv('P', LineNum)+'</td><td id="CTD'+LineNum+'"></td>'
+          markup += '<th></th><td id="PTD' + LineNum + '"></td><td id="CTD' + LineNum + '"></td>'
       }
       else{
-          markup += '<td id="PTD'+LineNum+'">'+createCommentDiv('P', LineNum)+'</td><th></th><td id="CTD'+LineNum+'"></td>'
-      }
-  }
-  else{
-      comment = createCommentDiv('C', LineNum)
-      if(diff_view){
-          if(peer_diff_style === 'inline'){
-              markup += '<th></th><td id="PTD'+LineNum+'"></td><td id="CTD'+LineNum+'">'+comment+'</td>'
-          }
-          else{
-              markup += '<td id="PTD'+LineNum+'"></td><th></th><td id="CTD'+LineNum+'">'+comment+'</td>'
-          };
-      }
-      else{
-          markup += '<td id="CTD'+LineNum+'" class="peer-comment-td">'+comment+'</td>';
+          markup += '<td id="PTD' + LineNum + '"></td><th></th><td id="CTD' + LineNum + '"></td>'
       };
   }
+  else{
+      markup += '<td id="CTD' + LineNum + '" class="peer-comment-td"></td>';
+  };
   return $('<tr>',
-           {id: "CTR"+LineNum, class: "comment-tr"}
+           {id: "CTR" + LineNum, class: "comment-tr"}
            ).append(markup);
 };
+
 
 function default_for(arg, val){
     return typeof arg !== 'undefined' ? arg : val;
 };
 
-function getCommentsInline(LineNum, fileID, refresh)
-{
-    refresh = default_for(refresh, false);
-    if($('#CTD'+LineNum).children().length > 0){
-        $('#CTD'+LineNum).empty();
-        if(!refresh){
-           console.log($('#PTD'+LineNum).children().length);
-           if($('#PTD'+LineNum).children().length === 0){
-               $('#CTR'+LineNum).remove();
-           };
-           return;
-        };
-    };
 
-    $('#comment-loading-C'+LineNum).show();
-    var diff_view = false;
-    if(peer_parent_file_id !== 0){
+function refreshComment(path, fileid, line){
+    let url = baseUrl + '?action=commenttree&fileid=' + fileid + '&line=' + line + '&path=' + path
+    let selector = '#PTD' + line
+    if(fileid == peer_file_id){  /* don't use '===' here it may be either int or str */
+      selector = '#CTD' + line
+    }
+
+    if($(selector).length == 0){
+      /* No comment for this line yet. Prepare tr */
+      if(peer_parent_file_id !== 0){
         diff_view = true;
-    };
-    if($('#CTD'+LineNum).length === 0 ){
-       $('#L'+LineNum).parent().after(getInlineCommentMarkup(LineNum, diff_view, false));
+      }
+      else{
+        diff_view = false;
+      }
+      $('th#L' + line).parent().after(getInlineCommentMarkup(line, diff_view, false));
     }
     else{
-        $('#CTD'+LineNum).append(createCommentDiv('C', LineNum));
+      $(selector + ' .peer-loading').show();
     }
-    var url = baseUrl + '?actionType=getCommentTree&IDFile=' + fileID + '&LineNum=' + LineNum
-    $('#CL'+LineNum).load(url, function(){
-                           $('#comment-loading-C'+LineNum).hide();
-                           $("#comment-line-view"+LineNum).val(LineNum);
-                           $("#comment-fileid-view"+LineNum).val(fileID);
-                           $('#comment-refresh-C'+LineNum).attr('href', 'javascript:getComments('+LineNum+', '+fileID +', true)')
-                           $('#addcomment-view'+LineNum).on('click', function(){
-                                   addComment($("#comment-line-view"+LineNum).val(), $("#comment-fileid-view"+LineNum).val(), -1);
-                           });
-                           });
+    $(selector).load(url);
 };
 
-function getParentCommentsInline(LineNum, fileID, refresh)
-{
-    refresh = default_for(refresh, false);
-
-    if($('#PTD'+LineNum).children().length > 0){
-        $('#PTD'+LineNum).empty();
-        if(!refresh){
-           if($('#CTD'+LineNum).children().length === 0){
-               $('#CTR'+LineNum).remove();
-           };
-           return;
-        };
-    };
-    $('#comment-loading-P'+LineNum).show();
-    var diff_view = true;
-
-    if($('#PTD'+LineNum).length === 0 ){
-        $('#P'+LineNum).parent().after(getInlineCommentMarkup(LineNum, diff_view, true));
-    }
-    else{
-        $('#PTD'+LineNum).append(createCommentDiv('P', LineNum));
-    }
-    var url = baseUrl + '?actionType=getCommentTree&IDFile=' + fileID + '&LineNum=' + LineNum
-    $('#PL'+LineNum).load(url, function(){
-                           $('#comment-loading-P'+LineNum).hide();
-                           $("#comment-line-view"+LineNum).val(LineNum);
-                           $("#comment-fileid-view"+LineNum).val(fileID);
-                           $('#comment-refresh-P'+LineNum).attr('href', 'javascript:getParentComments('+LineNum+', '+fileID +', true)')
-                           $('#addcomment-view'+LineNum).on('click', function(){
-                                   addComment($("#comment-line-view"+LineNum).val(), $("#comment-fileid-view"+LineNum).val(), -1);
-                           });
-                           });
-};
-
-function getCommentsPopup(LineNum, fileID)
-{
-    if(LineNum != $("#comment-line-view").val() || fileID != $("#comment-fileid-view").val()){
-        $('#view-comment-dlg').dialog('close');
-    };
-    $("#comment-line-view").val(LineNum);
-    $("#comment-fileid-view").val(fileID);
-    $('#view-comment-dlg').dialog({title: "Comments for Line "+LineNum});
-    $('#comment-tree').empty();
-    $('#view-comment-dlg').dialog('open');
-    $('#comment-loading').show();
-    var url = baseUrl + '?actionType=getCommentTree&IDFile=' + fileID + '&LineNum=' + LineNum
-    $('#comment-tree').load(url, function(){
-                           $('#comment-loading').hide();
-                           $('#comment-refresh').attr('href', 'javascript:getComments('+LineNum+', '+fileID +')')
-                           $('#addcomment-view'+LineNum).on('click', function(){
-                                   addComment($("#comment-line-view").val(), $("#comment-fileid-view").val(), -1);
-                           });
-                           });
-}
 
 function getComments(LineNum, fileID, refresh)
 {
-   refresh = default_for(refresh, false);
+    refresh = default_for(refresh, false);
 
-   if($('#inline-comments').is(':checked')){
-       getCommentsInline(LineNum, fileID, refresh)
-   }else{
-       getCommentsPopup(LineNum, fileID)
-   };
+    /* Hide/show comments by clicking header again */
+    if($('#CTD'+LineNum).children().length > 0){
+        $('#CTD'+LineNum).empty();
+        if(!refresh){
+           if($('#PTD' + LineNum).children().length === 0){
+               $('#CTR' + LineNum).remove();
+           };
+           return;
+        };
+    };
+
+    if(peer_parent_file_id !== 0){
+      diff_view = true;
+    }
+    else{
+      diff_view = false;
+    }
+    if($('#CTD'+LineNum).length === 0 ){
+       $('th#L'+LineNum).parent().after(getInlineCommentMarkup(LineNum, diff_view, false));
+    }
+
+    let url = baseUrl + '?action=commenttree&fileid=' + fileID + '&line=' + LineNum + '&path=' + peer_file_path
+    $('#CTD' + LineNum).load(url, function(){
+      /* On page load all parents are loaded, then all follow-ups. If we are the last follow-up line we
+         assume all comments are loaded. This isn't entirely accurate because loading of comments is async */
+      let selector = '#CTD' + peer_comments[peer_comments.length - 1] + ' .peer-comment'
+      if($(selector).length !== 0 ){
+        $('#peer-spinner').hide();
+      }
+    });
 };
 
-function getParentComments(LineNum, fileID, refresh)
+
+function getParentComments(line, fileid, refresh)
 {
-   refresh = default_for(refresh, false);
+    refresh = default_for(refresh, false);
 
-   if($('#inline-comments').is(':checked')){
-       getParentCommentsInline(LineNum, fileID, refresh)
-   }else{
-       getCommentsPopup(LineNum, fileID)
-   };
+    /* Hide/show comments by clicking header again */
+    if($('#PTD' + line).children().length > 0){
+        $('#PTD' + line).empty();
+        if(!refresh){
+           if($('#CTD' + line).children().length === 0){
+               $('#CTR' + line).remove();
+           };
+           return;
+        };
+    };
+    /* Make sure comment tr exists */
+    if($('#PTD' + line).length === 0 ){
+        $('th#P' + line).parent().after(getInlineCommentMarkup(line, true, true));
+    }
+
+    let url = baseUrl + '?action=commenttree&fileid=' + fileid + '&line=' + line + '&path=' + peer_file_path
+    $('#PTD' + line).load(url);
 };
+
 
 function addComment(LineNum, fileID, parentID)
 {
@@ -186,6 +136,7 @@ function addComment(LineNum, fileID, parentID)
     $('#add-comment-dlg').dialog('moveToTop');
 }
 
+
 function markComment(line, file_id, comment_id, read_status, review_id){
     $.post("peerReviewCommentCallback",
            {'fileid': file_id, 'line': line, 'commentid': comment_id, 'markread': read_status,
@@ -193,9 +144,8 @@ function markComment(line, file_id, comment_id, read_status, review_id){
             '__FORM_TOKEN': form_token
            },
             function(data){
-              /* var data = $.parseJSON(data); */
-              /* Show or refresh comment dialog */
-              getComments(data['line'], data['fileid'], true);
+             /* Show or refresh comment dialog */
+             refreshComment(peer_file_path, data['fileid'], data['line'])
            });
 };
 
@@ -209,7 +159,25 @@ function markCommentNotread(line, file_id, comment_id, review_id){
 
 jQuery(document).ready(function($) {
 
-    function create_comment_link(LineNum, fileID, is_parent){
+    function loadComments(path, comment_list){
+             if(peer_parent_file_id !== 0){
+                 /* This is a diff view. */
+                 if(peer_diff_style === 'inline'){
+                     $('table.trac-diff thead tr').append('<td class="ctd-inline"></td>')
+                     $('table.trac-diff tbody tr').append('<td class="ctd-inline"></td>')
+                 };
+                 /* First load parent comments */
+                 for(var i = 0; i < peer_parent_comments.length; i++){
+                     getParentComments(peer_parent_comments[i], peer_parent_file_id);
+                 };
+             };
+             for(var i = 0; i < peer_comments.length; i++){
+                 getComments(peer_comments[i], peer_file_id);
+             };
+    };
+
+
+    function comment_link(LineNum, fileID, is_parent){
         if(is_parent){
             var js_href = 'javascript:getParentComments(' + LineNum + ',' + fileID+ ')'
         }
@@ -220,9 +188,10 @@ jQuery(document).ready(function($) {
                          text: LineNum}).prepend($('<img>', {src: tacUrl}));
     };
 
+
     function add_get_comments_link(prefix, line, fileid, is_parent){
         $(prefix+line).empty();
-        $(prefix+line).append(create_comment_link(line, fileid, is_parent));
+        $(prefix+line).append(comment_link(line, fileid, is_parent));
     }
 
     function add_comment_button(event){
@@ -230,41 +199,14 @@ jQuery(document).ready(function($) {
 
        var LineNum = $( "#comment-line" ).val();
        $.post("peerReviewCommentCallback", $("#add-comment-form").serialize(), function(data){
-          /* var data = $.parseJSON(data); */
-          /* Show or refresh comment dialog */
-          getComments(data['line'], data['fileid'], true);
+          /* Show or refresh comment after creation */
+          refreshComment(peer_file_path, data['fileid'], data['line'])
        });
 
        $( "#add-comment-dlg" ).dialog('close');
        /* Add open comment link. This can't be a parent. */
        add_get_comments_link('#L', LineNum, $("#comment-fileid" ).val(), false);
     }
-
-    function inline_comment_cbox(){
-         if($('#inline-comments').is(':checked')){
-             $('#view-comment-dlg').dialog('close');
-
-             if(peer_parent_file_id !== 0){
-                 /* This is a diff view. */
-                 if(peer_diff_style === 'inline'){
-                     $('table.trac-diff thead tr').append('<td class="ctd-inline"></td>')
-                     $('table.trac-diff tbody tr').append('<td class="ctd-inline"></td>')
-                 };
-                 /* First load parent comments */
-                 for(var i = 0; i < peer_parent_comments.length; i++){
-                     getParentCommentsInline(peer_parent_comments[i], peer_parent_file_id);
-                 };
-             };
-             for(var i = 0; i < peer_comments.length; i++){
-                 getCommentsInline(peer_comments[i], peer_file_id);
-             };
-         }else{
-                 if(peer_diff_style === 'inline'){
-                     $('table.trac-diff .ctd-inline').remove()
-                 };
-             $('.comment-tr').remove();
-         };
-    };
 
    for(var i=0; i < peer_comments.length; i++) {
        add_get_comments_link('#L', peer_comments[i], peer_file_id, false);
@@ -274,22 +216,14 @@ jQuery(document).ready(function($) {
        add_get_comments_link('#P', peer_parent_comments[i], peer_parent_file_id, true);
    }
 
-   $( "#add-comment-dlg" ).dialog({
+    $( "#add-comment-dlg" ).dialog({
       title: "Add Comment",
       width: 500,
       autoOpen: false,
       resizable: true,
       dialogClass: 'top-dialog',
-   });
-
-   $( "#view-comment-dlg" ).dialog({
-      title: "View Comments",
-      width: 440,
-      autoOpen: false,
-      resizable: false,
-   });
-
-    /* Submit button for comment */
+    });
+    /* Submit button for comment on add comment dialog */
     $('#addcomment').on('click', add_comment_button);
 
     /* auto preview */
@@ -302,5 +236,18 @@ jQuery(document).ready(function($) {
           $("#commentchange").hide();
     });
 
-    $('#inline-comments').on('change', inline_comment_cbox);
+  /* Show inline comments */
+  if(typeof peer_comments !== 'undefined'){
+    if($('table th#L1').length !== 0){
+      loadComments(peer_file_path, peer_comments);
+      if(peer_comments.length ===0){
+        $('#peer-spinner').hide();
+      }
+    }
+    else{
+    /* No file is shown (identical follow-up) */
+      $('#peer-spinner').hide();
+    }
+  };
+
 });

@@ -25,6 +25,7 @@
     <body>
     # block content
         <div id="content" class="trac-content borderless">
+            <div id="peer-spinner"></div>
             # if is_finished:
             <div class="notice system-message">
                 <p>
@@ -178,8 +179,6 @@
 
             <p>Back to the <a href="${href.peerreviewview(review_file['review_id'])}"> Code Review Details</a> page.</p>
 
-            <label><input type="checkbox" id="inline-comments" />Show comments inline.</label>
-
             # if diffs or not parent_review:
             <table border="0" width="100%" style="border-collapse: collapse" id="table1">
                 <tr>
@@ -243,12 +242,6 @@
                     ${jmacros.form_token_input()}
                     <div>
                         <textarea rows="6" id="comment-txt" name="comment"></textarea>
-                        <div id="commentchange" class="ticketdraft" style="display: none">
-                            <p class="help">Preview:</p>
-                            <div class="notes-preview comment searchable">
-
-                            </div>
-                        </div>
                     </div>
                     <div class="buttons">
                         <input type="hidden" name="fileid" value="-1" id="comment-fileid"/>
@@ -257,18 +250,15 @@
                         <input type="hidden" name="addcomment" value="Add Comment"/>
                         <input type="submit" name="addcomment" value="Add Comment" id="addcomment"/>
                     </div>
-                </form>
-            </div>
+                    <div>
+                        <div id="commentchange" class="ticketdraft" style="display: none">
+                            <p class="help">Preview:</p>
+                            <div class="notes-preview comment searchable">
 
-            <div id="view-comment-dlg">
-                <p id="refresh"><a id="comment-refresh" href="">Refresh</a></p>
-                <div id="comment-tree">  </div>
-                <p id="comment-loading">Loading...</p>
-                <div class="buttons">
-                    <input type="hidden" name="fileid" value="-1" id="comment-fileid-view"/>
-                    <input type="hidden" name="line" value="" id="comment-line-view" />
-                    <input type="hidden" name="addcomment" value="Add Comment"/>
-                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
 
             <script type="text/javascript">

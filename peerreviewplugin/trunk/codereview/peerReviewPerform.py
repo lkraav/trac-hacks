@@ -20,7 +20,7 @@ from codereview.changeset import get_changeset_data
 from codereview.model import Comment, ReviewCommentModel, PeerReviewModel, ReviewFileModel
 from codereview.repo import file_data_from_repo
 from codereview.util import get_changeset_html, get_review_for_file, not_allowed_to_comment,\
-    review_is_finished, review_is_locked
+    review_is_finished, review_is_locked, to_trac_path
 from trac.core import *
 from trac.mimeview import *
 from trac.mimeview.api import IHTMLPreviewAnnotator
@@ -107,12 +107,11 @@ class PeerReviewPerform(Component):
         # Add parent data if any
         data.update(self.parent_data(req, review, r_file, repos))
 
-        # Mark if this is a changeset review
+        # Handle changeset reviews
         reponame, changeset = get_changeset_data(self.env, review['review_id'])
         data.update({'changeset': changeset,
                      'repo': reponame,
                      'changeset_html': get_changeset_html(self.env, req, repos.display_rev(changeset), repos)})
-
         if data['changeset']:
             # This simulates a parent review by creating some temporary data
             # not backed by the database. If it's a new file, parent information is omitted
@@ -163,10 +162,21 @@ class PeerReviewPerform(Component):
             add_ctxtnav(req, _("Next File"), req.href.peerreviewperform(IDFile=file_id), title=_("File %s") % path)
 
     def create_script_data(self, req, data):
+        """Create a dict with data for javascript. This includes
+        comment information, file id, review id and other.
+
+        :param req: Request object from process_request()
+        :param data: data dictionary holding some review information.
+        :return dict with data for javascript
+
+        Note that 'data' is not changed in place here. A new dict is created for use with
+        add_script_data().
+        """
         r_file = data['review_file']
         scr_data = {'peer_comments': sorted(list(set([c.line_num for c in
                                                       Comment.select_by_file_id(self.env, r_file['file_id'])]))),
                     'peer_file_id': r_file['file_id'],
+                    'peer_file_path': to_trac_path(r_file['path']),
                     'peer_review_id': r_file['review_id'],
                     'auto_preview_timeout': self.env.config.get('trac', 'auto_preview_timeout', '2.0'),
                     'form_token': req.form_token,
