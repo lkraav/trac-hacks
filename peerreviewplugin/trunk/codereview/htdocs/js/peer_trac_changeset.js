@@ -218,7 +218,7 @@ jQuery(document).ready(function($) {
         $(th).replaceWith('<th>' + line + '</th>')
     };
 
-    $(diff_table).find('#CTD' + line + ' #comment-loading-' + line).show();
+    $(diff_table).find('#CTD' + line + ' .peer-loading').show();
     var url = peer_comment_url + '?action=commenttree&fileid=' + fileid + '&line=' + line + '&path=' + path
     $('#CTD' + line).load(url);
   };

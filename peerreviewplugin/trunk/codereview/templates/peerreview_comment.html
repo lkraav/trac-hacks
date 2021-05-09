@@ -26,7 +26,7 @@
 
 <py:if test="not create_add_comment_dlg">
     <div class="peer-comment">
-        <div class="peer-loading" id="comment-loading-${lineNum}" style="display: none">Loading...</div>
+        <div class="peer-loading" id="comment-loading-${fileID}-${lineNum}" style="display: none">Loading...</div>
         <p class="refresh"><a id="comment-refresh-${'P' + lineNum}"
                               href="javascript:refreshComment('${path}', ${fileID}, ${lineNum})">Refresh</a></p>
 

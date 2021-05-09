@@ -9,21 +9,22 @@
 # Author: Cinc
 #
 
-import copy
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from datetime import datetime
-from time import time
 from trac.core import Component, implements, TracError
-from trac.db import Table, Column, Index,  DatabaseManager
+from trac.db import Table, Column, Index
 from trac.env import IEnvironmentSetupParticipant
-from trac.resource import ResourceNotFound
 from trac.search.api import shorten_result
 from trac.util.datefmt import from_utimestamp, to_utimestamp, utc
 from trac.util.translation import N_, _
+from .compat import itervalues
 from .tracgenericclass.model import IConcreteClassProvider, AbstractVariableFieldsObject, \
     need_db_create_for_realm, create_db_for_realm, need_db_upgrade_for_realm, upgrade_db_for_realm
 
 __author__ = 'Cinc'
+
+
+
 
 db_name_old = 'codereview_version'  # for database version 1
 db_name = 'peerreview_version'
@@ -433,9 +434,30 @@ class ReviewCommentModel(AbstractVariableFieldsObject):
         rcm['file_id'] = file_id
         return rcm.list_matching_objects()
 
-    @classmethod
-    def create_comment_tree(cls, file_id, line_num):
-        pass
+    @staticmethod
+    def create_comment_tree(env, fileid, line):
+        """Create a comment tree for the given file and line number.
+
+        :param env: Trac environment object
+        :param fileid: id of a peerreviewfile
+        :param line: line number we wnat to get comments for
+        :return dict with key: comment id, val: comment data as a namedtuple
+                each comments 'children' dict is properly populated thus for each
+                comment we have a (sub)tree. Comments with parent_id = -1 are root
+                comments.
+        """
+        Comment = namedtuple('Comment', "children, comment_id, file_id, parent_id, line, author, comment, created")
+        tree = {}
+        for row in env.db_query("SELECT comment_id, file_id, parent_id, line_num, author, comment, created"
+                                " FROM peerreviewcomment WHERE file_id = %s"
+                                " AND line_num = %s"
+                                " ORDER by created", (fileid, line)):
+            comment = Comment({}, *row)
+            tree[comment.comment_id] = comment
+        for comment in itervalues(tree):
+            if comment.parent_id != -1 and comment.parent_id in tree:
+                tree[comment.parent_id].children[comment.comment_id] = comment
+        return tree
 
 
 class PeerReviewModelProvider(Component):
