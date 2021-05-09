@@ -178,10 +178,40 @@ table.code th.performCodeReview{
 }
 
 /* timeline */
-.codereview .notes{
-  color: #aaa;
-  font-size: 90%;
-  margin-left: 2em;
+.peerreview .notes{
+  margin-left: 15px;
+}
+
+.peerreview div.notes > p{
+  margin: 0;
+}
+
+.peerreview ul.userlist {
+  list-style-type: none;
+  margin-left: 15px;
+  padding-left: 0px;
+}
+
+.peerreview ul.rfiles {
+  list-style-type: none;
+  margin-left: 15px;
+}
+
+.timeline dd.peerreview .rfiles {
+ color: #aaa;
+ font-size: 90%;
+ margin-left: 15px;
+ padding-left: 0;
+ list-style-type: none;
+}
+
+.timeline dd.peerreview .rfiles li div {
+ border: 1px solid #999;
+ display: inline-block;
+ margin: 0 .5em 0 0;
+ width: .8em;
+ height: .8em;
+ vertical-align: middle;
 }
 
 /* Comment handling */

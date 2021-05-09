@@ -15,8 +15,9 @@ from trac.resource import Resource, get_resource_url
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import from_utimestamp, to_utimestamp
 from trac.util.html import html as tag
+from trac.util.text import to_unicode
 from trac.util.translation import _
-from trac.web.chrome import add_stylesheet
+from trac.web.chrome import add_stylesheet, Chrome
 
 
 class PeerReviewTimeline(Component):
@@ -42,6 +43,7 @@ class PeerReviewTimeline(Component):
             ts_stop = to_utimestamp(stop)
 
             coderev_resource = Resource('peerreview')
+            author_short = Chrome(self.env).authorinfo_short
 
             add_stylesheet(req, 'hw/css/peerreview.css')
 
@@ -49,15 +51,8 @@ class PeerReviewTimeline(Component):
                 rm = PeerReviewerModel(self.env)
                 rm.clear_props()
                 rm['review_id'] = rev_id
-                reviewers_lst = list(rm.list_matching_objects())
-
-                rev_list = ''
-                last = len(reviewers_lst) - 1
-                for idx, reviewer in enumerate(reviewers_lst):
-                    rev_list = rev_list + reviewer['reviewer']
-                    if idx != last:
-                        rev_list += ', '
-                return rev_list
+                reviewers = [author_short(reviewer['reviewer']) for reviewer in rm.list_matching_objects()]
+                return reviewers
 
             def get_files_for_review_id(review_id):
                 """Get all files belonging to the given review id. Provide the number of comments if asked for."""
@@ -98,6 +93,7 @@ class PeerReviewTimeline(Component):
 
     def render_timeline_event(self, context, field, event):
         codereview_page, name, notes, reviewersList, oldstatus, newstatus, files = event[3]
+        num_files = self.config.getint('timeline', 'changeset_show_files', 0)
 
         if field == 'url':
             return get_resource_url(self.env, codereview_page, context.href)
@@ -107,23 +103,38 @@ class PeerReviewTimeline(Component):
                        )
 
         def filelist():
-            ul = tag.ul()
-            for f in files:
-                ul.append(tag.li(
+            def create_li(f):
+                return tag.li(tag.div(),
                                  tag.a('%s @ %s' % (f['path'], f['changerevision']),
                                        href='peerreviewfile/%s' % f['file_id']
                                        )
                                 )
-                          )
+
+            ul = tag.ul(class_="rfiles")
+
+            if num_files == 0:
+                # don't show
+                return None
+            elif num_files == -1:
+                # unlimited
+                for rfile in files:
+                    ul.append(create_li(rfile))
+            else:
+                for rfile in files[:num_files]:
+                    ul.append(create_li(rfile))
+                if num_files < len(files):
+                    ul.append(tag.li(u'…'))
             return ul
 
         if field == 'description':
-            return tag(_('Assigned to: '), tag.em(reviewersList),
-                       tag.div(_('Additional notes:')),
+            return tag(_('Assigned to: '),
+                       tag.ul([tag.li(reviewer) for reviewer in reviewersList],
+                              class_='userlist'),
+                       tag.div(_('Additional notes:')) if notes else None,
                        tag.div(
                            format_to_html(self.env, context, notes),
                            class_='notes'
-                       ),
-                       tag.div(_('Files:')),
+                       ) if notes else None,
+                       tag.div(_('Files:')) if num_files else None,
                        filelist()
                        )
