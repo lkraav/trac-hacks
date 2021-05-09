@@ -224,7 +224,7 @@ class PeerReviewMain(Component):
         then it's OK to not define this method.
         """
         if resource.realm == 'peerreviewfile':
-            return href('peerreviewperform', IDFile=resource.id)
+            return href('peerreviewfile', resource.id)
         elif resource.realm == 'peerreview':
             return href.peerreviewview(resource.id)
 

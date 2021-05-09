@@ -384,7 +384,7 @@ ${review_notes}
 
         try:
             for f in data['review_files']:
-                txt += u"||[/peerreviewperform?IDFile=%s %s]|| %s ||%s" % \
+                txt += u"||[/peerreviewfile/%s %s]|| %s ||%s" % \
                        (f['file_id'], f['path'], f.num_comments, CRLF)
         except KeyError:
             pass

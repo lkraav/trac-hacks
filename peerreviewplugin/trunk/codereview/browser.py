@@ -173,7 +173,7 @@ class PeerReviewBrowser(Component):
                         'hash': row[2],
                         'status': row[3],
                         'file_id': row[4],
-                        'file_href': req.href.peerreviewperform(IDFile=row[4]),
+                        'file_href': req.href.peerreviewfile(row[4]),
                         'review_href': req.href.peerreviewview(row[0]),
                         'bg_color': bg}
                 trows += Template(tr_tmpl).safe_substitute(data)

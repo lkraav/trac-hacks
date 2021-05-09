@@ -162,7 +162,7 @@ class TestResource(unittest.TestCase):
         self.assertEqual('foo/peerreviewview/1' , self.plugin.get_resource_url(resource, href))
 
         resource = Resource('peerreviewfile', 1)
-        self.assertEqual('foo/peerreviewperform?IDFile=1' , self.plugin.get_resource_url(resource, href))
+        self.assertEqual('foo/peerreviewfile/1' , self.plugin.get_resource_url(resource, href))
 
 def test_suite():
     suite = unittest.TestSuite()

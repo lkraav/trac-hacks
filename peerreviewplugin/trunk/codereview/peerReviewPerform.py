@@ -16,6 +16,7 @@
 # repository browser's line number to indicate what lines are being
 # reviewed and if there are any comments on a particular line.
 import os
+import re
 from codereview.changeset import get_changeset_data
 from codereview.model import Comment, ReviewCommentModel, PeerReviewModel, ReviewFileModel
 from codereview.repo import file_data_from_repo
@@ -42,6 +43,7 @@ class PeerReviewPerform(Component):
     """
     implements(INavigationContributor, IRequestHandler, IHTMLPreviewAnnotator)
 
+    peerreview_file_re = re.compile(r'/peerreviewfile/([0-9]+)$')
     # IHTMLPreviewAnnotator methods
 
     def get_annotation_type(self):
@@ -69,7 +71,14 @@ class PeerReviewPerform(Component):
     # IRequestHandler methods
 
     def match_request(self, req):
+        match = self.peerreview_file_re.match(req.path_info)
+        if match:
+            req.args['fileid'] = match.group(1)
+            return True
+        self.env.log.info("Legacy URL 'peerReviewPerform' or 'peerreviewperform' called from: %s",
+                          req.get_header('Referer'))
         if req.path_info == '/peerreviewperform':
+            self.env.log.info("Legacy URL 'peerreviewperform' called from: %s", req.get_header('Referer'))
             return True
         elif req.path_info == '/peerReviewPerform':
             self.env.log.info("Legacy URL 'peerReviewPerform' called from: %s", req.get_header('Referer'))
@@ -79,7 +88,7 @@ class PeerReviewPerform(Component):
     def process_request(self, req):
         req.perm.require('CODE_REVIEW_VIEW')
 
-        fileid = req.args.get('IDFile')
+        fileid = req.args.get('fileid', req.args.get('IDFile'))
         if not fileid:
             raise TracError("No file ID given - unable to load page.", "File ID Error")
 
@@ -153,13 +162,13 @@ class PeerReviewPerform(Component):
         else:
             path, file_id = rev_files[idx - 1].split(':')
             path = os.path.basename(path)
-            add_ctxtnav(req, _("Previous File"), req.href.peerreviewperform(IDFile=file_id), title=_("File %s") % path)
+            add_ctxtnav(req, _("Previous File"), req.href.peerreviewfile(file_id), title=_("File %s") % path)
         if idx == len(rev_files)-1:
             add_ctxtnav(req, _("Next File"))
         else:
             path, file_id = rev_files[idx + 1].split(':')
             path = os.path.basename(path)
-            add_ctxtnav(req, _("Next File"), req.href.peerreviewperform(IDFile=file_id), title=_("File %s") % path)
+            add_ctxtnav(req, _("Next File"), req.href.peerreviewfile(file_id), title=_("File %s") % path)
 
     def create_script_data(self, req, data):
         """Create a dict with data for javascript. This includes
