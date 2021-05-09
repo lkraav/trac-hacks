@@ -35,7 +35,7 @@
               ${commentHTML}
               <div py:if="not is_finished and not review_locked and not not_allowed" class="buttons">
                   <input type="button" name="addcomment" value="Add New Comment"
-                         id="${'addcomment-view'+lineNum}"/>
+                         id="${'addcomment-view'+lineNum}" onClick="addComment(${lineNum}, ${fileID}, -1);"/>
                   <input type="hidden" name="fileid" value="" id="${'comment-fileid-view'+lineNum}"/>
                   <input type="hidden" name="line" value="" id="${'comment-line-view'+lineNum}" />
               </div>
@@ -44,9 +44,7 @@
               </p>
           </div>
 
-          <span py:when="1">Invalid Parameters</span>
-          <span py:when="2">Comment Text Blank</span>
-          <span py:when="3">Invalid Action Type</span>
+          <span py:when="'valueerror'">Invalid Parameters</span>
           <span py:when="closed">Review already closed</span>
         </py:choose>
     </div>

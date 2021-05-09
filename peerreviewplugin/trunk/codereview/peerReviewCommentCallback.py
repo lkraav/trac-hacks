@@ -74,9 +74,9 @@ class PeerReviewCommentHandler(Component):
                 if self.review_is_closed(req):
                     data['invalid'] = 'closed'
                     if hasattr(Chrome, 'jenv'):
-                        return 'peerreview_comment_callback_jinja.html', data
+                        return 'peerreview_comment_jinja.html', data
                     else:
-                        return 'peerreview_comment_callback.html', data, None
+                        return 'peerreview_comment.html', data, None
 
                 rfile = ReviewFileModel(self.env, fileid)
                 data['path'] = rfile['path'].lstrip('/')  # Trac path doesn't start with '/'. Db path does.
@@ -118,29 +118,17 @@ class PeerReviewCommentHandler(Component):
         if req.args.get('action') == 'commenttree':
             self.get_comment_tree(req, data)
             data['path'] = req.args.get('path', '')
-            if hasattr(Chrome, 'jenv'):
-                return 'peerreview_comment_jinja.html', data
-            else:
-                return 'peerreview_comment.html', data, None
         elif req.args.get('action') == 'addcommentdlg':
             data['create_add_comment_dlg'] = True
             data['form_token'] = req.form_token
-            if hasattr(Chrome, 'jenv'):
-                return 'peerreview_comment_jinja.html', data
-            else:
-                return 'peerreview_comment.html', data, None
+        else:
+            data['invalid'] = 'error'  # We shouldn't end here
 
-        actionType = req.args.get('actionType')
-        if actionType == 'getCommentFile':
-            self.env.log.info("Trying to get comment file. Not implemented.")
-            # self.getCommentFile_obsolete(req, data)
-            data['invalid'] = 5
-        else:
-            data['invalid'] = 5
         if hasattr(Chrome, 'jenv'):
-            return 'peerreview_comment_callback_jinja.html', data
+            return 'peerreview_comment_jinja.html', data
         else:
-            return 'peerreview_comment_callback.html', data, None
+            return 'peerreview_comment.html', data, None
+
 
     def review_is_closed(self, req):
         fileid = req.args.get('IDFile')
@@ -158,7 +146,7 @@ class PeerReviewCommentHandler(Component):
         linenum = req.args.get('LineNum') or req.args.get('line')
 
         if not fileid or not linenum:
-            data['invalid'] = 1
+            data['invalid'] = 'valueerror'
             return
 
         with self.env.db_query as db:
@@ -226,13 +214,7 @@ class PeerReviewCommentHandler(Component):
             <tr>
                 <td></td>
                 <td></td>
-                <td>
-                    <!--! Attachment -->
-                    <a py:if="comment.AttachmentPath" border="0" alt="Code Attachment"
-                       href="${callback}?actionType=getCommentFile&amp;fileName=${comment.AttachmentPath}&amp;IDFile=$fileid">
-                        <img src="${href.chrome('hw/images/paper_clip.gif')}" /> $comment.AttachmentPath
-                    </a>
-                </td>
+                <td></td>
                 <td class="comment-reply">
                    <a py:if="not is_locked" href="javascript:addComment($line, $fileid, $comment.comment_id)">Reply</a>
                 </td>
@@ -281,15 +263,7 @@ class PeerReviewCommentHandler(Component):
             <tr>
                 <td></td>
                 <td></td>
-                <td>
-                    ## Attachment
-                    # if comment.AttachmentPath:
-                    <a border="0" alt="Code Attachment"
-                       href="${callback}?actionType=getCommentFile&amp;fileName=${comment.AttachmentPath}&amp;IDFile=${fileid}">
-                        <img src="${href.chrome('hw/images/paper_clip.gif')}" /> ${comment.AttachmentPath}
-                    </a>
-                    # endif
-                </td>
+                <td></td>
                 <td class="comment-reply">
                    # if not is_locked:
                    <a href="javascript:addComment(${line}, ${fileid}, ${comment.comment_id})">Reply</a>
