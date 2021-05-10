@@ -11,7 +11,7 @@ import itertools
 from codereview.model import get_users, PeerReviewModel, PeerReviewerModel, \
     ReviewDataModel, ReviewFileModel
 from codereview.peerReviewCommentCallback import writeJSONResponse, writeResponse
-from codereview.repo import hash_from_file_node
+from codereview.repo import file_lines_from_node, hash_from_file_node
 from codereview.repobrowser import get_node_from_repo
 from codereview.util import get_files_for_review_id
 from functools import partial
@@ -19,6 +19,8 @@ from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
 from trac.util.translation import _
 from trac.versioncontrol.api import Node, RepositoryManager
+from trac.versioncontrol.diff import diff_blocks
+from trac.versioncontrol.web_ui.util import get_existing_node
 from trac.web.chrome import Chrome
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import add_script, add_script_data, add_stylesheet, web_context
@@ -86,8 +88,13 @@ class PeerChangeset(Component):
                     # hint how to perform a review until we have a proper diff view.
                     for change in data['changes']:
                         if change['change'] in ('add', 'copy', 'move'):
-                                change['comments'] = "Perform review on review page for 'Review %s'." % review['review_id']
-
+                            node = get_existing_node(self.env, data['repos'],
+                                                     change['new']['path'], change['new']['rev'])
+                            lines = file_lines_from_node(node)
+                            if lines:
+                                change['diffs'] = diff_blocks([], lines)
+                                change['old'] = {'rev': ' ---',
+                                                 'shortrev': ' ---'}
         return template, data, content_type
 
     def file_dict_from_changeset(self, req, cset, reponame, review=None):

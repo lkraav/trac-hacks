@@ -161,10 +161,14 @@ def get_nodes_for_dir(self, repodict, dir_node, fnodes, ignore_ext, incl_ext, ex
     return errors
 
 
-def file_data_from_repo(node, keyword_substitution=False):
+def file_lines_from_node(node, keyword_substitution=False):
+    """Get a list of lines for the text file represented by the given node.
 
-    if not node:
-        return u''
+    Note that it is assumed that the text is utf-8.
+    End separators are stripped of.
+    """
+    if not node or node.isdir:
+        return []
 
     dat = u''
     if keyword_substitution:

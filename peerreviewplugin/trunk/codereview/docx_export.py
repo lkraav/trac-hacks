@@ -13,7 +13,7 @@ from trac.util.text import to_unicode, to_utf8
 from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.web_ui.util import get_existing_node
 from .model import PeerReviewModel, PeerReviewerModel, ReviewCommentModel, ReviewFileModel
-from .peerReviewPerform import file_data_from_repo
+from .peerReviewPerform import file_lines_from_node
 
 try:
     from docx import Document
@@ -309,7 +309,7 @@ def get_file_data(env, f_info):
         rev = repos.normalize_rev(rev)
     rev_or_latest = rev or repos.youngest_rev
     node = get_existing_node(env, repos, f_info['path'], rev_or_latest)
-    return file_data_from_repo(node)
+    return file_lines_from_node(node)
 
 
 def create_comment_tree(comments):

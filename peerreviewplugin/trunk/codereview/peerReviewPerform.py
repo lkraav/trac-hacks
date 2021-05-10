@@ -19,7 +19,7 @@ import os
 import re
 from codereview.changeset import get_changeset_data
 from codereview.model import Comment, ReviewCommentModel, PeerReviewModel, ReviewFileModel
-from codereview.repo import file_data_from_repo
+from codereview.repo import file_lines_from_node
 from codereview.util import get_changeset_html, get_review_for_file, not_allowed_to_comment,\
     review_is_finished, review_is_locked, to_trac_path
 from trac.core import *
@@ -439,8 +439,8 @@ def create_diff_data(req, data):
     node = data['node']
     par_node = data['par_node']
 
-    old = file_data_from_repo(par_node)
-    new = file_data_from_repo(node)
+    old = file_lines_from_node(par_node)
+    new = file_lines_from_node(node)
 
     if diff_data['options']['contextall']:
         context = None
