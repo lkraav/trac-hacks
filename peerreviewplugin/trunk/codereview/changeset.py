@@ -18,7 +18,7 @@ from functools import partial
 from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
 from trac.util.translation import _
-from trac.versioncontrol.api import Node, RepositoryManager
+from trac.versioncontrol.api import Changeset, Node, RepositoryManager
 from trac.versioncontrol.diff import diff_blocks
 from trac.versioncontrol.web_ui.util import get_existing_node
 from trac.web.chrome import Chrome
@@ -87,7 +87,7 @@ class PeerChangeset(Component):
                     # These are files which were copied, moved or added. Give the user a
                     # hint how to perform a review until we have a proper diff view.
                     for change in data['changes']:
-                        if change['change'] in ('add', 'copy', 'move'):
+                        if change['change'] in ('add', 'copy', 'move') and not change['diffs']:
                             node = get_existing_node(self.env, data['repos'],
                                                      change['new']['path'], change['new']['rev'])
                             lines = file_lines_from_node(node)
@@ -95,6 +95,7 @@ class PeerChangeset(Component):
                                 change['diffs'] = diff_blocks([], lines)
                                 change['old'] = {'rev': ' ---',
                                                  'shortrev': ' ---'}
+
         return template, data, content_type
 
     def file_dict_from_changeset(self, req, cset, reponame, review=None):
@@ -330,19 +331,20 @@ def create_changeset_review(self, req):
     # Create file entries
     path, kind, change, base_path, base_rev = range(0, 5)
     for item in changeset.get_changes():
-        rfile = ReviewFileModel(self.env)
-        rfile['review_id'] = id_
-        # Path must have leading '/' in the database for historical reasons.
-        rfile['path'] = u'/' + item[path].lstrip('/')
-        rfile['revision'] = rev
-        rfile['line_start'] = 0
-        rfile['line_end'] = 0
-        rfile['repo'] = reponame
-        node, display_rev, context = get_node_from_repo(req, repo, rfile['path'], rfile['revision'])
-        if node and node.kind == Node.FILE:
-            rfile['changerevision'] = rev
-            rfile['hash'] = hash_from_file_node(node)
-            rfile.insert()
+        if item[change] != Changeset.DELETE:
+            rfile = ReviewFileModel(self.env)
+            rfile['review_id'] = id_
+            # Path must have leading '/' in the database for historical reasons.
+            rfile['path'] = u'/' + item[path].lstrip('/')
+            rfile['revision'] = rev
+            rfile['line_start'] = 0
+            rfile['line_end'] = 0
+            rfile['repo'] = reponame
+            node, display_rev, context = get_node_from_repo(req, repo, rfile['path'], rfile['revision'])
+            if node and node.kind == Node.FILE:
+                rfile['changerevision'] = rev
+                rfile['hash'] = hash_from_file_node(node)
+                rfile.insert()
 
     # Mark that this is a changeset review
     dm = ReviewDataModel(self.env)
