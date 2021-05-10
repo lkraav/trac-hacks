@@ -113,6 +113,8 @@ jQuery(document).ready(function($) {
 
         $("#create-review-submit").on('click', function(event){
             event.preventDefault ? event.preventDefault() : event.returnValue = false;
+            $("#create-review-submit").prop('disabled', true);
+            $('#peer-spinner').show();
             $.post(peer_changeset_url, $('#create-peerreview-form').serialize(), function(data){
                 $('#peer-create-review').hide("fade", function(){
                    $('#peer-create-review').after(data['html']);
@@ -121,9 +123,14 @@ jQuery(document).ready(function($) {
                        loadComments(key, data['filedata'][key]);
                      };
                    };
+                   $('#peer-spinner').hide();
                 });
             },
-            'json');
+            'json').fail(function(){
+                $("#create-review-submit").prop('disabled', false);
+                $('#peer-spinner').hide();
+                alert('Unable to create codereview');
+              });
             return false;
         });
 
@@ -260,7 +267,7 @@ jQuery(document).ready(function($) {
     });
   };
 
-  $('#overview').after('<div id="peer-create-review"></div><div id="peer-add-comment"></div>');
+  $('#overview').after('<div id="peer-spinner" style="display: none"></div><div id="peer-create-review"></div><div id="peer-add-comment"></div>');
 
   /* Get 'Codereview' section */
   var data = 'peer_repo=' + peer_repo + '&peer_rev=' + peer_rev
