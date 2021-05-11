@@ -24,8 +24,6 @@ from .tracgenericclass.model import IConcreteClassProvider, AbstractVariableFiel
 __author__ = 'Cinc'
 
 
-
-
 db_name_old = 'codereview_version'  # for database version 1
 db_name = 'peerreview_version'
 db_version = 2  # Don't change this one!
@@ -94,6 +92,23 @@ class PeerReviewModel(AbstractVariableFieldsObject):
             self['closed'] = None
         self['status'] = new_status
         self.save_changes(author=author)
+
+        # Handle changeset reviews
+
+        dm = ReviewDataModel(self.env)
+        dm['type'] = 'changeset'
+        dm['review_id'] = self['review_id']
+        rev_data = list(dm.list_matching_objects())
+        if rev_data:
+            changeset = rev_data[-1]
+            if self['status'] == 'closed':
+                # Mark changeset review as closed. 'data' will be something like: reponame:xxxxx:closed
+                changeset['data'] += u':closed'
+            else:
+                # User reopened the review
+                if changeset['data'].endswith(u':closed'):
+                    changeset['data'] = changeset['data'][:-7]
+            changeset.save_changes(author)
 
         # Change the status of files attached to this review
 

@@ -116,15 +116,20 @@ jQuery(document).ready(function($) {
             $("#create-review-submit").prop('disabled', true);
             $('#peer-spinner').show();
             $.post(peer_changeset_url, $('#create-peerreview-form').serialize(), function(data){
-                $('#peer-create-review').hide("fade", function(){
-                   $('#peer-create-review').after(data['html']);
-                   if(data['success'] == 1){
-                     for(var key in data['filedata']){
-                       loadComments(key, data['filedata'][key]);
-                     };
-                   };
-                   $('#peer-spinner').hide();
-                });
+                if(peer_new_file == 1) {
+                   location.reload(true);
+                }
+                else{
+                    $('#peer-create-review').hide("fade", function(){
+                       $('#peer-create-review').after(data['html']);
+                       if(data['success'] == 1){
+                         for(var key in data['filedata']){
+                           loadComments(key, data['filedata'][key]);
+                         };
+                       };
+                       $('#peer-spinner').hide();
+                    });
+                }
             },
             'json').fail(function(){
                 $("#create-review-submit").prop('disabled', false);
@@ -194,7 +199,19 @@ jQuery(document).ready(function($) {
         markComment(line, file_id, comment_id, 'notread', review_id);
     };
 
-  /* USer wants to add a comment */
+  window.toggleComment = function toggleComment(){
+
+    let selector = '#' + $(this).data('ctr');
+    if($(selector + ':visible').length == 1){
+      $(selector).hide();
+    }
+    else{
+      $(selector).show();
+    }
+    return false;
+  };
+
+  /* User wants to add a comment */
   window.addComment = function addComment(line, fileid, parentid)
     {
         $("#comment-line").val(line);
@@ -222,7 +239,8 @@ jQuery(document).ready(function($) {
         }else{
           $(th).parent().after('<tr class="comment-tr" id="CTR' + line + '"><td colspan="2"></td><td colspan="2" id="CTD' + line + '">Loading...</td></tr>')
         }
-        $(th).replaceWith('<th>' + line + '</th>')
+        let link = $('<a/>', {text: line, href: '#', 'data-ctr': 'CTR' + line}).on('click', toggleComment).prepend($('<img>', {src: peer_pin_icon}))
+        $(th).replaceWith($('<th></th').append(link))
     };
 
     $(diff_table).find('#CTD' + line + ' .peer-loading').show();
@@ -257,12 +275,14 @@ jQuery(document).ready(function($) {
         }else{
           $(this).parent().after('<tr class="comment-tr" id="CTR' + line + '"><td colspan="2"></td><td colspan="2" id="CTD' + line + '">Loading...</td></tr>')
         }
+        let link = $('<a/>', {text: line, href: '#', 'data-ctr': 'CTR' + line}).on('click', toggleComment).prepend($('<img>', {src: peer_pin_icon}))
+        $(this).replaceWith($('<th></th').append(link))
         let url = peer_comment_url + '?action=commenttree&fileid=' + fid_comments[0] + '&line=' + line + '&path=' + path
         $('#CTD' + line).load(url);
       }
       else{
-      if($.isNumeric(line) && peer_perm_dev == 1)
-        $(this).replaceWith('<th data-line="' + line + '"><a href="javascript:addComment(' + line + ', ' + fileid + ', -1)">' + line + '</a></th>')
+          if($.isNumeric(line) && peer_perm_dev == 1)
+            $(this).replaceWith('<th data-line="' + line + '"><a href="javascript:addComment(' + line + ', ' + fileid + ', -1)">' + line + '</a></th>')
       }
     });
   };
@@ -270,7 +290,7 @@ jQuery(document).ready(function($) {
   $('#overview').after('<div id="peer-spinner" style="display: none"></div><div id="peer-create-review"></div><div id="peer-add-comment"></div>');
 
   /* Get 'Codereview' section */
-  var data = 'peer_repo=' + peer_repo + '&peer_rev=' + peer_rev
+  var data = 'peer_repo=' + peer_repo + '&peer_rev=' + peer_rev + '&peer_new_file=' + peer_new_file
   $.get(peer_changeset_url, data, function(res){
       if(res['action'] === 'create')
       {

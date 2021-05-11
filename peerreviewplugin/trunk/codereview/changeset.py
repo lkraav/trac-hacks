@@ -13,7 +13,7 @@ from codereview.model import get_users, PeerReviewModel, PeerReviewerModel, \
 from codereview.peerReviewCommentCallback import writeJSONResponse, writeResponse
 from codereview.repo import file_lines_from_node, hash_from_file_node
 from codereview.repobrowser import get_node_from_repo
-from codereview.util import get_files_for_review_id
+from codereview.util import get_files_for_review_id, to_trac_path
 from functools import partial
 from trac.core import Component, implements
 from trac.resource import get_resource_url, Resource
@@ -71,30 +71,36 @@ class PeerChangeset(Component):
                          'peer_comment_url': req.href.peercomment(),
                          'tacUrl': req.href.chrome('/hw/images/thumbtac11x11.gif'),
                          'peer_perm_dev': 0,
+                         'peer_new_file': 0,  # for deciding if we need to reload the page.
+                         'peer_pin_icon': req.href.chrome('/hw/images/thumbtac11x11.gif'),
                          }
                 if f_data:
                     jdata['peer_file_comments'] = f_data
                 if 'CODE_REVIEW_DEV' in req.perm:
                     jdata['peer_perm_dev'] = 1
 
-                add_script_data(req, jdata)
-                add_script(req, "hw/js/peer_trac_changeset.js")
-                add_script(req, "hw/js/peer_user_list.js")
-                Chrome(self.env).add_jquery_ui(req)
-                add_script(req, 'common/js/folding.js')
-
-                if review:
-                    # These are files which were copied, moved or added. Give the user a
-                    # hint how to perform a review until we have a proper diff view.
-                    for change in data['changes']:
-                        if change['change'] in ('add', 'copy', 'move') and not change['diffs']:
+                # These are files which were copied, moved or added. Trac normally doesn't
+                # have a diff view for them so add the data here.
+                for change in data['changes']:
+                    if change['change'] in ('add', 'copy', 'move') and not change['diffs']:
+                        jdata['peer_new_file'] = 1  # We reload the page after review creation
+                        if review:
                             node = get_existing_node(self.env, data['repos'],
                                                      change['new']['path'], change['new']['rev'])
                             lines = file_lines_from_node(node)
                             if lines:
                                 change['diffs'] = diff_blocks([], lines)
+                                # Don't add 'href' to this dict otherwise the header with revision
+                                # info will become a link. A value of None or '' won't prevent it.
                                 change['old'] = {'rev': ' ---',
-                                                 'shortrev': ' ---'}
+                                                 'shortrev': ' ---',
+                                                 }
+
+                add_script_data(req, jdata)
+                add_script(req, "hw/js/peer_trac_changeset.js")
+                add_script(req, "hw/js/peer_user_list.js")
+                Chrome(self.env).add_jquery_ui(req)
+                add_script(req, 'common/js/folding.js')
 
         return template, data, content_type
 
@@ -114,9 +120,10 @@ class PeerChangeset(Component):
         f_data = {}
         review = review or get_review_for_changeset(self.env, cset, reponame)
         if review:
+            # We ask for include comment inforamtion here
             rfiles = get_files_for_review_id(self.env, req, review['review_id'], True)
             for rfile in rfiles:
-                path = rfile['path'].lstrip('/')  # Trac path doesn't start with '/'. Db path does.
+                path = to_trac_path(rfile['path'])  # Trac path doesn't start with '/'. Db path does.
                 lines = set([comment['line_num'] for comment in rfile.comment_data])
                 if lines:
                     f_data[path] = [rfile['file_id'], list(lines)]
@@ -135,10 +142,11 @@ class PeerChangeset(Component):
   <input type="hidden" name="__FORM_TOKEN" value="{form-token}" />
   <fieldset>
     <legend>Select reviewers for your review.</legend>
-    %s
+    {userselect}
     <div class="buttons">
       <input id="create-review-submit" type="submit" name="create" value="Create Code Review"/>
     </div>
+    <div><p class="help">{reload}</p></div>
   </fieldset>
 </form>
 <div id="user-rem-confirm" title="Remove user?">
@@ -170,19 +178,20 @@ class PeerChangeset(Component):
             'new': 'yes',
             'users': users,
             'cycle': itertools.cycle,
-            'authorinfo': partial(chrome.authorinfo, req)
+            'authorinfo': partial(chrome.authorinfo, req),
+            'reload': _("The page will be reloaded.") if req.args.getint('peer_new_file') == 1 else ""
         }
         if hasattr(Chrome, 'jenv'):
             template = chrome.load_template('peerreviewuser_jinja.html')
-            rendered = chrome.render_template_string(template, data)
+            data['userselect'] = chrome.render_template_string(template, data)
         else:
             template = chrome.load_template('user_list.html', None)
-            rendered = template.generate(**data).render()
+            data['userselect'] = template.generate(**data).render()
 
         peerreview_div = '<div class="collapsed"><h3 class="foldable">%s</h3>' \
                          '<div id="peer-codereview">%s</div>' \
                          '</div><div><p class="help">%s</p></div>' % \
-                         (_('Codereview'), _form.format(**data) % rendered,
+                         (_('Codereview'), _form.format(**data),
                           _("You need to create a review if you want to comment on files."))
         return peerreview_div
 
@@ -211,7 +220,8 @@ class PeerChangeset(Component):
             </dl>
         </div>
         """.format(title=_('Codereview'))
-        def create_user_list():
+
+        def create_user_list(reviewer):
             chrome = Chrome(self.env)
             if reviewer:
                 usr = [u'<tr><td class="user-icon"><span class="ui-icon ui-icon-person"></span></td><td>%s</td></tr>' % chrome.authorinfo(req,
@@ -230,10 +240,9 @@ class PeerChangeset(Component):
             return no_perm_tmpl.format(msg=_("You don't have permission to view code review information."))
 
         res = Resource('peerreview', review['review_id'])
-        reviewer = list(PeerReviewerModel.select_by_review_id(self.env, review['review_id']))
         data = {
             'status': review['status'],
-            'user_list': create_user_list(),
+            'user_list': create_user_list(list(PeerReviewerModel.select_by_review_id(self.env, review['review_id']))),
             'review_url': get_resource_url(self.env, res, req.href),
             'review_id': review['review_id'],
             'status_label': _("Status:"),
@@ -360,7 +369,7 @@ def get_review_for_changeset(env, cs_num, repo_name):
      Return None if not found."""
     dm = ReviewDataModel(env)
     dm['type'] = 'changeset'
-    dm['data'] = "%s:%s" % (repo_name, cs_num)
+    dm['data'] = "%s:%s" % (repo_name, cs_num)  # this will automatically skip closed reviews
     rev_data = list(dm.list_matching_objects())
 
     # Permission handling is done in the called methods so the proper message is created there.
@@ -385,4 +394,4 @@ def get_changeset_data(env, review_id):
     rev_data = list(dm.list_matching_objects())
     if not rev_data:
         return ['', '']
-    return rev_data[-1]['data'].split(':')
+    return rev_data[-1]['data'].split(':')[:2]

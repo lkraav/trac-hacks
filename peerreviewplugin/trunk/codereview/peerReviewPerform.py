@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2005-2006 Team5
-# Copyright (C) 2016-2019 Cinc
+# Copyright (C) 2016-2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING.txt, which
@@ -30,7 +30,7 @@ from trac.util.datefmt import format_date, to_datetime, user_time
 from trac.util.html import html as tag
 from trac.util.translation import _
 from trac.web.chrome import add_ctxtnav, INavigationContributor, Chrome, \
-                            add_link, add_stylesheet, add_script_data, add_script, web_context
+                            add_stylesheet, add_script_data, add_script, web_context
 from trac.web.main import IRequestHandler
 from trac.wiki.formatter import format_to_html
 from trac.versioncontrol.web_ui.util import *
@@ -467,12 +467,16 @@ def create_diff_data(req, data):
             'new': {'path': node.path,
                     'rev': "%s (Review #%s)" % (node.rev, data['review']['review_id']),
                     'shortrev': data['display_rev'](node.rev),
-                    'href': file_href
+                    'href': file_href,
+                    'title': _("Show revision %(rev)s of this file in browser",
+                               rev=data['display_rev'](node.rev))
                     },
             'old': {'path': par_node.path if par_node else '',
                     'rev': "%s%s" % (par_rev, par_rev_info),
                     'shortrev': data['display_rev'](par_rev),
-                    'href': par_href
+                    'href': par_href,
+                    'title': _("Show revision %(rev)s of this file in browser",
+                               rev=data['display_rev'](par_rev))
                     },
             'props': []}
     changes.append(info)
