@@ -135,13 +135,10 @@ table.code th.performCodeReview{
   margin: 0.75em;
 }
 
-#prepare-ticket fieldset{
-  padding: 1em;
+.ticket-table {
+  font-size: 90%;
 }
 
-.ticket-table th{
-  padding: 1em;
-}
 /* file browser */
 #add-file{
   margin-bottom: 2em;

@@ -33,15 +33,44 @@ from trac.util.translation import _
 from trac.versioncontrol.api import RepositoryManager
 from trac.web.chrome import add_link, add_script, add_stylesheet, Chrome, INavigationContributor, web_context
 from trac.web.main import IRequestHandler
-from trac.wiki.formatter import format_to_html, format_to_oneliner
+from trac.wiki.model import WikiPage
+from trac.wiki.formatter import format_to_html
 
 
 class PeerReviewView(Component):
     """Displays a summary page for a review.
 
-    === The following configuration options may be set:
+    === Configuration
 
     [[TracIni(peerreview)]]
+
+    === Ticket template
+
+    If the review status is in the list defined by {{{show_ticket}}}
+    you may create a ticket
+    prefilled with review details from within the review page. This can be
+    used to inform team members about pending work or a succesful review.
+
+    The ticket description is defined in the wiki page {{{CodeReview/TicketTemplate}}}.
+    If this page doesn't exists a default description is used. The following
+    variables can be used in the ticket template:
+
+    || **${review_id}** || will be replaced with the review id ||
+    || **${review_name}** || name of the current review ||
+    || **${review_notes}** || notes of the current review ||
+    || **${review_files}** || a table with files belonging to the review ||
+
+    The inserted file table is a wiki table with two columns like this:
+    {{{
+    || path/to/file || number of comments ||
+    || ... || ... ||
+    }}}
+
+    You may use the following wiki formatting for a file table with custom headers:
+    {{{
+    ||= File path =||= Comments =||
+    ${review_files}
+    }}}
     """
     implements(IRequestHandler, INavigationContributor, IWorkflowOperationProvider, IWorkflowTransitionListener)
 
@@ -54,13 +83,13 @@ class PeerReviewView(Component):
                    "may comment. Used to lock a review against modification after all reviewing persons have "
                    "finished their task.")
 
-    show_ticket = BoolOption("peerreview", "show_ticket", False,
-                             doc="A ticket may be created with information about "
-                                 "a review. If set to {{{True}}} a ticket preview on "
-                                 "the view page of a review will be shown and a button "
-                                 "for filling the '''New Ticket''' page with data. "
-                                 "The review must have status ''reviewed''. Only the "
-                                 "author or a manager have the necessary permisisons.")
+    show_ticket = ListOption("peerreview", "show_ticket", ['reviewed', 'in-review', 'approved', 'disapproved'],
+                             doc="A ticket may be created from within the review page with information about "
+                                 "a review. A ticket preview "
+                                 "and a button for filling the '''New Ticket''' page with data will be shown "
+                                 "on the view page of a review if the review status is in this list "
+                                 "of states. [[BR]][[BR]]"
+                                 "You must be the review author or a manager to use this feature.")
 
     peerreview_view_re = re.compile(r'/peerreviewview/([0-9]+)$')
 
@@ -362,36 +391,46 @@ class PeerReviewView(Component):
         return review
 
     desc = u"""
-Review [/peerreviewview/${review_id} ${review_name}] is finished.
+Review [review:${review_id} ${review_name}].
 === Review
 
 ||= Name =|| ${review_name} ||
-||= ID =|| ${review_id} ||
-[[br]]
-**Review Notes:**
+||= ID =|| [review:${review_id}] ||
+
+=== Review Notes
+
 ${review_notes}
 
 === Files
 ||= File name =||= Comments =||
+${review_files}
 """
 
     def add_ticket_data(self, req, data):
         """Create the ticket description for tickets created from the review page"""
         review = data['review']
-        tmpl = Template(self.desc)
-        txt = tmpl.substitute(review_name=review['name'], review_id=review['review_id'],
-                                   review_notes="")  #review['notes'])
+
+        wikipage = WikiPage(self.env, 'CodeReview/TicketTemplate')
+        if wikipage.exists:
+            tmpl = Template(wikipage.text)
+        else:
+            tmpl = Template(self.desc)
 
         try:
+            file_table = ''
             for f in data['review_files']:
-                txt += u"||[/peerreviewfile/%s %s]|| %s ||%s" % \
+                file_table += u"||[rfile:%s %s]|| %s ||%s" % \
                        (f['file_id'], f['path'], f.num_comments, CRLF)
         except KeyError:
             pass
 
+        txt = tmpl.substitute(review_name=review['name'], review_id=review['review_id'],
+                              review_notes=review['notes'] if review['notes'] else '',
+                              review_files=file_table)
+
         data['ticket_desc_wiki'] = self.create_preview(req, txt)
         data['ticket_desc'] = txt
-        data['ticket_summary'] = u'Problems with Review "%s"' % review['name']
+        data['ticket_summary'] = u'Review "%s"' % review['name']
 
     def create_preview(self, req, text):
         resource = Resource('peerreview')

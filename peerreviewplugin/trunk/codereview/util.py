@@ -85,9 +85,10 @@ def review_is_locked(config, review, authname=""):
     """For a locked review a user can't change his voting
     :param config: Trac config object
     :param review: review object
-    :authname: login name of user
+    :param authname: login name of user
 
-    :return True if review is in lock state, usually 'reviewed'.
+    :return True if review is in lock state else False. Default lock state is
+            usually 'reviewed'.
 
     authname may be an empty string to check if a review is in the lock state at all.
     If not empty the review is not locked for the user with the given login name.
@@ -98,9 +99,11 @@ def review_is_locked(config, review, authname=""):
     lock_states = config.getlist("peerreview", "reviewer_locked_states")
     return review['status'] in lock_states
 
+
 def get_changeset_html(env, req, rev, repos):
     """Create html for use in templates from changeset and repository information
 
+    :param env: Environment object
     :param req: Request object
     :param rev: changeset revision as a string
     :param repos: Repository object for this changeset
@@ -117,9 +120,11 @@ def get_changeset_html(env, req, rev, repos):
         changeset_html = ''
     return changeset_html
 
+
 def get_files_for_review_id(env, req, review_id, comments=False):
     """Get all file objects belonging to the given review id. Provide the number of comments if asked for.
 
+    :param env: Environment object
     :param review_id: id of review as an int
     :param req: Request object
     :param comments: if True add information about comments as attributes to the file objects

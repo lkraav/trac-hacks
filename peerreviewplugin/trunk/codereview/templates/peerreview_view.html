@@ -150,8 +150,10 @@
             </div>
 
             <!--! Ticket creation in Trac -->
-            <py:if test="(manager or review['owner'] == req.authname) and review_done and show_ticket">
-                <h3>Prepare ticket</h3>
+            <py:if test="(manager or review['owner'] == req.authname) and review['status'] in show_ticket">
+                <div class="collapsed">
+                    <h3 class="foldable">Create ticket</h3>
+                <div>
                 <form class="workflow-actions" action="${req.href.newticket()}" method="post" target="_blank" id="prepare-ticket">
                     <input type="hidden" name="preview" value="" />
                     <input type="hidden" name="field_project" value="${review['project']}" />
@@ -178,14 +180,16 @@
                             </tr>
                     </table>
                     <div class="buttons">
-                        <input type="submit" value="Prepare Ticket"/>
+                        <input type="submit" value="Create Ticket"/>
                     </div>
+                    <p class="help">
+                     Clicking <strong>Create Ticket</strong> will open a <strong>New Ticket</strong> page where you may
+                    modify all settings.
+                    </p>
                     </fieldset>
                 </form>
-                <p class="help">
-                     Clicking <strong>Prepare Ticket</strong> will open a <strong>New Ticket</strong> page where you may
-                    modify all settings.
-                </p>
+                </div>
+            </div>
             </py:if>
 
             <div>
