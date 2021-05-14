@@ -10,8 +10,11 @@ from trac.perm import IPermissionRequestor
 from trac.wiki.api import WikiSystem
 from trac.web.api import RequestDone
 from trac.web.chrome import ITemplateProvider, add_notice, add_script
+try:
+    import defaults
+except ImportError:
+    import wikiprint.defaults as defaults
 
-import wikiprint.defaults as defaults
 import wikiprint
 from .api import IWikiPrintFormat
 
