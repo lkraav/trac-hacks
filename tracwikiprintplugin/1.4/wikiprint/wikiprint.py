@@ -1,16 +1,28 @@
-"""
-Copyright (C) 2008 Prognus Software Livre - www.prognus.com.br
-Author: Diorgenes Felipe Grzesiuk <diorgenes@prognus.com.br>
-Modified by: Alvaro Iradier <alvaro.iradier@polartech.es>
-"""
+# -*- coding: utf-8 -*-
 
-import StringIO
+# Copyright (C) 2008 Prognus Software Livre - www.prognus.com.br
+# Copyright (C) 2021 Cinc
+#
+# Author: Diorgenes Felipe Grzesiuk <diorgenes@prognus.com.br>
+# Modified by: Alvaro Iradier <alvaro.iradier@polartech.es>
 import os
 import re
 import tempfile
 import time
-import urllib2
-import urlparse
+
+try:
+    from StringIO import StringIO as WikiPrintIO
+    import urllib2 as url_lib
+    import urlparse as url_parse
+    import defaults
+    PY2 = True
+except ImportError:
+    import urllib.request as url_lib
+    import urllib.parse as url_parse
+    from io import BytesIO as WikiPrintIO
+    from io import StringIO as OutlineIO
+    import wikiprint.defaults as defaults
+    PY2 = False
 from pkg_resources import resource_filename
 
 from trac.config import Option, BoolOption, ListOption
@@ -31,7 +43,6 @@ try:
 except ImportError:
     import ho.pisa as pisa
 
-import defaults
 
 # Kludge to workaround the lack of absolute imports in Python version prior to
 # 2.5
@@ -56,6 +67,7 @@ FIX_HTML_RES = [
     # removing empty <tr> reportlab/platypus/tables.py chokes on
     re.compile(r'<tr.*>\s*</tr>')
 ]
+
 
 class linkLoader:
 
@@ -85,7 +97,7 @@ class linkLoader:
             if name.startswith('http://') or name.startswith('https://'):
                 self.env.log.debug(
                     "WikiPrint.linkLoader => Resolving URL: %s", name)
-                url = urlparse.urljoin(relative, name)
+                url = url_parse.urljoin(relative, name)
                 self.env.log.debug(
                     "WikiPrint.linkLoader => urljoined URL: %s", url)
             elif self.allow_local:
@@ -94,13 +106,13 @@ class linkLoader:
                     "WikiPrint.linkLoader => Resolve local filesystem %s", name)
                 return name
             else:
-                #Relative path
+                # Relative path
                 self.env.log.debug(
                     "WikiPrint.linkLoader => Relative path %s to %s", name,
-                    urlparse.urljoin(self.req.abs_href(), name))
-                url = urlparse.urljoin(self.req.abs_href(), name)
+                    url_parse.urljoin(self.req.abs_href(), name))
+                url = url_parse.urljoin(self.req.abs_href(), name)
 
-            path = urlparse.urlsplit(url)[2]
+            path = url_parse.urlsplit(url)[2]
             self.env.log.debug("WikiPrint.linkLoader => path: %s", path)
             suffix = ''
             if '.' in path:
@@ -113,19 +125,19 @@ class linkLoader:
             # Allow wikiprint to authenticate using user and password,
             # Basic HTTP Auth or Digest
             if self.env.config.get('wikiprint', 'httpauth_user'):
-                pwmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+                pwmgr = url_lib.HTTPPasswordMgrWithDefaultRealm()
                 pwmgr.add_password(
                     None, url,
                     self.env.config.get('wikiprint', 'httpauth_user'),
                     self.env.config.get('wikiprint', 'httpauth_password'))
-                auth_handler = urllib2.HTTPBasicAuthHandler(pwmgr)
-                auth_handler2 = urllib2.HTTPDigestAuthHandler(pwmgr)
+                auth_handler = url_lib.HTTPBasicAuthHandler(pwmgr)
+                auth_handler2 = url_lib.HTTPDigestAuthHandler(pwmgr)
 
-                opener = urllib2.build_opener(auth_handler, auth_handler2)
-                urllib2.install_opener(opener)
+                opener = url_lib.build_opener(auth_handler, auth_handler2)
+                url_lib.install_opener(opener)
 
             # Prepare the request with the auth cookie
-            request = urllib2.Request(url)
+            request = url_lib.Request(url)
             self.env.log.debug(
                 "Adding cookie to HTTP request: pdfgenerator_cookie=%s",
                 self.auth_cookie)
@@ -133,7 +145,7 @@ class linkLoader:
                 "Cookie", "pdfgenerator_cookie=%s" % self.auth_cookie)
 
             # Make the request and download the file
-            ufile = urllib2.urlopen(request)
+            ufile = url_lib.urlopen(request)
             tfile = file(path, 'wb')
             size = 0
             while True:
@@ -151,7 +163,7 @@ class linkLoader:
                 path, size)
             return path
 
-        except Exception, e:
+        except Exception as e:
             self.env.log.debug("WikiPrint.linkLoader ERROR: %s", e)
         return None
 
@@ -272,7 +284,7 @@ class WikiPrint(Component):
 
         # Replace PageOutline macro with Table of Contents
         if book:
-            #If book, remove [[TOC]], and add at beginning
+            # If book, remove [[TOC]], and add at beginning
             page = page.replace('[[pdf-toc]]', '')
             page = Markup(self.get_toc()) + Markup(page)
         else:
@@ -280,10 +292,11 @@ class WikiPrint(Component):
 
         page = self.add_headers(req, page, book, title=title, subject=subject,
                                 version=version, date=date)
-        page = page.encode(self.default_charset, 'replace')
+        # page = page.encode(self.default_charset, 'replace')
+        page = to_unicode(page)
         css_data = self.get_css(req)
 
-        pdf_file = StringIO.StringIO()
+        pdf_file = WikiPrintIO()
 
         auth_cookie = hex_entropy()
         loader = linkLoader(self.env, req, auth_cookie)
@@ -297,7 +310,7 @@ class WikiPrint(Component):
             """, (auth_cookie, req.authname, '127.0.0.1', int(time.time())))
 
         pdf = pisa.CreatePDF(page, pdf_file, show_errors_as_pdf=True,
-                             default_css=css_data,
+                             default_css=None,  # css_data,
                              link_callback=loader.getFileName)
         out = pdf_file.getvalue()
         pdf_file.close()
@@ -361,12 +374,12 @@ class WikiPrint(Component):
                 filename = resource_filename('.'.join(parts[:-1]),
                                              parts[-1] + '.py')
                 formatter = HtmlFormatter(style=style_cls)
-                content = u'\n\n'.join([
+                content = to_unicode(u'\n\n'.join([
                     formatter.get_style_defs('div.code pre'),
                     formatter.get_style_defs('table.code td')
-                ]).encode('utf-8')
+                ]))
                 style += Markup(content)
-            except ValueError, e:
+            except ValueError:
                 pass
 
         page = \
@@ -442,11 +455,14 @@ class WikiToPDFPage(Component):
 
         page = wikiprint.wikipage_to_html(text, page_name, req)
 
-        #Get page title from first header in outline
-        out = StringIO.StringIO()
+        # Get page title from first header in outline
+        if PY2:
+            out = WikiPrintIO()
+        else:
+            out = OutlineIO()
         context = web_context(req, Resource('wiki', page_name))
         outline = OutlineFormatter(self.env, context)
-        outline.format(text, out, 1, 1)
+        outline.format(to_unicode(text), out, 1, 1)
 
         title = wikipage.name
         for depth, anchor, text in outline.outline:
@@ -459,7 +475,7 @@ class WikiToPDFPage(Component):
                                   title=title,
                                   subject="%s - %s" % (self.env.project_name,
                                                        page_name),
-                                  version=str(wikipage.version),
+                                  version=to_unicode(wikipage.version),
                                   date=format_datetime(to_datetime(None)))
         return out, 'application/pdf'
 

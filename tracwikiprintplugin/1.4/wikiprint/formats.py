@@ -8,8 +8,8 @@ from trac.core import Component, implements
 from trac.web.api import RequestDone
 from trac.wiki.model import WikiPage
 
-from api import IWikiPrintFormat
-from wikiprint import WikiPrint
+from .api import IWikiPrintFormat
+from .wikiprint import WikiPrint
 
 
 class WikiPrintOutput(Component):

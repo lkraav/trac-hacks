@@ -11,9 +11,9 @@ from trac.wiki.api import WikiSystem
 from trac.web.api import RequestDone
 from trac.web.chrome import ITemplateProvider, add_notice, add_script
 
-import defaults
+import wikiprint.defaults as defaults
 import wikiprint
-from api import IWikiPrintFormat
+from .api import IWikiPrintFormat
 
 
 class WikiPrintAdmin(Component):
