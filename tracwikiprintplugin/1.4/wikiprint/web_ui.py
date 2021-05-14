@@ -1,22 +1,39 @@
-"""
-Copyright (C) 2008 Prognus Software Livre - www.prognus.com.br
-Author: Diorgenes Felipe Grzesiuk <diorgenes@prognus.com.br>
-Modified by: Alvaro Iradier <alvaro.iradier@polartech.es>
-"""
-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2008 Prognus Software Livre - www.prognus.com.br
+# Copyright (C) 2021 Cinc
+#
+# Author: Diorgenes Felipe Grzesiuk <diorgenes@prognus.com.br>
+# Modified by: Alvaro Iradier <alvaro.iradier@polartech.es>
 from trac.admin.api import IAdminPanelProvider
 from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import IPermissionRequestor
+from trac.util.text import to_unicode
 from trac.wiki.api import WikiSystem
 from trac.web.api import RequestDone
-from trac.web.chrome import ITemplateProvider, add_notice, add_script
+from trac.web.chrome import add_notice, add_script, Chrome, ITemplateProvider
 try:
     import defaults
 except ImportError:
     import wikiprint.defaults as defaults
 
-import wikiprint
 from .api import IWikiPrintFormat
+from .wikiprint import linkLoader
+
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def itervalues(d):
+        return iter(d.values())
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def itervalues(d):
+        return d.itervalues()
+    def iteritems(d):
+        return d.iteritems()
 
 
 class WikiPrintAdmin(Component):
@@ -26,12 +43,12 @@ class WikiPrintAdmin(Component):
 
     implements(IAdminPanelProvider, IPermissionRequestor, ITemplateProvider)
 
-    ### IPermissionRequestor methods
+    # IPermissionRequestor methods
 
     def get_permission_actions(self):
         return ['WIKIPRINT_ADMIN', 'WIKIPRINT_FILESYSTEM', 'WIKIPRINT_BOOK']
 
-    ### ITemplateProvider methods
+    # ITemplateProvider methods
 
     def get_templates_dirs(self):
         from pkg_resources import resource_filename
@@ -41,7 +58,7 @@ class WikiPrintAdmin(Component):
         from pkg_resources import resource_filename
         return [('wikiprint', resource_filename(__name__, 'htdocs'))]
 
-    ### IAdminPanelProvider methods
+    # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
         if req.perm.has_permission('WIKIPRINT_ADMIN'):
@@ -100,11 +117,15 @@ class WikiPrintAdmin(Component):
         data['leftpages'] = leftpages
         data['rightpages'] = rightpages
         data['formats'] = formats
-        data['default_format'] = formats.iterkeys().next()
+        data['default_format'] = next(iter(formats))
+        data['iteritems'] = iteritems
 
         add_script(req, 'wikiprint/js/admin_wikiprint.js')
 
-        return 'admin_wikibook.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'admin_wikibook_jinja.html', data
+        else:
+            return 'admin_wikibook.html', data
 
     def _render_options(self, req, cat, page, component):
         req.perm.assert_permission('WIKIPRINT_ADMIN')
@@ -169,16 +190,18 @@ class WikiPrintAdmin(Component):
         data['httpauth_password'] = \
             self.env.config.get('wikiprint', 'httpauth_password')
 
-        return 'admin_wikiprint.html', data, None
+        if hasattr(Chrome, 'jenv'):
+            return 'admin_wikiprint_jinja.html', data
+        else:
+            return 'admin_wikiprint.html', data
 
     def _send_resource_file(self, req, content_type, file, default_value):
         # Send the output
-        req.send_response(200)
-        req.send_header('Content-Type', 'text/plain')
         if not file:
             out = default_value
         else:
-            linkloader = wikiprint.linkLoader(self.env, req, allow_local=True)
+            self.log.debug('## Viewing file %s' % file)
+            linkloader = linkLoader(self.env, req, allow_local=True)
             resolved_file = linkloader.getFileName(file)
             if not resolved_file:
                 raise Exception("File or URL load problem: %s (need " +
@@ -191,8 +214,13 @@ class WikiPrintAdmin(Component):
                 raise Exception("File or URL load problem: %s (IO Error)"
                                 % file)
             del linkloader
+        writeResponse(req, to_unicode(out))
 
-        req.send_header('Content-Length', len(out))
-        req.end_headers()
-        req.write(out)
-        raise RequestDone
+
+def writeResponse(req, data, httperror=200, content_type='text/plain; charset=utf-8'):
+    data = data.encode('utf-8')
+    req.send_response(httperror)
+    req.send_header('Content-Type', content_type)
+    req.send_header('Content-Length', len(data))
+    req.end_headers()
+    req.write(data)
