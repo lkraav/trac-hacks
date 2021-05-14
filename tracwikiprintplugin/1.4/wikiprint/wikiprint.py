@@ -52,6 +52,10 @@ EXCLUDE_RES = [
     re.compile(r'----(\r)?$\n^Back up: \[\[ParentWiki\]\]', re.M | re.I),
 ]
 
+FIX_HTML_RES = [
+    # removing empty <tr> reportlab/platypus/tables.py chokes on
+    re.compile(r'<tr.*>\s*</tr>')
+]
 
 class linkLoader:
 
@@ -236,6 +240,9 @@ class WikiPrint(Component):
         self.env.log.debug('WikiPrint => Wiki input for WikiPrint: %r', text)
         context = web_context(req, Resource('wiki', page_name))
         page = format_to_html(self.env, context, text)
+        for r in FIX_HTML_RES:
+            page = r.sub('', page)
+
         self.env.log.debug('WikiPrint => Wiki to HTML output: %r', page)
 
         # Link to internal sections of document.
