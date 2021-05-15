@@ -310,7 +310,7 @@ class WikiPrint(Component):
             """, (auth_cookie, req.authname, '127.0.0.1', int(time.time())))
 
         pdf = pisa.CreatePDF(page, pdf_file, show_errors_as_pdf=True,
-                             default_css=None,  # css_data,
+                             default_css=css_data,
                              link_callback=loader.getFileName)
         out = pdf_file.getvalue()
         pdf_file.close()
