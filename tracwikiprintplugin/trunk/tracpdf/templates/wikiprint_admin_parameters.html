@@ -1,0 +1,66 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block admintitle
+            PDF Paramters
+            # endblock admintitle
+        </title>
+        # block head
+        ${ super() }
+        # endblock head
+    </head>
+    <body>
+    # block adminpanel
+        <h2>PDF Parameters</h2>
+    <form action="" method="post">
+        ${jmacros.form_token_input()}
+        <p>These parameters apply to PDF files.</p>
+        <fieldset>
+            <legend>${_("Document Properties")}</legend>
+            <div class="field">
+                <label>${_("Title:")}</label>
+                <input type="text" class="form-control" size="50" id="pdftitle"
+                       name="pdftitle" value="${pdftitle}" />
+                <p class="help">${_("Leave empty to use the name of the wiki page as the title.")}</p>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>${_("Page size")}</legend>
+            <select name="pagesize">
+                # for psize in pagesizes:
+                <option value="${psize.value}" ${{"selected": psize.value == pagesize}|htmlattr}>${psize.label}</option>
+                # endfor
+            </select>
+        </fieldset>
+
+        <fieldset>
+            <legend>${_("Footer")}</legend>
+            <div class="field">
+                <select name="footertext">
+                    # for footer in footerlst:
+                    <option value="${footer.value}"
+                            ${{"selected": footer.value == footertext}|htmlattr}>${footer.label}</option>
+                    # endfor
+                </select>
+
+            </div>
+        </fieldset>
+
+        <div class="buttons">
+            <input name="save" value="${_('Save Changes')}" type="submit" />
+        </div>
+    </form>
+
+    # endblock adminpanel
+    </body>
+</html>
