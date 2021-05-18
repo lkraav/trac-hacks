@@ -29,7 +29,9 @@ from trac.env import Component, implements
 from trac.config import BoolOption, Option
 from trac.perm import IPermissionRequestor
 from trac.admin import IAdminPanelProvider
-from trac.web.chrome import ITemplateProvider
+from trac.util.translation import _
+from trac.web.chrome import add_warning, ITemplateProvider
+from trac.wiki.model import WikiPage
 
 
 _footer = namedtuple('Footer', 'value label')
@@ -120,16 +122,23 @@ class WikiPrintAdmin(Component):
         req.perm.require('WIKIPRINT_ADMIN')
 
         if req.method == 'POST' and req.args.get('save'):
-            self.config.set('wikiprint', 'pagesize', req.args.get('pagesize'))
-            self.config.set('wikiprint', 'title', req.args.get('pdftitle'))
-            self.config.set('wikiprint', 'footertext', req.args.get('footertext'))
-            self.config.set('wikiprint', 'stylepage', req.args.get('stylepage'))
-            self.config.set('wikiprint', 'coverpage', req.args.get('coverpage'))
-            if req.args.get('toc'):
-                self.config.set('wikiprint', 'toc', 'enabled')
+            covpage = req.args.get('coverpage')
+            if covpage:
+                wpage = WikiPage(self.env, covpage)
+
+            if covpage and not wpage.exists:
+                add_warning(req, _("The given cover page does not exist."))
             else:
-                self.config.set('wikiprint', 'toc', '')
-            self.config.save()
+                self.config.set('wikiprint', 'pagesize', req.args.get('pagesize'))
+                self.config.set('wikiprint', 'title', req.args.get('pdftitle'))
+                self.config.set('wikiprint', 'footertext', req.args.get('footertext'))
+                self.config.set('wikiprint', 'stylepage', req.args.get('stylepage'))
+                self.config.set('wikiprint', 'coverpage', req.args.get('coverpage'))
+                if req.args.get('toc'):
+                    self.config.set('wikiprint', 'toc', 'enabled')
+                else:
+                    self.config.set('wikiprint', 'toc', '')
+                self.config.save()
 
         data = prepare_data_dict(self, req)
         return 'wikiprint_admin_parameters.html', data

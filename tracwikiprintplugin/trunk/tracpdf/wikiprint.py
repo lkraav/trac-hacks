@@ -32,7 +32,7 @@ from trac.mimeview.api import IContentConverter
 from trac.util.text import to_unicode
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
-from trac.web.chrome import add_ctxtnav, add_stylesheet, web_context
+from trac.web.chrome import add_ctxtnav, add_stylesheet, add_warning, web_context
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
 
@@ -40,9 +40,9 @@ from .admin import coverpage, footertext, pagesize, prepare_data_dict, pdftitle,
 from .util import get_trac_css, writeResponse
 
 
-FIX_HTML_RES = [
-    # removing empty <tr> reportlab/platypus/tables.py chokes on, see #14012
-    re.compile(r'<tr.*>\s*</tr>')
+FILTER_WIKI_RES = [
+    re.compile(r'\[\[TracGuideToc\]\]'),
+    re.compile(r'\[\[PageOutline(\(.*\))?\]\]'),
 ]
 
 default_page_tmpl =u"""<!DOCTYPE html>
@@ -96,18 +96,31 @@ class WikiToPdf(Component):
             version = req.args.getint('version')
 
         if req.args.get('download'):
-            req.redirect(req.href('wiki', pagename, version=version,
-                                  format='pdfpage',
-                                  pdftitle=req.args.get('pdftitle'),
-                                  pagesize=req.args.get('pagesize'),
-                                  footertext=req.args.get('footertext'),
-                                  stylepage=req.args.get('stylepage'),
-                                  coverpage=req.args.get('coverpage'),
-                                  toc=req.args.get('toc')))
+            covpage = req.args.get('coverpage')
+
+            if covpage:
+                page = WikiPage(self.env, covpage)
+
+            if covpage and not page.exists:
+                add_warning(req, _("The given cover page does not exist."))
+            else:
+                pdf_format = 'pdfbook' if req.args.get('coverpage') else 'pdfpage'
+                req.redirect(req.href('wiki', pagename, version=version,
+                                      format=pdf_format,
+                                      pdftitle=req.args.get('pdftitle'),
+                                      pagesize=req.args.get('pagesize'),
+                                      footertext=req.args.get('footertext'),
+                                      stylepage=req.args.get('stylepage'),
+                                      coverpage=req.args.get('coverpage'),
+                                      toc=req.args.get('toc'),
+                                      download=1))
+
         data = prepare_data_dict(self, req)
 
         data.update({'pagename': pagename,
-                     'pdfbook': req.args.get('pdfbook')})
+                     # 'coverpage' is when we have a cover page error and reload the same page.
+                     # In that case the 'pdfbook' info is not available.
+                     'pdfbook': req.args.get('pdfbook') or 'coverpage' in req.args})
 
         add_stylesheet(req, 'wikiprint/css/wikiprint.css')
         add_ctxtnav(req, _("Back to %s" % pagename), req.href('wiki', pagename, version=version))
@@ -143,7 +156,7 @@ class WikiToPdf(Component):
         # again but with format='pdfpage'
         if key == 'pdfpagecustom':
             req.redirect(req.href('wikiprintparams', pagename, version=version))
-        elif key == 'pdfbook':
+        elif key == 'pdfbook' and not req.args.get('download'):
             req.redirect(req.href('wikiprintparams', pagename, version=version, pdfbook=1))
 
         options = {
@@ -159,16 +172,16 @@ class WikiToPdf(Component):
 
         # Wiki urls will be handled by the WikiToHtml component
         coverpage = req.args.get('coverpage')
-        if coverpage:
-            page_lst = [req.abs_href('wikiprint', coverpage, stylepage=req.args.get('stylepage'))]
-        else:
-            page_lst = []
+        stylepage = req.args.get('stylepage')
+        filterwiki = 1 if key == 'pdfbook' else None
+
+        page_lst = [req.abs_href('wikiprint', coverpage, stylepage=stylepage)] if coverpage else []
 
         if req.args.get('toc'):
             page_lst.append('toc')
 
         page_lst.append(req.abs_href('wikiprint', pagename, version=version,
-                                     stylepage=req.args.get('stylepage')))
+                                     stylepage=stylepage, filterwiki=filterwiki))
         pdf_page = from_url(page_lst, False, options=options)
 
         return pdf_page, 'application/pdf'
@@ -260,6 +273,12 @@ class WikiToHtml(Component):
         pagename = req.path_info  # This is something like /wiki/WikiStart
         pagename = pagename.split('/')[-1]
         stylepage = req.args.get('stylepage', 'WikiPrint/StylesHtmlPage')
+
+        # Filter out macros e.g. [[TracGuideToc]] or [[PageOutline]]. Usually done
+        # when creating a PDF book.
+        if req.args.get('filterwiki'):
+            for rec in FILTER_WIKI_RES:
+                wikitext = rec.sub('', wikitext)
 
         wiki_html = wiki_to_html(self.env, req, pagename, wikitext)
         return self.page_tmpl.format(wiki=wiki_html, style=self._get_styles(stylepage))
