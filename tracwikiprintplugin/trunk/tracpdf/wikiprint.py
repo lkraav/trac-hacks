@@ -36,7 +36,7 @@ from trac.web.chrome import add_ctxtnav, add_stylesheet, web_context
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
 
-from .admin import prepare_data_dict
+from .admin import prepare_data_dict, footertext, pagesize, pdftitle, stylepage
 from .util import get_trac_css, writeResponse
 
 
@@ -72,10 +72,10 @@ class WikiToPdf(Component):
 
     implements(IContentConverter, IRequestHandler)
 
-    pagesize = Option('wikiprint', 'pagesize')
-    pdftitle = Option('wikiprint', 'title')
-    footertext = Option('wikiprint', 'footertext')
-    stylepage = Option('wikiprint', 'stylepage')
+    pagesize = pagesize
+    pdftitle = pdftitle
+    footertext = footertext
+    stylepage = stylepage
 
     # IRequestHandler methods
 
@@ -228,10 +228,8 @@ class WikiToHtml(Component):
     page_tmpl = default_page_tmpl
 
     def _get_styles(self, stylepage):
-        self.log.info('#### ###### %s' % stylepage)
         page = WikiPage(self.env, stylepage)
         if page.exists:
-            self.log.info('#### ###### %s' % page.text)
             return page.text
 
         # Get standard Trac styles

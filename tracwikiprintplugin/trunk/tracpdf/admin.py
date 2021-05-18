@@ -64,18 +64,37 @@ def prepare_data_dict(self, req):
             }
 
 
-class WikiPrintAdmin(Component):
+pagesize = Option('wikiprint', 'pagesize', 'A4',
+                  'Page size of PDF. Can be one of {{{A3, A4, A5, B4, B5, B6, Folio, Legal, Letter}}}')
+pdftitle = Option('wikiprint', 'title', '', 'Title of PDF. Part of the document properties. If left '
+                                            'empty the name of the wikipage will be used.')
+footertext = Option('wikiprint', 'footertext', '[page] / [topage]',
+                    'Footer text for PDF.[[BR]][[BR]]Note that there is a predefined list of footers used by '
+                    'the administration page. Any configured footer not in the list will be overwritten when '
+                    'saving parameters. When left empty no footer is added to the PDF. Currently defined '
+                    'footers:\n'
+                    '* {{{[page] / [topage]}}}\n'
+                    '* {{{{pagename}  -  [page] / [topage]}}}\n')
+stylepage = Option('wikiprint', 'stylepage', '',
+                   'Wiki page holding CSS styles to apply when creating PDF files. If empty the '
+                   'Trac default styles will be used.[[BR]][[BR]]'
+                   'The style page must be created at {{{WikiPrint/Styles/<StylePage>}}}.')
 
+
+class WikiPrintAdmin(Component):
+    """Configure PDF page default parameters.
+
+    === Configuration
+    The parameters configured on this page are written to ''trac.ini''.
+    Here's a description of the relevant section.
+    [[TracIni(wikiprint)]]
+    """
     implements(IAdminPanelProvider, IPermissionRequestor, ITemplateProvider)
 
-    pagesize = Option('wikiprint', 'pagesize', 'A4', 'Page size of PDF.')
-    pdftitle = Option('wikiprint', 'title', '', 'Title of PDF. Part of the document properties. If left '
-                                                'empty the name of the wikipage will be used.')
-    footertext = Option('wikiprint', 'footertext', '[page] / [topage]',
-                        'Footer text for PDF. Note that the footer must be enabled first.')
-    stylepage = Option('wikiprint', 'stylepage', '', 'Wiki page holding CSS styles to apply when '
-                                                     'creating PDF files. If empty the Trac default '
-                                                     'styles will be used.')
+    pagesize = pagesize
+    pdftitle = pdftitle
+    footertext = footertext
+    stylepage = stylepage
 
     # IPermissionRequestor methods
 
