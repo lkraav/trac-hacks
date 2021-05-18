@@ -36,7 +36,7 @@ from trac.web.chrome import add_ctxtnav, add_stylesheet, web_context
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
 
-from .admin import prepare_data_dict, footertext, pagesize, pdftitle, stylepage
+from .admin import coverpage, footertext, pagesize, prepare_data_dict, pdftitle, stylepage, toc
 from .util import get_trac_css, writeResponse
 
 
@@ -76,6 +76,8 @@ class WikiToPdf(Component):
     pdftitle = pdftitle
     footertext = footertext
     stylepage = stylepage
+    coverpage = coverpage
+    toc = toc
 
     # IRequestHandler methods
 
@@ -99,10 +101,13 @@ class WikiToPdf(Component):
                                   pdftitle=req.args.get('pdftitle'),
                                   pagesize=req.args.get('pagesize'),
                                   footertext=req.args.get('footertext'),
-                                  stylepage=req.args.get('stylepage')))
+                                  stylepage=req.args.get('stylepage'),
+                                  coverpage=req.args.get('coverpage'),
+                                  toc=req.args.get('toc')))
         data = prepare_data_dict(self, req)
 
-        data.update({'pagename': pagename})
+        data.update({'pagename': pagename,
+                     'pdfbook': req.args.get('pdfbook')})
 
         add_stylesheet(req, 'wikiprint/css/wikiprint.css')
         add_ctxtnav(req, _("Back to %s" % pagename), req.href('wiki', pagename, version=version))
@@ -119,12 +124,14 @@ class WikiToPdf(Component):
         'text/x-trac-wiki', 'text/plain', 8)"""
         yield 'pdfpage', _("PDF Page"), 'pdf', 'text/x-trac-wiki', 'application/pdf', 8
         yield 'pdfpagecustom', _("PDF Page (custom settings)"), 'pdf', 'text/x-trac-wiki', 'application/pdf', 8
+        yield 'pdfbook', _("PDF Book"), 'pdf', 'text/x-trac-wiki', 'application/pdf', 8
 
     def convert_content(self, req, mimetype, content, key):
         """Convert the given content from mimetype to the output MIME type
         represented by key. Returns a tuple in the form (content,
         output_mime_type) or None if conversion is not possible.
         """
+        # Permission handling is done when creating the HTML data
         pagename = req.args.get('page')
         if not pagename:
             return None
@@ -136,6 +143,8 @@ class WikiToPdf(Component):
         # again but with format='pdfpage'
         if key == 'pdfpagecustom':
             req.redirect(req.href('wikiprintparams', pagename, version=version))
+        elif key == 'pdfbook':
+            req.redirect(req.href('wikiprintparams', pagename, version=version, pdfbook=1))
 
         options = {
             'page-size': req.args.get('pagesize') or self.pagesize,
@@ -148,9 +157,19 @@ class WikiToPdf(Component):
         }
         self._add_footer(options, pagename, req.args.get('footertext'))
 
-        # This will be handled by the WikiToHtml component
-        url = req.abs_href('wikiprint', pagename, version=version, stylepage=req.args.get('stylepage'))
-        pdf_page = from_url([url], False, options=options)
+        # Wiki urls will be handled by the WikiToHtml component
+        coverpage = req.args.get('coverpage')
+        if coverpage:
+            page_lst = [req.abs_href('wikiprint', coverpage, stylepage=req.args.get('stylepage'))]
+        else:
+            page_lst = []
+
+        if req.args.get('toc'):
+            page_lst.append('toc')
+
+        page_lst.append(req.abs_href('wikiprint', pagename, version=version,
+                                     stylepage=req.args.get('stylepage')))
+        pdf_page = from_url(page_lst, False, options=options)
 
         return pdf_page, 'application/pdf'
 

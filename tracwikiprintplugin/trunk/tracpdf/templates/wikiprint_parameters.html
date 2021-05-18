@@ -73,6 +73,27 @@
                         </div>
                     </fieldset>
 
+                    # if pdfbook:
+                    <fieldset>
+                        <legend>${_("Book parameters")}</legend>
+                        <p>The following parameters apply when creating a PDF book.</p>
+                        <div class="field">
+                            <label>${_("Cover page:")}</label>
+                            <input type="text" class="form-control" size="50" id="coverpage"
+                                   name="coverpage" value="${coverpage}" />
+                            <p class="help">${_("Configure a wiki page used as a cover when creating a PDF book.")}</p>
+                        </div>
+                        <p></p>
+                        <div class="field">
+                            <label>
+                                <input type="checkbox" name="toc" value="1"
+                                       ${{"checked": toc}|htmlattr}/>
+                                ${_("Add a table of contents.")}
+                            </label>
+                        </div>
+                    </fieldset>
+                    # endif
+
                     <div class="buttons">
                         <input name="download" value="${_('Download')}" type="submit" />
                     </div>

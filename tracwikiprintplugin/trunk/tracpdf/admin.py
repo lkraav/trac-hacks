@@ -26,7 +26,7 @@
 from collections import namedtuple
 from pkg_resources import resource_filename
 from trac.env import Component, implements
-from trac.config import Option
+from trac.config import BoolOption, Option
 from trac.perm import IPermissionRequestor
 from trac.admin import IAdminPanelProvider
 from trac.web.chrome import ITemplateProvider
@@ -60,7 +60,9 @@ def prepare_data_dict(self, req):
             'pdftitle': req.args.get('pdftitle') or self.pdftitle,
             'footertext': req.args.get('footertext') or self.footertext,
             'stylepage': req.args.get('stylepage') or self.stylepage,
-            'stylelst': stylelst
+            'stylelst': stylelst,
+            'coverpage': req.args.get('coverpage') or self.coverpage,
+            'toc': req.args.get('toc', False) if 'coverpage' in req.args else self.toc,
             }
 
 
@@ -79,7 +81,11 @@ stylepage = Option('wikiprint', 'stylepage', '',
                    'Wiki page holding CSS styles to apply when creating PDF files. If empty the '
                    'Trac default styles will be used.[[BR]][[BR]]'
                    'The style page must be created at {{{WikiPrint/Styles/<StylePage>}}}.')
-
+toc = BoolOption('wikiprint', 'toc', 'enabled', "Whether to add a table of content when creating a PDF book.\n"
+                                                "* {{{enabled}}}: add the table of content\n"
+                                                "* {{{disabled}}}: don't add a table of content")
+coverpage = Option('wikiprint', 'coverpage', '', 'Wiki page to be used as a cover when creating a PDF book. '
+                                                 'Leave empty when no cover page should be added.')
 
 class WikiPrintAdmin(Component):
     """Configure PDF page default parameters.
@@ -95,6 +101,8 @@ class WikiPrintAdmin(Component):
     pdftitle = pdftitle
     footertext = footertext
     stylepage = stylepage
+    coverpage = coverpage
+    toc = toc
 
     # IPermissionRequestor methods
 
@@ -116,6 +124,11 @@ class WikiPrintAdmin(Component):
             self.config.set('wikiprint', 'title', req.args.get('pdftitle'))
             self.config.set('wikiprint', 'footertext', req.args.get('footertext'))
             self.config.set('wikiprint', 'stylepage', req.args.get('stylepage'))
+            self.config.set('wikiprint', 'coverpage', req.args.get('coverpage'))
+            if req.args.get('toc'):
+                self.config.set('wikiprint', 'toc', 'enabled')
+            else:
+                self.config.set('wikiprint', 'toc', '')
             self.config.save()
 
         data = prepare_data_dict(self, req)
