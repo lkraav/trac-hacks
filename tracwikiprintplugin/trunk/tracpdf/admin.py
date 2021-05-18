@@ -39,20 +39,28 @@ footerlst = [_footer('', 'No footer'),
 
 
 def prepare_data_dict(self, req):
-    _ps = namedtuple('PageSize', 'value label')
-    return {'pagesizes': [_ps('A3', 'A3 (297 x 420 mm)'),
-                          _ps('A4', 'A4 (210 x 297 mm)'),
-                          _ps('A5', 'A5 (148 x 210 mm)'),
-                          _ps('B4', 'B4 (250 x 353 mm)'),
-                          _ps('B5', 'B5 (176 x 250 mm)'),
-                          _ps('B6', 'B6 (125 x 176 mm)'),
-                          _ps('Folio', 'Folio (210 x 330 mm)'),
-                          _ps('Legal', 'Legal (215.9 x 355.6 mm)'),
-                          _ps('Letter', 'Letter (215.9 x 279.4 mm)')],
+    _pp = namedtuple('PageProp', 'value label')
+
+    stylelst = [_pp('', 'Trac default')]
+    with self.env.db_query as db:
+        for row in db("SELECT DISTINCT name FROM wiki WHERE name LIKE 'WikiPrint/Styles/%'"):
+            stylelst.append(_pp(row[0], row[0].split('/')[-1]))
+
+    return {'pagesizes': [_pp('A3', 'A3 (297 x 420 mm)'),
+                          _pp('A4', 'A4 (210 x 297 mm)'),
+                          _pp('A5', 'A5 (148 x 210 mm)'),
+                          _pp('B4', 'B4 (250 x 353 mm)'),
+                          _pp('B5', 'B5 (176 x 250 mm)'),
+                          _pp('B6', 'B6 (125 x 176 mm)'),
+                          _pp('Folio', 'Folio (210 x 330 mm)'),
+                          _pp('Legal', 'Legal (215.9 x 355.6 mm)'),
+                          _pp('Letter', 'Letter (215.9 x 279.4 mm)')],
             'footerlst': footerlst,
             'pagesize': req.args.get('pagesize') or self.pagesize,
             'pdftitle': req.args.get('pdftitle') or self.pdftitle,
             'footertext': req.args.get('footertext') or self.footertext,
+            'stylepage': req.args.get('stylepage') or self.stylepage,
+            'stylelst': stylelst
             }
 
 
@@ -65,6 +73,9 @@ class WikiPrintAdmin(Component):
                                                 'empty the name of the wikipage will be used.')
     footertext = Option('wikiprint', 'footertext', '[page] / [topage]',
                         'Footer text for PDF. Note that the footer must be enabled first.')
+    stylepage = Option('wikiprint', 'stylepage', '', 'Wiki page holding CSS styles to apply when '
+                                                     'creating PDF files. If empty the Trac default '
+                                                     'styles will be used.')
 
     # IPermissionRequestor methods
 
@@ -85,6 +96,7 @@ class WikiPrintAdmin(Component):
             self.config.set('wikiprint', 'pagesize', req.args.get('pagesize'))
             self.config.set('wikiprint', 'title', req.args.get('pdftitle'))
             self.config.set('wikiprint', 'footertext', req.args.get('footertext'))
+            self.config.set('wikiprint', 'stylepage', req.args.get('stylepage'))
             self.config.save()
 
         data = prepare_data_dict(self, req)

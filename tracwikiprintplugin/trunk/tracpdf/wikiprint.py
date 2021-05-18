@@ -24,7 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import re
-
+from collections import namedtuple
 from pdfkit import from_url
 from trac.env import Component, implements
 from trac.config import Option
@@ -75,6 +75,7 @@ class WikiToPdf(Component):
     pagesize = Option('wikiprint', 'pagesize')
     pdftitle = Option('wikiprint', 'title')
     footertext = Option('wikiprint', 'footertext')
+    stylepage = Option('wikiprint', 'stylepage')
 
     # IRequestHandler methods
 
@@ -97,9 +98,12 @@ class WikiToPdf(Component):
                                   format='pdfpage',
                                   pdftitle=req.args.get('pdftitle'),
                                   pagesize=req.args.get('pagesize'),
-                                  footertext=req.args.get('footertext')))
+                                  footertext=req.args.get('footertext'),
+                                  stylepage=req.args.get('stylepage')))
         data = prepare_data_dict(self, req)
-        data['pagename'] = pagename
+
+        data.update({'pagename': pagename})
+
         add_stylesheet(req, 'wikiprint/css/wikiprint.css')
         add_ctxtnav(req, _("Back to %s" % pagename), req.href('wiki', pagename, version=version))
         return 'wikiprint_parameters.html', data
@@ -144,7 +148,8 @@ class WikiToPdf(Component):
         }
         self._add_footer(options, pagename, req.args.get('footertext'))
 
-        url = req.abs_href('wikiprint', pagename, version=version)
+        # This will be handled by the WikiToHtml component
+        url = req.abs_href('wikiprint', pagename, version=version, stylepage=req.args.get('stylepage'))
         pdf_page = from_url([url], False, options=options)
 
         return pdf_page, 'application/pdf'
@@ -222,9 +227,11 @@ class WikiToHtml(Component):
 
     page_tmpl = default_page_tmpl
 
-    def _get_styles(self):
-        page = WikiPage(self.env, 'WikiPrint/StylesHtmlPage')
+    def _get_styles(self, stylepage):
+        self.log.info('#### ###### %s' % stylepage)
+        page = WikiPage(self.env, stylepage)
         if page.exists:
+            self.log.info('#### ###### %s' % page.text)
             return page.text
 
         # Get standard Trac styles
@@ -235,9 +242,10 @@ class WikiToHtml(Component):
     def create_html_page(self, req, wikitext):
         pagename = req.path_info  # This is something like /wiki/WikiStart
         pagename = pagename.split('/')[-1]
+        stylepage = req.args.get('stylepage', 'WikiPrint/StylesHtmlPage')
 
         wiki_html = wiki_to_html(self.env, req, pagename, wikitext)
-        return self.page_tmpl.format(wiki=wiki_html, style=self._get_styles())
+        return self.page_tmpl.format(wiki=wiki_html, style=self._get_styles(stylepage))
 
 
 def wiki_to_html(env, req, pagename, wikitext):

@@ -56,6 +56,21 @@
             </div>
         </fieldset>
 
+        <fieldset>
+            <legend>${_("Style page")}</legend>
+            <div class="field">
+                <select name="stylepage">
+                    # for style in stylelst:
+                    <option value="${style.value}"
+                            ${{"selected": style.value == stylepage}|htmlattr}>${style.label}</option>
+                    # endfor
+                </select>
+                <p class="help">Add CSS style information to wiki pages at <em>WikiPrint/Styles/</em> to
+                    define your own styles.
+                For example: <em>WikiPrint/Styles/MyStyle</em>.</p>
+            </div>
+        </fieldset>
+
         <div class="buttons">
             <input name="save" value="${_('Save Changes')}" type="submit" />
         </div>
