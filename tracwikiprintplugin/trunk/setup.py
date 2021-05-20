@@ -49,6 +49,7 @@ setup(
     entry_points={'trac.plugins': [
         'tracpdf.wikiprint = tracpdf.wikiprint',
         'tracpdf.admin = tracpdf.admin',
+        'tracpdf.pdfbook = tracpdf.pdfbook',
     ]},
     test_suite='tests'
 )
