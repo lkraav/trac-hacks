@@ -76,6 +76,7 @@
                     # if pdfbook:
                     <fieldset>
                         <legend>${_("Book parameters")}</legend>
+                        <input type="hidden" name="pdfbook" value="1" />
                         <p>The following parameters apply when creating a PDF book.</p>
                         <div class="field">
                             <label>${_("Cover page:")}</label>
@@ -92,6 +93,16 @@
                             </label>
                         </div>
                     </fieldset>
+                    # if pages:
+                    <fieldset>
+                        <legend>Pages</legend>
+                        <ul>
+                            # for page in pages:
+                            <li><input type="hidden" name="pages" value="${page}" />${page}</li>
+                            # endfor
+                        </ul>
+                    </fieldset>
+                    # endif
                     # endif
 
                     <div class="buttons">

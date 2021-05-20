@@ -35,39 +35,22 @@ from trac.web.api import IRequestHandler
 from trac.web.chrome import add_ctxtnav, add_stylesheet, add_warning, web_context
 from trac.wiki.formatter import format_to_html
 from trac.wiki.model import WikiPage
+from trac.wiki.parser import WikiParser
 
 from .admin import coverpage, footertext, pagesize, prepare_data_dict, pdftitle, stylepage, toc
+from .pdfbook import parse_makro_content
 from .util import get_trac_css, writeResponse
 
 
-FILTER_WIKI_RES = [
-    re.compile(r'\[\[TracGuideToc\]\]'),
-    re.compile(r'\[\[PageOutline(\(.*\))?\]\]'),
-]
-
-default_page_tmpl =u"""<!DOCTYPE html>
-<html>
-  <head>
-      <title>
-      </title>
-      <style>
-        {style}
-      </style>
-  </head>
-  <body>
-    {wiki}
-  </body>
-</html>
-"""
-
-
 class WikiToPdf(Component):
-    """Create PDF page from a wiki page.
+    """Create a PDF page or a book from a wiki page.
 
+    ==== Configuration
     {{{wkhtmltopdf}}} must be installed and in your path. Get
     it from https://wkhtmltopdf.org/
 
-    Go to the admin page for customization.
+    [[TracIni(wikiprint)]]
+    Configuration can be done on the admin page.
     """
 
     implements(IContentConverter, IRequestHandler)
@@ -87,23 +70,85 @@ class WikiToPdf(Component):
             if match.group(1):
                 req.args['page'] = match.group(1)
             return True
+        # This is a call from the PdfBook makro
+        match = re.match(r'/wikiprintpdfbook(?:/(.+))?$', req.path_info)
+        if match:
+            if match.group(1):
+                req.args['page'] = match.group(1)
+                req.args['createbook'] = True
+            return True
 
-    def process_request(self, req):
-        """Pdf parameters page."""
+    def pagename_version_from_req(self, req):
+        """Parse a request to get the name and version of the wiki page.
+
+        :param req: Request object
+        return tuple with pagename, version
+
+        'Note that version may be None.
+        """
         pagename = req.args.get('page')
         version = None
         if req.args.get('version'):  # Allow version to be empty
             version = req.args.getint('version')
+        return pagename, version
+
+    def _get_pdf_book_config(self, req):
+        """Get the PDF book configuration from the wiki page holding the PdfBook
+        makro.
+
+        :param req: Request object holding wiki page name
+        :return dict with:
+                {'coverpage': name of wiki page to use as cover,
+                 'toc': True|False - wether to add a table of contents,
+                 'pages': list of wiki page names
+                }
+        Note that only one PdfBook makro on the page is supported.
+        """
+        pagename, version = self.pagename_version_from_req(req)
+        page = WikiPage(self.env, pagename, version)
+
+        req.perm(page.resource).require('WIKI_VIEW')
+
+        text = page.text.splitlines()
+        conf = []
+        in_macro = False
+        for line in text:
+            if not in_macro:
+                block_start_match = None
+                if WikiParser.ENDBLOCK not in line:
+                    block_start_match = WikiParser._startblock_re.match(line)
+                # Handle start of a new block
+                if block_start_match:
+                    if len(block_start_match.groups()) == 2 and block_start_match.group(2) == 'PdfBook':
+                        in_macro = True
+                    continue
+            else:
+                if WikiParser.ENDBLOCK not in line:
+                    conf.append(line)
+                else:
+                    break
+        return parse_makro_content('\n'.join(conf))
+
+    def process_request(self, req):
+        """Handle the Pdf parameters page.
+
+        After the user adjusted settings like cover page or page size he is
+        redirected to the wiki page he came from with format='xxx' arg
+        so the download of the PDF will happen. Additional args specify
+        the chosen settings and control which kind of PDF will be created."""
+
+        pagename, version = self.pagename_version_from_req(req)
 
         if req.args.get('download'):
+            # Download button on PDF settings page brought us here.
             covpage = req.args.get('coverpage')
-
             if covpage:
                 page = WikiPage(self.env, covpage)
 
             if covpage and not page.exists:
                 add_warning(req, _("The given cover page does not exist."))
             else:
+                # User adjusted settings. Now call "Download in other format" again.
                 pdf_format = 'pdfbook' if req.args.get('coverpage') else 'pdfpage'
                 req.redirect(req.href('wiki', pagename, version=version,
                                       format=pdf_format,
@@ -113,14 +158,29 @@ class WikiToPdf(Component):
                                       stylepage=req.args.get('stylepage'),
                                       coverpage=req.args.get('coverpage'),
                                       toc=req.args.get('toc'),
-                                      download=1))
+                                      download=1,
+                                      pages=req.args.getlist('pages')))
 
+        # This overrides global settings from the admin page with adjustments
+        # by the user.
         data = prepare_data_dict(self, req)
 
+        if req.args.get('createbook'):
+            # We are coming from the macro holding a list of pages to use for the PDF.
+            # Update settings with config from macro
+            book = self._get_pdf_book_config(req)
+            data.update({'coverpage': req.args.get('coverpage') or book['coverpage'],
+                         'toc': book['toc']})
+        else:
+            book = {}
+        pages = book['pages'] if 'pages' in book else []
+
         data.update({'pagename': pagename,
-                     # 'coverpage' is when we have a cover page error and reload the same page.
-                     # In that case the 'pdfbook' info is not available.
-                     'pdfbook': req.args.get('pdfbook') or 'coverpage' in req.args})
+                     'pages': pages,
+                     # 'pdfbook' is set when we are coming from 'convert_content()'
+                     # 'coverpage' is set when we have a cover page error on the settings page
+                     # and reload the page.  In that case the 'pdfbook' info is not available.
+                     'pdfbook': req.args.get('pdfbook')})  # or 'coverpage' in req.args})
 
         add_stylesheet(req, 'wikiprint/css/wikiprint.css')
         add_ctxtnav(req, _("Back to %s" % pagename), req.href('wiki', pagename, version=version))
@@ -145,30 +205,19 @@ class WikiToPdf(Component):
         output_mime_type) or None if conversion is not possible.
         """
         # Permission handling is done when creating the HTML data
-        pagename = req.args.get('page')
+        pagename, version = self.pagename_version_from_req(req)
         if not pagename:
             return None
-        version = None
-        if req.args.get('version'):  # Allow version to be empty
-            version = req.args.getint('version')
 
         # Redirect to settings page. After parameters are chosen the method will be called
         # again but with format='pdfpage'
         if key == 'pdfpagecustom':
             req.redirect(req.href('wikiprintparams', pagename, version=version))
         elif key == 'pdfbook' and not req.args.get('download'):
+            # When 'download' is set we are coming from the settings page
             req.redirect(req.href('wikiprintparams', pagename, version=version, pdfbook=1))
 
-        options = {
-            'page-size': req.args.get('pagesize') or self.pagesize,
-            'encoding': "UTF-8",
-            'outline': None,
-            'title':  req.args.get('pdftitle') or self.pdftitle or pagename,
-            'cookie': [
-                ('trac_auth', req.incookie['trac_auth'].value),
-            ]
-        }
-        self._add_footer(options, pagename, req.args.get('footertext'))
+        pdfoptions = self.prepare_pdf_options(req, pagename)
 
         # Wiki urls will be handled by the WikiToHtml component
         coverpage = req.args.get('coverpage')
@@ -180,11 +229,33 @@ class WikiToPdf(Component):
         if req.args.get('toc'):
             page_lst.append('toc')
 
-        page_lst.append(req.abs_href('wikiprint', pagename, version=version,
+        # 'pages' are available when we create a PDF book from the makro PdfBook. The
+        # makro holds a list of pages specified by the user.
+        pages = req.args.getlist('pages')
+        if pages:
+           for page in pages:
+               page_lst.append(req.abs_href('wikiprint', page, version=version,
                                      stylepage=stylepage, filterwiki=filterwiki))
-        pdf_page = from_url(page_lst, False, options=options)
+        else:
+            page_lst.append(req.abs_href('wikiprint', pagename, version=version,
+                                     stylepage=stylepage, filterwiki=filterwiki))
+        # Now call pdfkit without a file name so it returns the PDF.
+        pdf_page = from_url(page_lst, False, options=pdfoptions)
 
         return pdf_page, 'application/pdf'
+
+    def prepare_pdf_options(self, req, pagename):
+        options = {
+            'page-size': req.args.get('pagesize') or self.pagesize,
+            'encoding': "UTF-8",
+            'outline': None,
+            'title': req.args.get('pdftitle') or self.pdftitle or pagename,
+            'cookie': [
+                ('trac_auth', req.incookie['trac_auth'].value),
+            ]
+        }
+        self._add_footer(options, pagename, req.args.get('footertext'))
+        return options
 
     def _add_footer(self, options, pagename, footertext=None):
         if not self.footertext and not footertext:
@@ -197,6 +268,27 @@ class WikiToPdf(Component):
             options.update({'footer-center': footertext})
         options.update({'footer-line': None,
                         'footer-font-size': 10})
+
+
+FILTER_WIKI_RES = [
+    re.compile(r'\[\[TracGuideToc\]\]'),
+    re.compile(r'\[\[PageOutline(\(.*\))?\]\]'),
+]
+
+default_page_tmpl =u"""<!DOCTYPE html>
+<html>
+  <head>
+      <title>
+      </title>
+      <style>
+        {style}
+      </style>
+  </head>
+  <body>
+    {wiki}
+  </body>
+</html>
+"""
 
 
 class WikiToHtml(Component):

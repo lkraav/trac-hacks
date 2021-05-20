@@ -28,5 +28,6 @@ import pkg_resources
 pkg_resources.require('Trac >= 1.4')
 del pkg_resources
 
-from .wikiprint import *
 from .admin import *
+from .pdfbook import PdfBook
+from .wikiprint import *
