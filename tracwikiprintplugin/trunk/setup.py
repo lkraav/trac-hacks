@@ -29,8 +29,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='TracToPdf',
-    version='3.0.0',
+    name='TracWikiPrint',
+    version='4.0.0',
     packages=['tracpdf'],
     package_data={
         'tracpdf': ['templates/*.html'
@@ -45,7 +45,18 @@ setup(
     description='Create PDF files from Tracs wiki pages',
     long_description=long_description,
     keywords='PDF wiki trac plugin',
-    classifiers=['Framework :: Trac'],
+    classifiers=['Development Status :: 4 - Beta',
+                 'Environment :: Plugins',
+                 'Environment :: Web Environment',
+                 'Framework :: Trac',
+                 'Intended Audience :: End Users/Desktop',
+                 'License :: OSI Approved :: BSD License',
+                 'Natural Language :: English',
+                 'Operating System :: OS Independent',
+                 'Programming Language :: Python :: 2',
+                 'Programming Language :: Python :: 2.7',
+                 'Programming Language :: Python :: 3',
+                 ],
     entry_points={'trac.plugins': [
         'tracpdf.wikiprint = tracpdf.wikiprint',
         'tracpdf.admin = tracpdf.admin',

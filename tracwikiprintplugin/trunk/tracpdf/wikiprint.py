@@ -327,7 +327,7 @@ class WikiToHtml(Component):
         """Return an iterable of tuples in the form (key, name, extension,
         in_mimetype, out_mimetype, quality), eg. ('latex', 'LaTeX', 'tex',
         'text/x-trac-wiki', 'text/plain', 8)"""
-        yield 'htmlpage', _("Show Content only"), 'html', 'text/x-trac-wiki', 'text/html; charset=utf-8', 8
+        yield 'htmlpage', _("Printable HTML"), 'html', 'text/x-trac-wiki', 'text/html; charset=utf-8', 8
 
     def convert_content(self, req, mimetype, content, key):
         """Returns a tuple in the form (content,
