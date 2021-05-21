@@ -2,11 +2,11 @@ TracWikiPrintPlugin
 ===================
 This plugin allows you to export to PDF (book or article format) or printable HTML format (page contents without Trac headers/footers) allowing easy printing. PDF export is based on [wkhtmltopdf](https://wkhtmltopdf.org/).
 
-Older versions up to V3.0.0 used [xhtml2pdf](http://www.xhtml2pdf.com/) for generating PDF files. While having the advantage of being a pure Python solution it was abandoned because the output quality of [wkhtmltopdf](https://wkhtmltopdf.org/) is way better.
+Older versions up to V3.0.0 used [xhtml2pdf](http://www.xhtml2pdf.com/) for generating PDF files. While having the advantage of being a pure Python solution it was abandoned because the output quality of [wkhtmltopdf](https://wkhtmltopdf.org/) is way better. For these unsupported older releases see [WikiPrintXhtml2pdf](https://trac-hacks.org/wiki/TracWikiPrintPlugin/WikiPrintXhtml2pdf).
 
 Key features:
 
-* Administration page for deault settings.
+* Administration page for default settings.
 * Customizable footers for PDF.
 * Customizable front page for PDF book format.
 * Automatic creation of Table of Contents for PDF books.
@@ -15,7 +15,7 @@ Key features:
 * PDF "print dialog" for altering settings prior to PDF file creation.
 * Makro to specify contents and format of PDF Books with export feature.
 
-The plugin is seemlessly integrated in the Trac user interface by adding items to the `Download in other formats` section of each wiki page.
+The plugin is seamlessly integrated in the Trac user interface by adding items to the `Download in other formats` section of each wiki page.
 
 The full documentation can be found on the homepage: [TracWikiPrintPlugin](https://trac-hacks.org/wiki/TracWikiPrintPlugin) (https://trac-hacks.org/wiki/TracWikiPrintPlugin)
 
@@ -65,7 +65,7 @@ wikiprint.* = enabled
 Usage
 -----
 
-After the olugin is enabled, a new administrative panel will be available under the `Wikiprint` section, and 4 new download formats will be available in the `Download in other formats` section at the end of each wiki page:
+After the plugin is enabled, a new administration panel will be available under the `Wikiprint` section, and 4 new download formats will be available in the `Download in other formats` section at the end of each wiki page:
 
 * Printable HTML
 * PDF Page
@@ -86,19 +86,19 @@ Styling of the page is according to the style page selected using the administra
 
 ### PDF Page
 
-The wiki page is exported as a PDF file.
+`PDF Page` creates a PDF file out of the wiki page, with no cover page. Styles will be used from the style page defined in the global configuration set with the administration panel.
 
-The global configuration set with the administration panel is used while exporting.
+Table of contents macros in the wiki page like `[[PageOutline()]]` or others are not stripped from the page.
 
 ### PDF Page (custom settings)
 
-The wiki page is exported as a PDF file. This is like normal `PDF Page` export but it is possible to override the global configuration while generating the PDF file. A settings page like a "print dialog" is presented to the user before the actual export happens.
+The wiki page is exported as a PDF file. This is like normal `PDF Page` export but it is possible to override the global configuration while generating the PDF file. A settings page similar to a "print dialog" is presented to the user before the actual export happens.
 
 ### PDF Book
 
-A PDF book is created from the wiki page. While exporting the book the user is presented with a settings page to specify a cover page and whether a table of contents should be added. Styling may be changed by selecting an appropriate style page.
+This will create a book-like PDF document. While exporting the user is presented with a settings page to specify a cover page and whether a table of contents should be added. Styling may be changed by selecting one of the available style page. The cover page used for the book may be any wiki page.
 
-The cover page may be any wiki page.
+Common table of contents macros in the wiki page like `[[PageOutline()]]` or `[[TracGuideToc()]]` are removed from each wiki page.
 
 ### PdfBook makro
 

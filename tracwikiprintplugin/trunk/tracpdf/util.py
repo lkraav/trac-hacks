@@ -25,7 +25,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 from imp import find_module
-
+from trac.util.text import to_unicode
 
 try:
     FileNotFoundError
@@ -50,9 +50,10 @@ def get_trac_css(env, css_file):
     #       styles.
     try:
         with open(os.path.join(mod[1], 'htdocs', 'css', css_file), 'r') as f:
-            return f.read(-1)
+            return to_unicode(f.read(-1))
     except FileNotFoundError:
-        return ''
+        return to_unicode(u'')
+
 
 def writeResponse(req, data, httperror=200, content_type='text/plain; charset=utf-8'):
     data = data.encode('utf-8')

@@ -359,7 +359,8 @@ class WikiToHtml(Component):
         # Get standard Trac styles
         trac_css = get_trac_css(self.env, 'trac.css')
         wiki_css = get_trac_css(self.env, 'wiki.css')
-        return "%s\n%s" % (trac_css, wiki_css)
+
+        return u"%s\n%s" % (trac_css, wiki_css)
 
     def create_html_page(self, req, wikitext):
         pagename = req.path_info  # This is something like /wiki/WikiStart
