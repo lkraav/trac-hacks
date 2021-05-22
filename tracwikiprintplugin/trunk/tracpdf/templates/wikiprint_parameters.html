@@ -26,15 +26,37 @@
         <div id="content" class="trac-content pdf-parameters">
             <h2>PDF Parameters for <em>${pagename}</em></h2>
                 <form action="" method="get">
+                    # if pdfbook:
                     <fieldset>
-                        <legend>${_("Document Properties")}</legend>
+                        <legend>${_("Book parameters")}</legend>
+                        <input type="hidden" name="pdfbook" value="1" />
+                        <p>The following parameters apply when creating a PDF book.</p>
                         <div class="field">
-                            <label>${_("Title:")}</label>
-                            <input type="text" class="form-control" size="50" id="pdftitle"
-                                   name="pdftitle" value="${pdftitle}" />
-                            <p class="help">${_("Leave empty to use the name of the wiki page as the title.")}</p>
+                            <label>${_("Cover page:")}</label>
+                            <input type="text" class="form-control" size="50" id="coverpage"
+                                   name="coverpage" value="${coverpage}" />
+                            <p class="help">${_("Configure a wiki page used as a cover when creating a PDF book.")}</p>
+                        </div>
+                        <p></p>
+                        <div class="field">
+                            <label>
+                                <input type="checkbox" name="toc" value="1"
+                                       ${{"checked": toc}|htmlattr}/>
+                                ${_("Add a table of contents.")}
+                            </label>
                         </div>
                     </fieldset>
+                    # if pages:
+                    <fieldset>
+                        <legend>Pages</legend>
+                        <ul>
+                            # for page in pages:
+                            <li><input type="hidden" name="pages" value="${page}" />${page}</li>
+                            # endfor
+                        </ul>
+                    </fieldset>
+                    # endif
+                    # endif
 
                     <fieldset>
                         <legend>${_("Page size")}</legend>
@@ -73,37 +95,15 @@
                         </div>
                     </fieldset>
 
-                    # if pdfbook:
                     <fieldset>
-                        <legend>${_("Book parameters")}</legend>
-                        <input type="hidden" name="pdfbook" value="1" />
-                        <p>The following parameters apply when creating a PDF book.</p>
+                        <legend>${_("Document Properties")}</legend>
                         <div class="field">
-                            <label>${_("Cover page:")}</label>
-                            <input type="text" class="form-control" size="50" id="coverpage"
-                                   name="coverpage" value="${coverpage}" />
-                            <p class="help">${_("Configure a wiki page used as a cover when creating a PDF book.")}</p>
-                        </div>
-                        <p></p>
-                        <div class="field">
-                            <label>
-                                <input type="checkbox" name="toc" value="1"
-                                       ${{"checked": toc}|htmlattr}/>
-                                ${_("Add a table of contents.")}
-                            </label>
+                            <label>${_("Title:")}</label>
+                            <input type="text" class="form-control" size="50" id="pdftitle"
+                                   name="pdftitle" value="${pdftitle}" />
+                            <p class="help">${_("Leave empty to use the name of the wiki page as the title.")}</p>
                         </div>
                     </fieldset>
-                    # if pages:
-                    <fieldset>
-                        <legend>Pages</legend>
-                        <ul>
-                            # for page in pages:
-                            <li><input type="hidden" name="pages" value="${page}" />${page}</li>
-                            # endfor
-                        </ul>
-                    </fieldset>
-                    # endif
-                    # endif
 
                     <div class="buttons">
                         <input name="download" value="${_('Download')}" type="submit" />

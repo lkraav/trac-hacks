@@ -24,13 +24,23 @@
     <form action="" method="post">
         ${jmacros.form_token_input()}
         <p>These parameters apply to PDF file creation when not overriden by the user.</p>
+
         <fieldset>
-            <legend>${_("Document Properties")}</legend>
+            <legend>${_("Book parameters")}</legend>
+            <p>The following parameters apply when creating a PDF book.</p>
             <div class="field">
-                <label>${_("Title:")}</label>
-                <input type="text" class="form-control" size="50" id="pdftitle"
-                       name="pdftitle" value="${pdftitle}" />
-                <p class="help">${_("Leave empty to use the name of the wiki page as the title.")}</p>
+                <label>${_("Cover page:")}</label>
+                <input type="text" class="form-control" size="50" id="coverpage"
+                       name="coverpage" value="${coverpage}" />
+                <p class="help">${_("Configure a wiki page used as a cover when creating a PDF book.")}</p>
+            </div>
+            <p></p>
+            <div class="field">
+                <label>
+                    <input type="checkbox" name="toc" value="1"
+                           ${{"checked": toc}|htmlattr}/>
+                    ${_("Add a table of contents.")}
+                </label>
             </div>
         </fieldset>
 
@@ -72,23 +82,13 @@
         </fieldset>
 
         <fieldset>
-            <legend>${_("Book parameters")}</legend>
-            <p>The following parameters apply when creating a PDF book.</p>
+            <legend>${_("Document Properties")}</legend>
             <div class="field">
-                <label>${_("Cover page:")}</label>
-                <input type="text" class="form-control" size="50" id="coverpage"
-                       name="coverpage" value="${coverpage}" />
-                <p class="help">${_("Configure a wiki page used as a cover when creating a PDF book.")}</p>
+                <label>${_("Title:")}</label>
+                <input type="text" class="form-control" size="50" id="pdftitle"
+                       name="pdftitle" value="${pdftitle}" />
+                <p class="help">${_("Leave empty to use the name of the wiki page as the title.")}</p>
             </div>
-            <p></p>
-            <div class="field">
-                <label>
-                    <input type="checkbox" name="toc" value="1"
-                           ${{"checked": toc}|htmlattr}/>
-                    ${_("Add a table of contents.")}
-                </label>
-            </div>
-
         </fieldset>
 
         <div class="buttons">

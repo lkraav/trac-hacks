@@ -24,10 +24,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import re
-from collections import namedtuple
 from pdfkit import from_url
 from trac.env import Component, implements
-from trac.config import Option
 from trac.mimeview.api import IContentConverter
 from trac.util.text import to_unicode
 from trac.util.translation import _
@@ -219,12 +217,15 @@ class WikiToPdf(Component):
 
         pdfoptions = self.prepare_pdf_options(req, pagename)
 
-        # Wiki urls will be handled by the WikiToHtml component
-        coverpage = req.args.get('coverpage')
+        # Wiki urls will be handled using WikiToHtml component
+        cover_page = req.args.get('coverpage')
         stylepage = req.args.get('stylepage')
+        # If set the known table of content makros are removed from the wiki page
         filterwiki = 1 if key == 'pdfbook' else None
 
-        page_lst = [req.abs_href('wikiprint', coverpage, stylepage=stylepage)] if coverpage else []
+        cover_url = req.abs_href('wikiprint', cover_page, stylepage=stylepage) if cover_page else None
+
+        page_lst = []
 
         if req.args.get('toc'):
             page_lst.append('toc')
@@ -240,11 +241,17 @@ class WikiToPdf(Component):
             page_lst.append(req.abs_href('wikiprint', pagename, version=version,
                                      stylepage=stylepage, filterwiki=filterwiki))
         # Now call pdfkit without a file name so it returns the PDF.
-        pdf_page = from_url(page_lst, False, options=pdfoptions)
+        pdf_page = from_url(page_lst, False, options=pdfoptions, cover=cover_url)
 
         return pdf_page, 'application/pdf'
 
     def prepare_pdf_options(self, req, pagename):
+        """Prepare the global wkhtmltopdf options used when generating a PDF page or book.
+
+        :param req: Request object which may hold page settings
+        :param pagename: name of the current wiki page
+        :return: dict with wkhtmltopdf global options
+        """
         options = {
             'page-size': req.args.get('pagesize') or self.pagesize,
             'encoding': "UTF-8",
@@ -258,6 +265,15 @@ class WikiToPdf(Component):
         return options
 
     def _add_footer(self, options, pagename, footertext=None):
+        """Add footer information to the global wkhtmltopdf options.
+
+        :param options: dict with global options
+        :param pagename: the name of the current wiki page
+        :param footertext: footer text specified by the user
+        :return: None
+
+        The given options dict is updated in place.
+        """
         if not self.footertext and not footertext:
             return
 
