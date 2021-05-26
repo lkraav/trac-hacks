@@ -27,6 +27,13 @@
 
 import re
 from io import StringIO
+try:
+    from markdown import markdown, Markdown
+    from markdown.inlinepatterns import InlineProcessor
+    from markdown.extensions import Extension
+    from markdown import util
+except ImportError:
+    markdown = None
 
 from trac.config import IntOption
 from trac.core import Component, implements
@@ -36,13 +43,7 @@ from trac.web.chrome import add_warning
 from trac.wiki.formatter import format_to_html, format_to_oneliner, Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
 
-try:
-    from markdown import markdown, Markdown
-    from markdown.inlinepatterns import InlineProcessor
-    from markdown.extensions import Extension
-    from markdown import util
-except ImportError:
-    markdown = None
+from .mdheader import HashHeaderProcessor
 
 # links, autolinks, and reference-style links
 
@@ -122,8 +123,15 @@ def format_to_markdown(env, context, content):
 
     trac_link = TracLinkExtension()
     trac_makro = TracMakroExtension()
-
     md = Markdown(extensions=['tables', trac_link, trac_makro], tab_length=tab_length, output_format='html')
+
+    # Register our own blockprocessor for hash headers ('#', '##', ...) which adds
+    # Tracs CSS classes for proper styling.
+    md.parser.blockprocessors.deregister('hashheader')
+    hash_header = HashHeaderProcessor(md.parser)  # This one is changed
+    md.parser.blockprocessors.register(hash_header, 'hashheader', 70)
+
+    # Added for use with format_to_html() and format_to_oneliner()
     md.trac_context = context
     md.trac_env = env
     return md.convert(re.sub(LINK, convert, content))
@@ -152,12 +160,10 @@ class TracLinkExtension(Extension):
 
 class TracMakroInlineProcessor(InlineProcessor):
     def handleMatch(self, m, data):
-        print('Trac makro: ', m.groups())
         # This is a Trac makro '[[FooBar()]]
         # return None, None, None
 
         html = format_to_html(self.md.trac_env, self.md.trac_context, '[[%s]]' % m.group(1))
-        print(html)
         return self.md.htmlStash.store(html), m.start(0), m.end(0)
 
 
