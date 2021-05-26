@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2008 Douglas Clifton <dwclifton@gmail.com>
 # Copyright (C) 2012-2013 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -32,11 +33,14 @@ from trac.core import Component, implements
 from trac.util.html import Markup, html as tag
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_warning
-from trac.wiki.formatter import Formatter, system_message
+from trac.wiki.formatter import format_to_html, format_to_oneliner, Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
 
 try:
-    from markdown import markdown
+    from markdown import markdown, Markdown
+    from markdown.inlinepatterns import InlineProcessor
+    from markdown.extensions import Extension
+    from markdown import util
 except ImportError:
     markdown = None
 
@@ -61,7 +65,7 @@ class MarkdownMacro(WikiMacroBase):
         blockquotes, code blocks, etc.
         """)
 
-    def expand_macro(self, formatter, name, content):
+    def expand_macro(self, formatter, name, content, args=None):
         if markdown:
             return format_to_markdown(self.env, formatter.context, content)
         else:
@@ -116,6 +120,48 @@ def format_to_markdown(env, context, content):
                     pre += abs_href
                 return pre + str(url) + suf
 
-    return markdown(re.sub(LINK, convert, content),
-                    extensions=['tables'], tab_length=tab_length)
+    trac_link = TracLinkExtension()
+    trac_makro = TracMakroExtension()
 
+    md = Markdown(extensions=['tables', trac_link, trac_makro], tab_length=tab_length, output_format='html')
+    md.trac_context = context
+    md.trac_env = env
+    return md.convert(re.sub(LINK, convert, content))
+
+
+class TracLinkInlineProcessor(InlineProcessor):
+    def handleMatch(self, m, data):
+        if m.group(1)[0] == '[':
+            # This is a Trac makro '[[FooBar()]]
+            return None, None, None
+
+        # print('Trac groups: ', m.groups())
+        html = format_to_oneliner(self.md.trac_env, self.md.trac_context, '[%s]' % m.group(1))
+        return self.md.htmlStash.store(html), m.start(0), m.end(0)
+
+        # el = util.etree.Element('span')
+        # el.text = self.md.htmlStash.store(html)
+        # return el, m.start(0), m.end(0)
+
+
+TRAC_LINK_PATTERN = r'\[(.*?)\]'
+class TracLinkExtension(Extension):
+    def extendMarkdown(self, md):
+        md.inlinePatterns.register(TracLinkInlineProcessor(TRAC_LINK_PATTERN, md), 'traclink', 170)
+
+
+class TracMakroInlineProcessor(InlineProcessor):
+    def handleMatch(self, m, data):
+        print('Trac makro: ', m.groups())
+        # This is a Trac makro '[[FooBar()]]
+        # return None, None, None
+
+        html = format_to_html(self.md.trac_env, self.md.trac_context, '[[%s]]' % m.group(1))
+        print(html)
+        return self.md.htmlStash.store(html), m.start(0), m.end(0)
+
+
+TRAC_MAKRO_PATTERN = r'\[\[(.*?)\]\]'
+class TracMakroExtension(Extension):
+    def extendMarkdown(self, md):
+        md.inlinePatterns.register(TracMakroInlineProcessor(TRAC_MAKRO_PATTERN, md), 'tracmakro', 172)
