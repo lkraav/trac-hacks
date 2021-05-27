@@ -70,7 +70,7 @@ class ThemeEngineModule(Component):
                 sys.exc_info() != (None, None, None):
             try:
                 theme = self.system.theme
-            except ThemeNotFound, e:
+            except ThemeNotFound as e:
                 add_warning(req, "Unknown theme %s configured. Please check "
                         "your trac.ini. You may need to enable "
                         "the theme\'s plugin." % e.theme_name)
@@ -115,7 +115,7 @@ class ThemeEngineModule(Component):
             try:
                 overrides = theme['provider'].get_template_overrides(
                                                     theme['name'])
-            except Exception, e:
+            except Exception as e:
                 overrides = {}
                 self.log.warning('Theme %s template overrides : %s',
                                  theme['name'],

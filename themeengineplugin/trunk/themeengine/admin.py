@@ -14,7 +14,7 @@ from pkg_resources import resource_filename, resource_string
 
 from trac.admin.api import IAdminPanelProvider
 from trac.core import *
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
+from trac.web.chrome import add_script, add_stylesheet, Chrome, ITemplateProvider
 from trac.web.api import IRequestHandler, HTTPNotFound
 from trac.perm import IPermissionRequestor
 
@@ -72,7 +72,10 @@ class SimpleThemeAdminModule(Component):
         add_stylesheet(req, 'themeengine/admin.css')
         add_stylesheet(req, 'themeengine/cycle2.css')
         #add_script(req, 'themeengine/jcarousellite_1.0.1.js')
-        return 'admin_theme.html', data
+        if hasattr(Chrome, 'jenv'):
+            return 'admin_theme.html', data, None
+        else:
+            return 'admin_theme.html', data
 
     # IPermissionRequestor methods
     def get_permission_actions(self):
@@ -160,7 +163,10 @@ class CustomThemeAdminModule(Component):
         data['colors'] = colors
         data['enable'] = self.config.getbool('theme', 'enable_css', False)
 
-        theme_css_file = os.path.join(self.env.get_htdocs_dir(), 'theme.css')
+        if hasattr(self.env, 'get_htdocs_dir'):
+            theme_css_file = os.path.join(self.env.get_htdocs_dir(), 'theme.css')
+        else:
+            theme_css_file = os.path.join(self.env.htdocs_dir, 'theme.css')
         if page == 'advanced' and os.path.exists(theme_css_file):
             data['css'] = open(theme_css_file).read()
 
@@ -197,7 +203,13 @@ class CustomThemeAdminModule(Component):
         add_stylesheet(req, 'themeengine/admin.css')
         add_script(req, 'themeengine/farbtastic/farbtastic.js')
         if page == 'advanced':
-            return 'admin_theme_advanced.html', data
+            if hasattr(Chrome, 'jenv'):
+                return 'admin_theme_advanced.html', data, None
+            else:
+                return 'admin_theme_advanced.html', data
         else:
             add_script(req, 'themeengine/jquery.rule.js')
-            return 'admin_theme_custom.html', data
+            if hasattr(Chrome, 'jenv'):
+                return 'admin_theme_custom.html', data, None
+            else:
+                return 'admin_theme_custom.html', data
