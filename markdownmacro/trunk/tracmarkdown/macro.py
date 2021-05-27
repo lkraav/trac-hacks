@@ -29,8 +29,9 @@ import re
 from io import StringIO
 try:
     from markdown import markdown, Markdown
-    from markdown.inlinepatterns import InlineProcessor
     from markdown.extensions import Extension
+    from markdown.inlinepatterns import InlineProcessor
+    from markdown.preprocessors import Preprocessor
     from markdown import util
 except ImportError:
     markdown = None
@@ -127,8 +128,9 @@ def format_to_markdown(env, context, content):
     trac_link = TracLinkExtension()
     trac_macro = TracMacroExtension()
     trac_tkt = TracTicketExtension()
+    wiki_proc = WikiProcessorExtension()
 
-    md = Markdown(extensions=['extra', trac_link, trac_macro, trac_tkt],
+    md = Markdown(extensions=['extra', wiki_proc, trac_link, trac_macro, trac_tkt],
                   tab_length=tab_length, output_format='html')
 
     # Register our own blockprocessor for hash headers ('#', '##', ...) which adds
@@ -138,6 +140,9 @@ def format_to_markdown(env, context, content):
     md.parser.blockprocessors.register(hash_header, 'hashheader', 70)
 
     # for item in md.parser.blockprocessors:
+    #     print(item)
+    # print('####')
+    # for item in md.preprocessors:
     #     print(item)
 
     # Added for use with format_to_html() and format_to_oneliner()
@@ -210,3 +215,42 @@ class TracTicketExtension(Extension):
         # without our extension breaking the link.
         # Same goes for autolinks <http://...> with priority 120.
         md.inlinePatterns.register(TracTicketInlineProcessor(TRAC_TICKET_PATTERN, md), 'tracticket', 115)
+
+
+class WikiProcessorExtension(Extension):
+    def extendMarkdown(self, md):
+        """Add to the Markdown instance."""
+        md.preprocessors.register(WikiProcessorPreprocessor(md), 'trac_wiki_processor', 25)
+
+
+class WikiProcessorPreprocessor(Preprocessor):
+    wp_open_re = re.compile(r'\{{3,3}#!|\{{3,3}[\s]*$')
+    wp_close_re = re.compile(r'}{3,3}[\s]*$')
+
+    def run(self, lines):
+        """  """
+        proc_lines = []
+        wp_lines = []
+        lvl = 0
+
+        for idx, line in enumerate(lines):
+            if re.match(self.wp_open_re, line):
+                # Opening '{{{'
+                lvl += 1
+                wp_lines.append(line)
+            elif lvl:
+                # Inside a WikiProcessor
+                wp_lines.append(line)
+                if re.match(self.wp_close_re, line):
+                    # Closing tag '}}}'
+                    lvl -= 1
+                    if not lvl:
+                        # Outermost WikiProcessor was closed
+                        html = format_to_html(self.md.trac_env, self.md.trac_context,
+                                              '\n'.join(wp_lines))
+                        proc_lines.append(self.md.htmlStash.store(html))
+                        wp_lines = []
+            else:
+                proc_lines.append(line)
+
+        return proc_lines
