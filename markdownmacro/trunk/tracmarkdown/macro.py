@@ -100,6 +100,9 @@ def format_to_markdown(env, context, content):
     f = Formatter(env, context)
     tab_length = env.config.getint('markdown', 'tab_length')
 
+    # TODO: this is currently not used because it breaks markdown links like
+    #       [example](http://example.com)
+    #       This is old code which may be obsolete after adding extension classes.
     def convert(m):
         pre, target, suf = filter(None, m.groups())
         out = StringIO()
@@ -124,7 +127,9 @@ def format_to_markdown(env, context, content):
     trac_link = TracLinkExtension()
     trac_macro = TracMacroExtension()
     trac_tkt = TracTicketExtension()
-    md = Markdown(extensions=['tables', trac_link, trac_macro, trac_tkt], tab_length=tab_length, output_format='html')
+
+    md = Markdown(extensions=['extra', trac_link, trac_macro, trac_tkt],
+                  tab_length=tab_length, output_format='html')
 
     # Register our own blockprocessor for hash headers ('#', '##', ...) which adds
     # Tracs CSS classes for proper styling.
@@ -132,10 +137,14 @@ def format_to_markdown(env, context, content):
     hash_header = HashHeaderProcessor(md.parser)  # This one is changed
     md.parser.blockprocessors.register(hash_header, 'hashheader', 70)
 
+    # for item in md.parser.blockprocessors:
+    #     print(item)
+
     # Added for use with format_to_html() and format_to_oneliner()
     md.trac_context = context
     md.trac_env = env
-    return md.convert(re.sub(LINK, convert, content))
+    return md.convert(content)
+    # return md.convert(re.sub(LINK, convert, content))
 
 
 class TracLinkInlineProcessor(InlineProcessor):
@@ -144,20 +153,24 @@ class TracLinkInlineProcessor(InlineProcessor):
     The Trac link is extracted from the text and converted using Tracs
     formatter to html. The html data is inserted eventually."""
     def handleMatch(self, m, data):
-        if m.group(1)[0] == '[':
+        if not m.group(1) or m.group(1)[0] == '[':
             # This is a Trac macro '[[FooBar()]]
             return None, None, None
 
-        # print('Trac groups: ', m.groups())
         html = format_to_oneliner(self.md.trac_env, self.md.trac_context, '[%s]' % m.group(1))
         return self.md.htmlStash.store(html), m.start(0), m.end(0)
 
 
-TRAC_LINK_PATTERN = r'\[(.*?)\]'
+TRAC_LINK_PATTERN = r'\[(.+?)\]'
 class TracLinkExtension(Extension):
     """For registering the Trac link processor"""
     def extendMarkdown(self, md):
-        md.inlinePatterns.register(TracLinkInlineProcessor(TRAC_LINK_PATTERN, md), 'traclink', 170)
+        # Use priority 115 so the markdown link processor with priority 160
+        # may resolve links like [example](http://...) properly without our
+        # extension breaking the link.
+        # Same goes for shortrefs like [Google] with priority 130
+        # and autolinks using priority 120.
+        md.inlinePatterns.register(TracLinkInlineProcessor(TRAC_LINK_PATTERN, md), 'traclink', 115)
 
 
 class TracMacroInlineProcessor(InlineProcessor):
@@ -190,6 +203,10 @@ class TracTicketInlineProcessor(InlineProcessor):
 
 TRAC_TICKET_PATTERN = r'#(\d+)'
 class TracTicketExtension(Extension):
-    """Register the ticketz link extension."""
+    """Register the ticket link extension."""
     def extendMarkdown(self, md):
-        md.inlinePatterns.register(TracTicketInlineProcessor(TRAC_TICKET_PATTERN, md), 'tracticket', 170)
+        # Use priority 115 so the markdown link processor with priority 160
+        # may resolve links with location part like [example](http://example.com/foo#123) properly
+        # without our extension breaking the link.
+        # Same goes for autolinks <http://...> with priority 120.
+        md.inlinePatterns.register(TracTicketInlineProcessor(TRAC_TICKET_PATTERN, md), 'tracticket', 115)
