@@ -122,8 +122,9 @@ def format_to_markdown(env, context, content):
                 return pre + str(url) + suf
 
     trac_link = TracLinkExtension()
-    trac_makro = TracMakroExtension()
-    md = Markdown(extensions=['tables', trac_link, trac_makro], tab_length=tab_length, output_format='html')
+    trac_macro = TracMacroExtension()
+    trac_tkt = TracTicketExtension()
+    md = Markdown(extensions=['tables', trac_link, trac_macro, trac_tkt], tab_length=tab_length, output_format='html')
 
     # Register our own blockprocessor for hash headers ('#', '##', ...) which adds
     # Tracs CSS classes for proper styling.
@@ -138,36 +139,57 @@ def format_to_markdown(env, context, content):
 
 
 class TracLinkInlineProcessor(InlineProcessor):
+    """Render all kinds of Trac links ([wiki:...], [ticket:...], etc.).
+
+    The Trac link is extracted from the text and converted using Tracs
+    formatter to html. The html data is inserted eventually."""
     def handleMatch(self, m, data):
         if m.group(1)[0] == '[':
-            # This is a Trac makro '[[FooBar()]]
+            # This is a Trac macro '[[FooBar()]]
             return None, None, None
 
         # print('Trac groups: ', m.groups())
         html = format_to_oneliner(self.md.trac_env, self.md.trac_context, '[%s]' % m.group(1))
         return self.md.htmlStash.store(html), m.start(0), m.end(0)
 
-        # el = util.etree.Element('span')
-        # el.text = self.md.htmlStash.store(html)
-        # return el, m.start(0), m.end(0)
-
 
 TRAC_LINK_PATTERN = r'\[(.*?)\]'
 class TracLinkExtension(Extension):
+    """For registering the Trac link processor"""
     def extendMarkdown(self, md):
         md.inlinePatterns.register(TracLinkInlineProcessor(TRAC_LINK_PATTERN, md), 'traclink', 170)
 
 
-class TracMakroInlineProcessor(InlineProcessor):
+class TracMacroInlineProcessor(InlineProcessor):
+    """Render Trac macros ('[FooBar()]').
+
+    The macro is extracted from the text and formatted
+    using Tracs wiki formatter.
+    """
     def handleMatch(self, m, data):
-        # This is a Trac makro '[[FooBar()]]
+        # This is a Trac macro '[[FooBar()]]
         # return None, None, None
 
         html = format_to_html(self.md.trac_env, self.md.trac_context, '[[%s]]' % m.group(1))
         return self.md.htmlStash.store(html), m.start(0), m.end(0)
 
 
-TRAC_MAKRO_PATTERN = r'\[\[(.*?)\]\]'
-class TracMakroExtension(Extension):
+TRAC_MACRO_PATTERN = r'\[\[(.*?)\]\]'
+class TracMacroExtension(Extension):
+    """Register the Trac macro processor."""
     def extendMarkdown(self, md):
-        md.inlinePatterns.register(TracMakroInlineProcessor(TRAC_MAKRO_PATTERN, md), 'tracmakro', 172)
+        md.inlinePatterns.register(TracMacroInlineProcessor(TRAC_MACRO_PATTERN, md), 'tracmacro', 172)
+
+
+class TracTicketInlineProcessor(InlineProcessor):
+    """Support simple Trac ticket links like '#123'."""
+    def handleMatch(self, m, data):
+        html = format_to_oneliner(self.md.trac_env, self.md.trac_context, '#%s' % m.group(1))
+        return self.md.htmlStash.store(html), m.start(0), m.end(0)
+
+
+TRAC_TICKET_PATTERN = r'#(\d+)'
+class TracTicketExtension(Extension):
+    """Register the ticketz link extension."""
+    def extendMarkdown(self, md):
+        md.inlinePatterns.register(TracTicketInlineProcessor(TRAC_TICKET_PATTERN, md), 'tracticket', 170)
