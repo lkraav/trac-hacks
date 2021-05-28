@@ -26,7 +26,7 @@
 """
 
 import re
-from io import StringIO
+from functools import partial
 try:
     from markdown import markdown, Markdown
     from markdown.extensions import Extension
@@ -38,9 +38,10 @@ except ImportError:
 
 from trac.config import IntOption
 from trac.core import Component, implements
-from trac.util.html import Markup, html as tag
+from trac.util.html import Markup, html as tag, TracHTMLSanitizer
 from trac.web.api import IRequestFilter
 from trac.web.chrome import add_warning
+from trac.wiki.api import WikiSystem
 from trac.wiki.formatter import format_to_html, format_to_oneliner, Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
 
@@ -56,25 +57,28 @@ WARNING = tag('Error importing Python Markdown, install it from ',
               tag.a('here', href="https://pypi.python.org/pypi/Markdown"),
               '.')
 
+tab_length = IntOption('markdown', 'tab_length', 4, """
+    Specify the length of tabs in the markdown source. This affects
+    the display of multiple paragraphs in list items, including sub-lists,
+    blockquotes, code blocks, etc.
+    """)
 
 class MarkdownMacro(WikiMacroBase):
     """Implements Markdown syntax [WikiProcessors WikiProcessor] as a Trac
        macro."""
 
-    tab_length = IntOption('markdown', 'tab_length', 4, """
-        Specify the length of tabs in the markdown source. This affects
-        the display of multiple paragraphs in list items, including sub-lists,
-        blockquotes, code blocks, etc.
-        """)
+    tab_length = tab_length
 
     def expand_macro(self, formatter, name, content, args=None):
         if markdown:
-            return format_to_markdown(self.env, formatter.context, content)
+            return format_to_markdown(self, formatter, content)
         else:
             return system_message(WARNING)
 
 
 class MarkdownFormatter(Component):
+
+    tab_length = tab_length
 
     implements(IRequestFilter)
 
@@ -83,47 +87,29 @@ class MarkdownFormatter(Component):
 
     def post_process_request(self, req, template, data, content_type):
 
-        def wiki_to_html(context, wikidom, escape_newlines=None):
-            return Markup(format_to_markdown(self.env, context, wikidom))
+        def wiki_to_html(self, context, wikidom, escape_newlines=None):
+            formatter = Formatter(self.env, context)
+            return Markup(format_to_markdown(self, formatter, wikidom))
 
         if data:
             if markdown:
-                data['wiki_to_html'] = wiki_to_html
+                data['wiki_to_html'] = partial(wiki_to_html, self)
             else:
                 add_warning(req, WARNING)
 
         return template, data, content_type
 
 
-def format_to_markdown(env, context, content):
-    abs_href = env.abs_href.base
-    abs_href = abs_href[:len(abs_href) - len(env.href.base)]
-    f = Formatter(env, context)
-    tab_length = env.config.getint('markdown', 'tab_length')
+def format_to_markdown(self, formatter, content):
+    _sanitizer = TracHTMLSanitizer(
+        safe_schemes=formatter.wiki.safe_schemes,
+        safe_origins=formatter.wiki.safe_origins)
 
-    # TODO: this is currently not used because it breaks markdown links like
-    #       [example](http://example.com)
-    #       This is old code which may be obsolete after adding extension classes.
-    def convert(m):
-        pre, target, suf = filter(None, m.groups())
-        out = StringIO()
-        f.format(target, out)
-        out_value = out.getvalue()
-        # Render obfuscated emails without a link
-        if u'…' in out_value:
-            idx = out_value.find('mailto:')
-            if idx != -1:
-                out_value = out_value[:idx-1] + out_value[idx+7:]
-            return out_value
+    def sanitize(text):
+        if WikiSystem(self.env).render_unsafe_content:
+            return Markup(text)
         else:
-            match = re.search(HREF, out_value)
-            if match:
-                url = match.group(1)
-                # Trac creates relative links, which Markdown won't touch
-                # inside <autolinks> because they look like HTML
-                if pre == '<' and url != target:
-                    pre += abs_href
-                return pre + str(url) + suf
+            return _sanitizer.sanitize(text)
 
     trac_link = TracLinkExtension()
     trac_macro = TracMacroExtension()
@@ -131,7 +117,7 @@ def format_to_markdown(env, context, content):
     wiki_proc = WikiProcessorExtension()
 
     md = Markdown(extensions=['extra', wiki_proc, trac_link, trac_macro, trac_tkt],
-                  tab_length=tab_length, output_format='html')
+                  tab_length=self.tab_length, output_format='html')
 
     # Register our own blockprocessor for hash headers ('#', '##', ...) which adds
     # Tracs CSS classes for proper styling.
@@ -139,17 +125,10 @@ def format_to_markdown(env, context, content):
     hash_header = HashHeaderProcessor(md.parser)  # This one is changed
     md.parser.blockprocessors.register(hash_header, 'hashheader', 70)
 
-    # for item in md.parser.blockprocessors:
-    #     print(item)
-    # print('####')
-    # for item in md.preprocessors:
-    #     print(item)
-
     # Added for use with format_to_html() and format_to_oneliner()
-    md.trac_context = context
-    md.trac_env = env
-    return md.convert(content)
-    # return md.convert(re.sub(LINK, convert, content))
+    md.trac_context = formatter.context
+    md.trac_env = self.env
+    return sanitize(md.convert(content))
 
 
 class TracLinkInlineProcessor(InlineProcessor):
