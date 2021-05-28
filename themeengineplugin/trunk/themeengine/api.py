@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2006-2010 Noah Kantrowitz <noah@coderanger.net>
 # Copyright (c) 2013      Olemis Lang <olemis+trac@gmail.com>
+# Copyright (c) 2021      Cinc
+#
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -65,7 +67,9 @@ class IThemeProvider(Interface):
          description::
            A brief description of the theme.
          template::
-           The name of the theme template file.
+           The name of the Genshi theme template file.
+         jinja_template::
+           The name of the Jinja2 theme template file.
          css::
            The filename of the CSS file.
          disable_trac_css::
@@ -232,6 +236,8 @@ class ThemeBase(Component):
         name = name.lower()
         self._set_info(info, 'template',
                        os.path.join('templates', name + '_theme.html'))
+        self._set_info(info, 'jinja_template',
+                       os.path.join('templates', name + '_theme_jinja.html'))
         self._set_info(info, 'css', name + '.css')
         self._set_info(info, 'htdocs', 'htdocs')
         self._set_info(info, 'screenshot', 'htdocs/screenshot.png')

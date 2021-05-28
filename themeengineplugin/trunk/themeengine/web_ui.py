@@ -2,6 +2,8 @@
 #
 # Copyright (c) 2006-2010 Noah Kantrowitz <noah@coderanger.net>
 # Copyright (c) 2013      Olemis Lang <olemis+trac@gmail.com>
+# Copyright (c) 2021      Cinc
+#
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -77,8 +79,18 @@ class ThemeEngineModule(Component):
             else:
                 if theme and 'css' in theme:
                     add_stylesheet(req, 'theme/'+theme['css'])
-                if theme and 'template' in theme:
-                    req.chrome['theme'] = os.path.basename(theme['template'])
+                if hasattr(Chrome, 'jenv'):
+                    # Trac 1.4 supports Genshi and Jinja2 templates
+                    if content_type == None:
+                        # Legacy Genshi template rendering
+                        if theme and 'template' in theme:
+                            req.chrome['theme'] = os.path.basename(theme['template'])
+                    else:
+                        if theme and 'jinja_template' in theme:
+                            req.chrome['theme'] = os.path.basename(theme['jinja_template'])
+                else:
+                    if theme and 'template' in theme:
+                        req.chrome['theme'] = os.path.basename(theme['template'])
                 if theme and 'scripts' in theme:
                     for script_def in theme['scripts']:
                         if (isinstance(script_def, tuple) and
