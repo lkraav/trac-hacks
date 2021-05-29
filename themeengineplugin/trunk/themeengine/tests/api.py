@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2013-2020 Olemis Lang <olemis@gmail.com>
+# Copyright (c) 2021      Cinc
+#
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -36,7 +38,7 @@ class ThemeSystemTestCase(unittest.TestCase):
     """Unit tests covering the theme system API
     """
     def setUp(self):
-        self.env = env = EnvironmentStub(enable=['trac.*', 'themeengine.*'])
+        self.env = env = EnvironmentStub(enable=['trac.*', 'themeengine.*', FullTheme, QuickTheme])
         self.themesys = ThemeEngineSystem(env)
 
     def tearDown(self):

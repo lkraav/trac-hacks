@@ -27,6 +27,9 @@ from themeengine.api import ThemeEngineSystem, ThemeNotFound
 from themeengine.translation import I18N_DOC_OPTIONS
 
 
+PY3 = sys.version_info.major == 3
+
+
 class ThemeEngineModule(Component):
     """A module to provide the theme content."""
 
@@ -80,14 +83,18 @@ class ThemeEngineModule(Component):
                 if theme and 'css' in theme:
                     add_stylesheet(req, 'theme/'+theme['css'])
                 if hasattr(Chrome, 'jenv'):
-                    # Trac 1.4 supports Genshi and Jinja2 templates
-                    if content_type == None:
-                        # Legacy Genshi template rendering
-                        if theme and 'template' in theme:
-                            req.chrome['theme'] = os.path.basename(theme['template'])
-                    else:
+                    # Trac 1.4 supports Genshi and Jinja2 templates. content_type is 'None' in Trac 1.4
+                    # when a Genshi template is being rendered.
+                    # Trac 1.6 only supports Jinja2.
+                    if content_type != None or (template, data) == (None, None):
+                        # If an exception occurs, for example permission error, the content_type is always 'None'.
+                        # So we need to handle exception pages here.
                         if theme and 'jinja_template' in theme:
                             req.chrome['theme'] = os.path.basename(theme['jinja_template'])
+                    else:
+                        # Legacy Genshi template rendering.
+                        if theme and 'template' in theme:
+                            req.chrome['theme'] = os.path.basename(theme['template'])
                 else:
                     if theme and 'template' in theme:
                         req.chrome['theme'] = os.path.basename(theme['template'])

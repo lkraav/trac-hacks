@@ -21,6 +21,19 @@ from trac.perm import IPermissionRequestor
 from themeengine.api import ThemeEngineSystem, ThemeNotFound
 from themeengine.translation import _, dgettext
 
+
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
+
+
 class SimpleThemeAdminModule(Component):
     """An admin panel for ThemeEngine."""
 
@@ -73,7 +86,7 @@ class SimpleThemeAdminModule(Component):
         add_stylesheet(req, 'themeengine/cycle2.css')
         #add_script(req, 'themeengine/jcarousellite_1.0.1.js')
         if hasattr(Chrome, 'jenv'):
-            return 'admin_theme.html', data, None
+            return 'admin_theme_jinja.html', data
         else:
             return 'admin_theme.html', data
 
@@ -131,6 +144,7 @@ class CustomThemeAdminModule(Component):
         data = {
             'themes': self.system.info.items(),
             '_dgettext' : dgettext,
+            'iteritems': iteritems
         }
 
         theme_name = self.system.theme_name or 'Default'
@@ -180,7 +194,7 @@ class CustomThemeAdminModule(Component):
                 if key.startswith('color.'):
                     self.config.remove('theme', key)
 
-            for name, color in colors.iteritems():
+            for name, color in iteritems(colors):
                 color = req.args.get('color_'+name, color)
                 self.config.set('theme', 'color.'+name, color)
 
@@ -204,12 +218,12 @@ class CustomThemeAdminModule(Component):
         add_script(req, 'themeengine/farbtastic/farbtastic.js')
         if page == 'advanced':
             if hasattr(Chrome, 'jenv'):
-                return 'admin_theme_advanced.html', data, None
+                return 'admin_theme_advanced_jinja.html', data
             else:
                 return 'admin_theme_advanced.html', data
         else:
             add_script(req, 'themeengine/jquery.rule.js')
             if hasattr(Chrome, 'jenv'):
-                return 'admin_theme_custom.html', data, None
+                return 'admin_theme_custom_jinja.html', data
             else:
                 return 'admin_theme_custom.html', data
