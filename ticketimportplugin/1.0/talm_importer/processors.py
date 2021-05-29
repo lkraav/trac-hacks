@@ -305,7 +305,7 @@ class ImportProcessor(ProcessorBase):
             Markup("<style type=\"text/css\">#report-notfound { display:none; }</style>\n") + \
             self.format_to_html(message)
 
-        return 'import_preview.html', data, None
+        return 'import_preview.html', data
     
 
 class PreviewProcessor(ProcessorBase):
@@ -455,5 +455,5 @@ class PreviewProcessor(ProcessorBase):
                                self.format_to_html(self.message) + \
                                Markup('<br/>')
 
-        return 'import_preview.html', self.data, None
+        return 'import_preview.html', self.data
 

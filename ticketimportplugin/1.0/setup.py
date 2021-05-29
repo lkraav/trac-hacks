@@ -22,7 +22,7 @@ setup(
     description='Import CSV and Excel files',
     zip_safe=True,
     packages=[PACKAGE],
-    package_data={PACKAGE: ['templates/*.html']},
+    package_data={PACKAGE: ['templates/*/*.html']},
     test_suite='talm_importer.test.suite',
     install_requires=['Trac'],
     entry_points={'trac.plugins': 'TicketImport = %s' % (PACKAGE)}

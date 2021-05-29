@@ -1,0 +1,148 @@
+<!--!
+ Copyright (c) 2007-2008 by nexB, Inc. http://www.nexb.com/ - All rights reserved.
+ Author: Francois Granade - fg at nexb dot com
+ Licensed under the same license as Trac - http://trac.edgewall.org/wiki/TracLicense
+-->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
+  <head>
+    <title>Ticket import</title>
+  </head>
+  <body>
+    <div id="content" class="report">
+      <h1>Ticket import</h1>
+      <p>
+        This module lets you import tickets in batch, from an Excel spreadsheet
+        or comma-separated-values (CSV) file. (Excel is preferred if your data
+        contain non-ASCII characters).
+      </p>
+      <p>The file or worksheet to import should contain:</p>
+      <ul>
+        <li>In the first line, the names of the fields to import.</li>
+        <li>In the remaining of the file or worksheet, the data to import.</li>
+      </ul>
+      <p>
+        The fields must be Trac fields. The valid fields for this Trac instance are:
+        <py:for each="idx, field in enumerate(fields)"><!--!
+          -->${ ' and ' if idx == len(fields) - 1 else ', ' if idx else '' }<!--!
+          --><strong>${field}</strong><!--!
+        --></py:for>.
+        Field names are case-insensitive: 'summary', 'Summary', 'SUMMARY' refer
+        to the same field. The order of the fields does not matter. If you want
+        to import columns that are not Trac fields yet, these fields must have
+        been created as custom fields in Trac (It is easy to create new fields,
+        but must be done by the Trac administrator in the Trac configuration
+        file).
+      </p>
+      <p>The only required fields are either:</p>
+      <ul>
+        <li>
+          <strong>summary</strong>:
+          If tickets are found in Trac with the same 'summary'<py:if test="reconciliate_by_owner_also">,
+          and the same owner if present</py:if>,
+          they will be reconciliated: no ticket will be added, but modified or
+          added values for other fields, will be imported (of course, any
+          replaced value is always kept in the Change History for the ticket).
+          As a consequence, <strong>you cannot have two tickets (or two rows in
+          your spreadsheet) with the same summary
+          <py:if test="reconciliate_by_owner_also"> and owner</py:if></strong>.
+          If <py:choose>
+            <py:when test="reconciliate_by_owner_also">the summary and owner don't</py:when>
+            <py:otherwise>the summary doesn't</py:otherwise>
+          </py:choose> match any existing ticket, a new ticket will be created.
+        </li>
+      </ul>
+      or:
+      <ul>
+        <li>
+          <strong>ticket</strong>:
+          This field should contain ticket numbers: if tickets are found with
+          the same number, they will be reconciliated. If it is empty for some
+          rows, they will be imported as new tickets. This can be used to
+          export (using a report and save as CSV), modify in Excel, and
+          re-import tickets.
+        </li>
+      </ul>
+      <p>
+        If a field name starts with <strong>#</strong>, the contents of the
+        field will be treated as references to other tickets, either a list of
+        dependencies or a Work Breakdown System number. (The WBS is identified
+        as the first ticket reference column which has a value containing a
+        period.)  This can aid import of projects created in an external
+        project management program. For example:
+      </p>
+      <table class="wiki">
+        <tr><th>summary</th><th>#blockedby</th><th>#wbs</th></tr>
+        <tr><td>Design schematic</td><td></td><td>1</td></tr>
+        <tr><td>Layout board</td><td>1</td><td>2</td></tr>
+        <tr><td>Check board</td><td>2</td><td>2.1</td></tr>
+        <tr><td>Manufacture prototypes</td><td>2,3</td><td>2.1</td></tr>
+        <tr><td>Verify prototypes</td><td>4</td><td>3</td></tr>
+      </table>
+      <p>Once imported, this might become:</p>
+      <table class="wiki">
+        <tr><th>id</th><th>summary</th><th>blockedby</th><th>wbs</th></tr>
+        <tr><td>3000</td><td>Design schematic</td><td></td><td></td></tr>
+        <tr><td>3001</td><td>Layout board</td><td>3000</td><td></td></tr>
+        <tr><td>3003</td><td>Check board</td><td>3001</td><td>3001</td></tr>
+        <tr><td>3004</td><td>Manufacture prototypes</td><td>3001,3003</td><td>3001</td></tr>
+        <tr><td>3005</td><td>Verify prototypes</td><td>3004</td><td></td></tr>
+      </table>
+      <p>
+        First, you will be shown a preview of the changes, and then you will be
+        able to execute the import. The first step (uploading and previewing)
+        will not modify the database.
+      </p>
+      <p>
+        Components, Milestones, etc... found in the spreadsheet will be added
+        to Trac if they do not exist yet. You may want to customize them after
+        that in the Admin section.
+      </p>
+      <p>
+        If the spreadsheet contains a Comment column, this column will be added
+        as comment to the tickets.
+      </p>
+      <form id="importer" method="post" enctype="multipart/form-data" action="${req.href('importer')}">
+        <fieldset>
+          <div class="field">
+            <label for="import-file">File to import:</label>
+            <input type="file" name="import-file" />
+          </div>
+          <div class="field">
+            <label for="importer-sheet">
+              For an Excel spreadsheet, index of the worksheet to import:
+              <select id="importer-sheet" name="sheet">
+                <option py:for="i in xrange(1, 10)" value="$i">$i</option>
+              </select>
+            </label>
+            <br />
+            <span class="hint">
+              <strong>Note:</strong> worksheets containing non-data (e.g.,
+              charts) are skipped when counting the worksheets.
+            </span>
+          </div>
+          <div class="field">
+            <label for="importer-encoding">
+              For a CSV file, select charset encoding of the file:
+              <select id="importer-encoding" name="encoding">
+                <option py:for="encoding in encodings"
+                        selected="${encoding == csv_default_encoding and 'selected'}"
+                        >$encoding</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+        <div class="buttons">
+          <input type="hidden" name="action" value="upload" />
+          <input type="submit" value="Upload file and preview import" />
+          <!--! <input type="submit" name="cancel" value="Cancel" /> -->
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

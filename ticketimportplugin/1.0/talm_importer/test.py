@@ -14,7 +14,6 @@ import re
 import shutil
 import tempfile
 import unittest
-from genshi.core import Markup
 from pkg_resources import parse_version
 
 from trac import __version__ as VERSION
@@ -24,6 +23,7 @@ from trac.loader import load_components
 from trac.test import EnvironmentStub
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
+from trac.util.html import Markup
 from trac.web.api import Request
 
 from talm_importer.importer import ImportModule

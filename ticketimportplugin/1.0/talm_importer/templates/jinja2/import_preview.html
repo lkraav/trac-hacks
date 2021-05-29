@@ -1,0 +1,63 @@
+{# Copyright (c) 2021 Jun Omae
+   Licensed under the same license as Trac - https://trac.edgewall.org/wiki/TracLicense
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block title
+      ${title} ${ super() }
+      # endblock title
+    </title>
+  </head>
+  <body>
+    # block content
+    <div id="content" class="report">
+      <h1>$title</h1>
+      # if message:
+      <div id="description" xml:space="preserve">${message}</div>
+      # endif
+
+      # if headers and rows:
+      <form action="${req.href('importer')}" method="post">
+        ${jmacros.form_token_input()}
+        <input type="hidden" name="action" value="import" />
+        <div class="buttons">
+          <input type="submit" name="cancel" value="Cancel" />
+          <input type="submit" value="Execute import" />
+        </div>
+      </form>
+      <table class="listing tickets">
+        <thead>
+          <tr>
+            # for header in headers:
+            <th>${header.title}</th>
+            # endfor
+          </tr>
+        </thead>
+        <tbody>
+          # for row in rows:
+          <tr class="${row.style}">
+            # for cell in row.cells:
+            #   set col = cell.col.strip('_')
+            #   if col == 'time':
+            <td class="${cell.style}">${format_time(int(cell.value)) if cell.value != 'None' else '--'}</td>
+            #   elif col in ('date', 'created', 'modified'):
+            <td class="${cell.style}">${format_date(int(cell.value)) if cell.value != 'None' else '--'}</td>
+            #   elif col == 'datetime':
+            <td class="${cell.style}">${format_datetime(int(cell.value)) if cell.value != 'None' else '--'}</td>
+            #   else:
+            <td class="${cell.style}">${cell.value}</td>
+            #   endif
+            # endfor
+          </tr>
+          # endfor
+        </tbody>
+      </table>
+      # endif
+    </div>
+    ${ super() }
+    # endblock content
+  </body>
+</html>

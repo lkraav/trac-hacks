@@ -1,0 +1,56 @@
+<!--!
+ Copyright (c) 2007-2008 by nexB, Inc. http://www.nexb.com/ - All rights reserved.
+ Author: Francois Granade - fg at nexb dot com
+ Licensed under the same license as Trac - http://trac.edgewall.org/wiki/TracLicense
+-->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
+  <head>
+    <title>$title</title>
+  </head>
+  <body>
+    <div id="content" class="report">
+      <h1>$title</h1>
+      <div py:if="message" id="description" xml:space="preserve">$message</div>
+      <py:if test="headers and rows">
+        <form action="importer" method="post">
+          <input type="hidden" name="action" value="import" />
+          <div class="buttons">
+            <input type="submit" name="cancel" value="Cancel" />
+            <input type="submit" value="Execute import" />
+          </div>
+        </form>
+        <table class="listing tickets">
+          <thead>
+            <tr>
+              <th py:for="header in headers">$header.title</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr py:for="row in rows" class="${row.style}">
+              <py:for each="cell in row.cells" py:with="col = cell.col.strip('_')">
+                <py:choose>
+                  <td py:when="col == 'time'" class="$cell.style">
+                    ${cell.value != 'None' and format_time(int(cell.value)) or '--'}
+                  </td>
+                  <td py:when="col in ('date', 'created', 'modified')" class="$cell.style">
+                    ${cell.value != 'None' and format_date(int(cell.value)) or '--'}
+                  </td>
+                  <td py:when="col == 'datetime'" class="$cell.style">
+                    ${cell.value != 'None' and format_datetime(int(cell.value)) or '--'}
+                  </td>
+                  <td py:otherwise="" class="$cell.style">$cell.value</td>
+                </py:choose>
+              </py:for>
+            </tr>
+          </tbody>
+        </table>
+      </py:if>
+    </div>
+  </body>
+</html>

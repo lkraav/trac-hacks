@@ -7,6 +7,7 @@
 
 from __future__ import with_statement
 
+from pkg_resources import parse_version, resource_filename
 import encodings
 import inspect
 import os
@@ -16,6 +17,7 @@ import tempfile
 import time
 import unicodedata
 
+from trac import __version__
 from trac.attachment import AttachmentModule
 from trac.core import Component, TracError, implements
 from trac.config import Option
@@ -24,15 +26,29 @@ from trac.perm import IPermissionRequestor
 from trac.ticket import TicketSystem
 from trac.ticket import model
 from trac.util import get_reporter_id
-from trac.util.compat import set, sorted
 from trac.util.html import html
 from trac.util.text import to_unicode
 from trac.web import IRequestHandler
-from trac.web.chrome import INavigationContributor, ITemplateProvider
+from trac.web.chrome import Chrome, INavigationContributor, ITemplateProvider
 
 from talm_importer.processors import ImportProcessor
 from talm_importer.processors import PreviewProcessor
 from talm_importer.readers import get_reader
+
+
+_parsed_version = parse_version(__version__)
+
+if _parsed_version >= parse_version('1.4'):
+    _use_jinja2 = True
+elif _parsed_version >= parse_version('1.3'):
+    _use_jinja2 = hasattr(Chrome, 'jenv')
+else:
+    _use_jinja2 = False
+
+if _use_jinja2:
+    _template_dir = resource_filename(__name__, 'templates/jinja2')
+else:
+    _template_dir = resource_filename(__name__, 'templates/genshi')
 
 
 class ImportModule(Component):
@@ -62,7 +78,7 @@ class ImportModule(Component):
         if match:
             return True
 
-    def process_request(self, req):
+    def _process_request(self, req):
         req.perm.assert_permission('IMPORT_EXECUTE')
         action = req.args.get('action', 'other')
 
@@ -87,7 +103,6 @@ class ImportModule(Component):
             return self._do_import(req.session['importer.uploadedfile'], int(req.session['importer.sheet']),
                                    req, req.session['importer.uploadedfilename'], tickettime,
                                    encoding=req.session['importer.encoding'])
-            
         else:
             req.session['importer.uploadedfile'] = None
             req.session['importer.uploadedfilename'] = None
@@ -97,7 +112,14 @@ class ImportModule(Component):
                      'csv_default_encoding': self.csv_default_encoding,
                      'encodings': self._get_encodings() }
 
-            return 'importer.html', data, None
+            return 'importer.html', data
+
+    if _use_jinja2:
+        process_request = _process_request
+    else:
+        def process_request(self, req):
+            rv = self._process_request(req)
+            return rv + (None,)
 
     # ITemplateProvider
 
@@ -111,8 +133,7 @@ class ImportModule(Component):
         """Return the absolute path of the directory containing the provided
         ClearSilver templates.
         """
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return [_template_dir]
 
     # Internal methods
 
