@@ -3,6 +3,7 @@
 #
 # Copyright (C) 2008 Douglas Clifton <dwclifton@gmail.com>
 # Copyright (C) 2012-2013 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2021 Cinc
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -19,8 +20,8 @@ setup(
 
     author='Douglas Clifton',
     author_email='dwclifton@gmail.com',
-    maintainer='Ryan J Ollos',
-    maintainer_email='ryan.j.ollos@gmail.com',
+    maintainer='Cinc-th',
+    maintainer_email='',
     description='Implements Markdown syntax WikiProcessor as a Trac macro.',
     long_description=open(
         os.path.join(os.path.dirname(__file__), 'README')).read(),
