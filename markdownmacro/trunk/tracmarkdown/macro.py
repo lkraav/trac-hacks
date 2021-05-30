@@ -8,6 +8,7 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
+"""Components adding support for Markdown as a wiki language to Trac."""
 
 """ @package MarkdownMacro
     @file macro.py
@@ -35,13 +36,14 @@ try:
 except ImportError:
     markdown = None
 
-from trac.config import IntOption
+from trac.config import IntOption, ListOption
 from trac.core import Component, implements
+from trac.resource import Resource
 from trac.util.html import Markup, html as tag, TracHTMLSanitizer
-from trac.web.api import IRequestFilter
-from trac.web.chrome import add_warning
+from trac.web.api import IRequestFilter, IRequestHandler
+from trac.web.chrome import add_warning, chrome_info_script, web_context
 from trac.wiki.api import WikiSystem
-from trac.wiki.formatter import format_to_html, format_to_oneliner, Formatter, system_message
+from trac.wiki.formatter import format_to, format_to_html, format_to_oneliner, Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
 
 from .mdheader import HashHeaderProcessor
@@ -58,8 +60,18 @@ tab_length = IntOption('markdown', 'tab_length', 4, """
     """)
 
 class MarkdownMacro(WikiMacroBase):
-    """Implements Markdown syntax [WikiProcessors WikiProcessor] as a Trac
-       macro."""
+    """Implements Markdown syntax as a Trac macro.
+
+    === Usage
+    The macro can only be used as a [WikiProcessors WikiProcessor]:
+    {{{
+    {{{#!Markdown
+    # A Header
+
+    This `is` *all* Markdown.
+    }}}
+    }}}
+    """
 
     tab_length = tab_length
 
@@ -71,12 +83,62 @@ class MarkdownMacro(WikiMacroBase):
 
 
 class MarkdownFormatter(Component):
+    """Allow to use Markdown as wiki language for certain wiki pages.
+
+    === Configuration
+    [[TracIni(markdown)]]
+    """
+    implements(IRequestFilter, IRequestHandler)
+
+    is_valid_default_handler = False
 
     tab_length = tab_length
+    root_pages = ListOption('markdown', 'root_pages', [],
+                            doc="List of wiki page names to be used as root pages for a page hierarchy. Wiki subpages "
+                                "of these roots will use Markdown as the default wiki language.[[BR]][[BR]]"
+                                "For example if the list contains `Docs, Note` the wiki pages `Docs/MyDocument` "
+                                "and `Note/FirstNote` will use Markdown; the wiki page `NoteOne` will use Trac "
+                                "WikiFormatting.\n\nExample:\n"
+                                "{{{#!ini\n[markdown]\nroot_pages = Docs, Note\n}}}\n**Note:** page names are "
+                                "case sensitive.")
 
-    implements(IRequestFilter)
+    # IRequestHandler methods
+
+    def match_request(self, req):
+        # We don't have to check the request here because Trac is
+        # calling process_request() directly from the returned handler
+        # in pre_process_request() for wiki preview rendering.
+        # But we allow for genuine Markup rendering here for the future and
+        # for testing.
+        return req.path_info == '/markup_render'
+
+    def process_request(self, req):
+        # This code is largely taken from WikiRenderer() in trac.wiki.web_api.
+        # See there for extended features like 'flavour' or options like
+        # 'escape_newlines' or 'shorten'.
+
+        # Allow all POST requests (with a valid __FORM_TOKEN, ensuring that
+        # the client has at least some permission). Additionally, allow GET
+        # requests from TRAC_ADMIN for testing purposes.
+        if req.method != 'POST':
+            req.perm.require('TRAC_ADMIN')
+        realm = req.args.get('realm', WikiSystem.realm)
+        id = req.args.get('id')
+        version = req.args.getint('version')
+        text = req.args.get('text', '')
+        resource = Resource(realm, id=id, version=version)
+        context = web_context(req, resource)
+        formatter = Formatter(self.env, context)
+        rendered = Markup(format_to_markdown(self, formatter, text))
+
+        req.send(rendered.encode('utf-8'))
 
     def pre_process_request(self, req, handler):
+        # This is coming for the wiki preview rendering. Redirect it to our handler
+        # to use Markdown for rendering.
+        if req.path_info == '/wiki_render':
+            if req.args.get('realm', None) == 'wiki':
+                return self
         return handler
 
     def post_process_request(self, req, template, data, content_type):
@@ -85,9 +147,12 @@ class MarkdownFormatter(Component):
             formatter = Formatter(self.env, context)
             return Markup(format_to_markdown(self, formatter, wikidom))
 
-        if data:
+        if template and data and 'page' in data:
+            # We only handle wiki pages
+            path = data['page'].name.split('/')
             if markdown:
-                data['wiki_to_html'] = partial(wiki_to_html, self)
+                if path[0] in self.root_pages:
+                    data['wiki_to_html'] = partial(wiki_to_html, self)
             else:
                 add_warning(req, WARNING)
 
