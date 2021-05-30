@@ -47,12 +47,7 @@ from trac.wiki.macros import WikiMacroBase
 
 from .mdheader import HashHeaderProcessor
 
-# links, autolinks, and reference-style links
 
-LINK = re.compile(
-    r'(\[.*\]\()([^) ]+)([^)]*\))|(<)([^>]+)(>)|(\n\[[^]]+\]: *)([^ \n]+)(.*\n)'
-)
-HREF = re.compile(r'href=[\'"]?([^\'" ]*)', re.I)
 WARNING = tag('Error importing Python Markdown, install it from ',
               tag.a('here', href="https://pypi.python.org/pypi/Markdown"),
               '.')
@@ -145,16 +140,18 @@ class TracLinkInlineProcessor(InlineProcessor):
         return self.md.htmlStash.store(html), m.start(0), m.end(0)
 
 
-TRAC_LINK_PATTERN = r'\[(.+?)\]'
 class TracLinkExtension(Extension):
     """For registering the Trac link processor"""
+
+    TRAC_LINK_PATTERN = r'\[(.+?)\]'
+
     def extendMarkdown(self, md):
         # Use priority 115 so the markdown link processor with priority 160
         # may resolve links like [example](http://...) properly without our
         # extension breaking the link.
         # Same goes for shortrefs like [Google] with priority 130
         # and autolinks using priority 120.
-        md.inlinePatterns.register(TracLinkInlineProcessor(TRAC_LINK_PATTERN, md), 'traclink', 115)
+        md.inlinePatterns.register(TracLinkInlineProcessor(self.TRAC_LINK_PATTERN, md), 'traclink', 115)
 
 
 class TracMacroInlineProcessor(InlineProcessor):
@@ -171,11 +168,13 @@ class TracMacroInlineProcessor(InlineProcessor):
         return self.md.htmlStash.store(html), m.start(0), m.end(0)
 
 
-TRAC_MACRO_PATTERN = r'\[\[(.*?)\]\]'
 class TracMacroExtension(Extension):
     """Register the Trac macro processor."""
+
+    TRAC_MACRO_PATTERN = r'\[\[(.*?)\]\]'
+
     def extendMarkdown(self, md):
-        md.inlinePatterns.register(TracMacroInlineProcessor(TRAC_MACRO_PATTERN, md), 'tracmacro', 172)
+        md.inlinePatterns.register(TracMacroInlineProcessor(self.TRAC_MACRO_PATTERN, md), 'tracmacro', 172)
 
 
 class TracTicketInlineProcessor(InlineProcessor):
@@ -185,15 +184,17 @@ class TracTicketInlineProcessor(InlineProcessor):
         return self.md.htmlStash.store(html), m.start(0), m.end(0)
 
 
-TRAC_TICKET_PATTERN = r'#(\d+)'
 class TracTicketExtension(Extension):
     """Register the ticket link extension."""
+
+    TRAC_TICKET_PATTERN = r'#(\d+)'
+
     def extendMarkdown(self, md):
         # Use priority 115 so the markdown link processor with priority 160
         # may resolve links with location part like [example](http://example.com/foo#123) properly
         # without our extension breaking the link.
         # Same goes for autolinks <http://...> with priority 120.
-        md.inlinePatterns.register(TracTicketInlineProcessor(TRAC_TICKET_PATTERN, md), 'tracticket', 115)
+        md.inlinePatterns.register(TracTicketInlineProcessor(self.TRAC_TICKET_PATTERN, md), 'tracticket', 115)
 
 
 class WikiProcessorExtension(Extension):
@@ -203,6 +204,8 @@ class WikiProcessorExtension(Extension):
 
 
 class WikiProcessorPreprocessor(Preprocessor):
+    """Support for Trac WikiProcessors using Trac syntax."""
+
     wp_open_re = re.compile(r'\{{3,3}#!|\{{3,3}[\s]*$')
     wp_close_re = re.compile(r'}{3,3}[\s]*$')
 
