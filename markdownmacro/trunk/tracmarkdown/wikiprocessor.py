@@ -90,9 +90,23 @@ class WikiProcessorFencePreprocessor(Preprocessor):
     (?P<fence>^(?:~{3,}|`{3,}))[ ]*    # Opening ``` or ~~~
     (?P<code>.*?)(?<=\n)
     (?P=fence)[ ]*$''', re.MULTILINE | re.DOTALL | re.VERBOSE)
-
+    ALPHANUM = re.compile(r'[\w]')
 
     def run(self, lines):
+        def callback(match):
+            txt = match.group(2)
+            if txt.startswith('\n#!'):
+                # First line of content specifies the type of content
+                return "{{{%s}}}\n" % match.group(2)
+            elif self.ALPHANUM.match(txt):
+                # Do we have any language specifier following? If yes add '#!'.
+                # The re returns 'None' if the text holds a '\n' before any alphanums
+                print('-->', repr("{{{#!%s}}}\n" % match.group(2)))
+                return "{{{#!%s}}}\n" % match.group(2)
+            else:
+                return "{{{%s}}}\n" % match.group(2)
+
         text = '\n'.join(lines)
-        text = self.FENCED_BLOCK_RE.sub(r"{{{#!\2}}}\n", text)
+        text = self.FENCED_BLOCK_RE.sub(callback, text)
+        # text = self.FENCED_BLOCK_RE.sub(r"{{{#!\2}}}\n", text)
         return text.split('\n')
