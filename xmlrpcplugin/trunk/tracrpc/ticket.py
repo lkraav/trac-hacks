@@ -31,6 +31,7 @@ else:
     TicketNotifyEmail = None
 
 from .api import IXMLRPCHandler, Binary
+from .util import iteritems
 
 __all__ = ['TicketRPC']
 
@@ -153,7 +154,7 @@ class TicketRPC(Component):
         t['summary'] = summary
         t['description'] = description
         t['reporter'] = req.authname
-        for k, v in attributes.iteritems():
+        for k, v in iteritems(attributes):
             t[k] = v
         t['status'] = 'new'
         t['resolution'] = ''
@@ -206,7 +207,7 @@ class TicketRPC(Component):
             if time_changed and \
                     str(time_changed) != str(to_utimestamp(t['changetime'])):
                 raise TracError("Ticket has been updated since last get().")
-            for k, v in attributes.iteritems():
+            for k, v in iteritems(attributes):
                 t[k] = v
             t.save_changes(author, comment, when=when)
         else:
@@ -227,7 +228,7 @@ class TicketRPC(Component):
                         "invalid action '%s'" % (id, req.authname, action))
             controllers = list(tm._get_action_controllers(req, t, action))
             all_fields = [field['name'] for field in ts.get_ticket_fields()]
-            for k, v in attributes.iteritems():
+            for k, v in iteritems(attributes):
                 if k in all_fields and k != 'status':
                     t[k] = v
             # TicketModule reads req.args - need to move things there...
@@ -451,7 +452,7 @@ def ticketModelFactory(cls, cls_attributes):
         def get(self, req, name):
             i = cls(self.env, name)
             attributes= {}
-            for k, default in cls_attributes.iteritems():
+            for k, default in iteritems(cls_attributes):
                 v = getattr(i, k)
                 if v is None:
                     v = default
@@ -466,7 +467,7 @@ def ticketModelFactory(cls, cls_attributes):
         def create(self, req, name, attributes):
             i = cls(self.env)
             i.name = name
-            for k, v in attributes.iteritems():
+            for k, v in iteritems(attributes):
                 setattr(i, k, v)
             i.insert();
         create.__doc__ = """ Create a new ticket %s with the given attributes. """ % cls.__name__.lower()
@@ -477,7 +478,7 @@ def ticketModelFactory(cls, cls_attributes):
 
         def _updateHelper(self, name, attributes):
             i = cls(self.env, name)
-            for k, v in attributes.iteritems():
+            for k, v in iteritems(attributes):
                 setattr(i, k, v)
             return i
     TicketModelImpl.__doc__ = """ Interface to ticket %s objects. """ % cls.__name__.lower()

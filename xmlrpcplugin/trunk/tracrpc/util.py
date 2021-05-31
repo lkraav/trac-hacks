@@ -21,12 +21,14 @@ if sys.version_info[0] == 2:
     unicode = unicode
     basestring = basestring
     unichr = unichr
+    iteritems = lambda d: d.iteritems()
     from itertools import izip
     import xmlrpclib
 else:
     unicode = str
     basestring = str
     unichr = chr
+    iteritems = lambda d: d.items()
     izip = zip
     from xmlrpc import client as xmlrpclib
 
