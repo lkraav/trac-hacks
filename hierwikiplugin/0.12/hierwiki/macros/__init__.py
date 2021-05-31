@@ -1,2 +1,0 @@
-import subwiki
-import parentwiki
