@@ -17,7 +17,6 @@ setup(
     name='TracMarkdownMacro',
     packages=['tracmarkdown'],
     version='0.11.10',
-
     author='Douglas Clifton',
     author_email='dwclifton@gmail.com',
     maintainer='Cinc-th',
@@ -29,7 +28,8 @@ setup(
     keywords='0.11 dwclifton processor macro wiki',
     url='https://trac-hacks.org/wiki/MarkdownMacro',
     license='BSD 3-Clause',
-
+    package_data={'tracmarkdown': ['htdocs/css/*.css',
+                                 ]},
     entry_points={'trac.plugins': ['tracmarkdown.macro = tracmarkdown.macro']},
     classifiers=[
         'Development Status :: 4 - Beta',

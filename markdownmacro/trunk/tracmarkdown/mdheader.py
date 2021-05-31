@@ -47,9 +47,9 @@ class HashHeaderProcessor(BlockProcessor):
                 # recursively parse this lines as a block.
                 self.parser.parseBlocks(parent, [before])
             # Create header using named groups from RE
-            h = util.etree.SubElement(parent, 'h%d' % len(m.group('level')),
-                                      attrib={'class': 'section'})  # add Trac class
+            h = util.etree.SubElement(parent, 'h%d' % len(m.group('level')))
             h.text = m.group('header').strip()
+            h.set('class', 'section')  # add Trac class
             if after:
                 # Insert remaining lines as first block for future parsing.
                 blocks.insert(0, after)

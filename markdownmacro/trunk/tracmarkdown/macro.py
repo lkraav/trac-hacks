@@ -27,6 +27,7 @@
 """
 
 from functools import partial
+from pkg_resources import resource_filename
 try:
     from markdown import markdown, Markdown
     from markdown.extensions import Extension
@@ -41,11 +42,12 @@ from trac.core import Component, implements
 from trac.resource import Resource
 from trac.util.html import Markup, html as tag, TracHTMLSanitizer
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import add_warning, chrome_info_script, web_context
+from trac.web.chrome import add_stylesheet, ITemplateProvider, add_warning, web_context
 from trac.wiki.api import WikiSystem
-from trac.wiki.formatter import format_to, format_to_html, format_to_oneliner, Formatter, system_message
+from trac.wiki.formatter import format_to_html, format_to_oneliner, Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
 
+from .mdcodeblock import CodeBlockProcessor
 from .mdheader import HashHeaderProcessor
 
 
@@ -88,7 +90,7 @@ class MarkdownFormatter(Component):
     === Configuration
     [[TracIni(markdown)]]
     """
-    implements(IRequestFilter, IRequestHandler)
+    implements(IRequestFilter, IRequestHandler, ITemplateProvider)
 
     is_valid_default_handler = False
 
@@ -137,8 +139,11 @@ class MarkdownFormatter(Component):
         # This is coming for the wiki preview rendering. Redirect it to our handler
         # to use Markdown for rendering.
         if req.path_info == '/wiki_render':
-            if req.args.get('realm', None) == 'wiki':
-                return self
+            if req.args.get('realm', None) == 'wiki' and req.args.get('id'):
+                path = req.args.get('id').split('/')
+                if markdown:
+                    if path[0] in self.root_pages:
+                        return self
         return handler
 
     def post_process_request(self, req, template, data, content_type):
@@ -156,7 +161,16 @@ class MarkdownFormatter(Component):
             else:
                 add_warning(req, WARNING)
 
+        add_stylesheet(req, 'markdown/css/markdown.css')
         return template, data, content_type
+
+    # ITemplateProvider methods
+
+    def get_templates_dirs(self):
+        return []
+
+    def get_htdocs_dirs(self):
+        return [('markdown', resource_filename(__name__, 'htdocs'))]
 
 
 def format_to_markdown(self, formatter, content):
@@ -179,11 +193,20 @@ def format_to_markdown(self, formatter, content):
     md = Markdown(extensions=['extra', wiki_proc, trac_link, trac_macro, trac_tkt, wp_fence],
                   tab_length=self.tab_length, output_format='html')
 
-    # Register our own blockprocessor for hash headers ('#', '##', ...) which adds
-    # Tracs CSS classes for proper styling.
-    md.parser.blockprocessors.deregister('hashheader')
+    # Register our own blockprocessors for hash headers ('#', '##', ...) and code blocks
+    # which add Tracs CSS classes for proper styling.
+    try:
+        md.parser.blockprocessors.deregister('hashheader')
+    except ValueError:
+        pass
     hash_header = HashHeaderProcessor(md.parser)  # This one is changed
     md.parser.blockprocessors.register(hash_header, 'hashheader', 70)
+    try:
+        md.parser.blockprocessors.deregister('code')
+    except ValueError:
+        pass
+    codeblock = CodeBlockProcessor(md.parser)  # This one is changed
+    md.parser.blockprocessors.register(codeblock, 'code', 80)
 
     # Added for use with format_to_html() and format_to_oneliner()
     md.trac_context = formatter.context
