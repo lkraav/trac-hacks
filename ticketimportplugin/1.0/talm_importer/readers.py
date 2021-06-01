@@ -58,7 +58,6 @@ def get_reader(env, filename, sheet_index, datetime_format, encoding='utf-8'):
         errors['CSVReader'] = exception_to_unicode(e, traceback=True)
 
     for name, error in iteritems(errors):
-        print(error)
         env.log.warning('Exception caught while reading the file using %s: %s',
                         name, error)
     if xlrd or openpyxl:
