@@ -32,6 +32,7 @@ try:
     from markdown import markdown, Markdown
     from markdown.extensions import Extension
     from markdown.inlinepatterns import InlineProcessor
+    from markdown.treeprocessors import Treeprocessor
     from markdown import util
     from .wikiprocessor import WikiProcessorExtension, WikiProcessorFenceExtension
 except ImportError:
@@ -46,9 +47,6 @@ from trac.web.chrome import add_stylesheet, ITemplateProvider, add_warning, web_
 from trac.wiki.api import WikiSystem
 from trac.wiki.formatter import format_to_html, format_to_oneliner, Formatter, system_message
 from trac.wiki.macros import WikiMacroBase
-
-from .mdcodeblock import CodeBlockProcessor
-from .mdheader import HashHeaderProcessor
 
 
 WARNING = tag('Error importing Python Markdown, install it from ',
@@ -90,7 +88,8 @@ class MarkdownFormatter(Component):
     === Configuration
     [[TracIni(markdown)]]
     """
-    implements(IRequestFilter, IRequestHandler, ITemplateProvider)
+    if markdown:
+        implements(IRequestFilter, IRequestHandler, ITemplateProvider)
 
     is_valid_default_handler = False
 
@@ -141,9 +140,8 @@ class MarkdownFormatter(Component):
         if req.path_info == '/wiki_render':
             if req.args.get('realm', None) == 'wiki' and req.args.get('id'):
                 path = req.args.get('id').split('/')
-                if markdown:
-                    if path[0] in self.root_pages:
-                        return self
+                if path[0] in self.root_pages:
+                    return self
         return handler
 
     def post_process_request(self, req, template, data, content_type):
@@ -155,11 +153,8 @@ class MarkdownFormatter(Component):
         if template and data and 'page' in data:
             # We only handle wiki pages
             path = data['page'].name.split('/')
-            if markdown:
-                if path[0] in self.root_pages:
-                    data['wiki_to_html'] = partial(wiki_to_html, self)
-            else:
-                add_warning(req, WARNING)
+            if path[0] in self.root_pages:
+                data['wiki_to_html'] = partial(wiki_to_html, self)
 
         add_stylesheet(req, 'markdown/css/markdown.css')
         return template, data, content_type
@@ -193,20 +188,7 @@ def format_to_markdown(self, formatter, content):
     md = Markdown(extensions=['extra', wiki_proc, trac_link, trac_macro, trac_tkt, wp_fence],
                   tab_length=self.tab_length, output_format='html')
 
-    # Register our own blockprocessors for hash headers ('#', '##', ...) and code blocks
-    # which add Tracs CSS classes for proper styling.
-    try:
-        md.parser.blockprocessors.deregister('hashheader')
-    except ValueError:
-        pass
-    hash_header = HashHeaderProcessor(md.parser)  # This one is changed
-    md.parser.blockprocessors.register(hash_header, 'hashheader', 70)
-    try:
-        md.parser.blockprocessors.deregister('code')
-    except ValueError:
-        pass
-    codeblock = CodeBlockProcessor(md.parser)  # This one is changed
-    md.parser.blockprocessors.register(codeblock, 'code', 80)
+    md.treeprocessors.register(TracClassTreeprocessor(), 'trac_class', 30)
 
     # Added for use with format_to_html() and format_to_oneliner()
     md.trac_context = formatter.context
@@ -283,3 +265,17 @@ class TracTicketExtension(Extension):
         # without our extension breaking the link.
         # Same goes for autolinks <http://...> with priority 120.
         md.inlinePatterns.register(TracTicketInlineProcessor(self.TRAC_TICKET_PATTERN, md), 'tracticket', 115)
+
+
+class TracClassTreeprocessor(Treeprocessor):
+    """Tree processor which applies Trac classes to some elements
+       so the styling is Trac like.
+    """
+
+    def run(self, root):
+        elms = root.iter(None)
+        for elm in elms:
+            if elm.tag in ('table', 'pre'):
+                elm.set('class', 'wiki')
+            elif elm.tag in ('h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
+                elm.set('class', 'section')
