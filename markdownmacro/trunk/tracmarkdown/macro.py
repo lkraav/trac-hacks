@@ -77,7 +77,7 @@ class MarkdownMacro(WikiMacroBase):
 
     def expand_macro(self, formatter, name, content, args=None):
         if markdown:
-            return format_to_markdown(self, formatter, content)
+            return format_to_markdown(self, formatter.context, content)
         else:
             return system_message(WARNING)
 
@@ -129,8 +129,7 @@ class MarkdownFormatter(Component):
         text = req.args.get('text', '')
         resource = Resource(realm, id=id, version=version)
         context = web_context(req, resource)
-        formatter = Formatter(self.env, context)
-        rendered = Markup(format_to_markdown(self, formatter, text))
+        rendered = Markup(format_to_markdown(self, context, text))
 
         req.send(rendered.encode('utf-8'))
 
@@ -147,8 +146,7 @@ class MarkdownFormatter(Component):
     def post_process_request(self, req, template, data, content_type):
 
         def wiki_to_html(self, context, wikidom, escape_newlines=None):
-            formatter = Formatter(self.env, context)
-            return Markup(format_to_markdown(self, formatter, wikidom))
+            return Markup(format_to_markdown(self, context, wikidom))
 
         if template and data and 'page' in data:
             # We only handle wiki pages
@@ -168,7 +166,8 @@ class MarkdownFormatter(Component):
         return [('markdown', resource_filename(__name__, 'htdocs'))]
 
 
-def format_to_markdown(self, formatter, content):
+def format_to_markdown(self, context, content):
+    formatter = Formatter(self.env, context)
     _sanitizer = TracHTMLSanitizer(
         safe_schemes=formatter.wiki.safe_schemes,
         safe_origins=formatter.wiki.safe_origins)
@@ -191,7 +190,7 @@ def format_to_markdown(self, formatter, content):
     md.treeprocessors.register(TracClassTreeprocessor(), 'trac_class', 30)
 
     # Added for use with format_to_html() and format_to_oneliner()
-    md.trac_context = formatter.context
+    md.trac_context = context
     md.trac_env = self.env
     return sanitize(md.convert(content))
 

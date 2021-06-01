@@ -30,7 +30,8 @@ setup(
     license='BSD 3-Clause',
     package_data={'tracmarkdown': ['htdocs/css/*.css',
                                  ]},
-    entry_points={'trac.plugins': ['tracmarkdown.macro = tracmarkdown.macro']},
+    entry_points={'trac.plugins': ['tracmarkdown.macro = tracmarkdown.macro',
+                                   'tracmarkdown.preview_renderer = tracmarkdown.preview_renderer']},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Plugins',
