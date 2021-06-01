@@ -5,9 +5,7 @@
 # Licensed under the same license as Trac - http://trac.edgewall.org/wiki/TracLicense
 #
 
-from __future__ import with_statement
-
-import difflib
+import io
 import os.path
 import pprint
 import re
@@ -26,38 +24,13 @@ from trac.ticket.model import Ticket
 from trac.util.html import Markup
 from trac.web.api import Request
 
-from talm_importer.importer import ImportModule
-from talm_importer.readers import get_reader
-
-
-try:
-    from openpyxl.writer.write_only import _openpyxl_shutdown
-except ImportError:
-    pass
-else:
-    import atexit
-    for index, entry in enumerate(atexit._exithandlers):
-        if entry[0] == _openpyxl_shutdown:
-            del atexit._exithandlers[index]
-    del index, entry
-    del _openpyxl_shutdown
-    del atexit
-
-
-if parse_version(VERSION) >= parse_version('0.12'):
-    CTL_EXT = '-0.12.ctl'
-else:
-    CTL_EXT = '.ctl'
+from .compat import long, unicode
+from .importer import ImportModule, _use_jinja2
+from .readers import get_reader
 
 
 TOPDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TESTDIR = 'test'
-
-
-def _db_query(db, stmt, *args):
-    cursor = db.cursor()
-    cursor.execute(stmt, args)
-    return list(cursor)
 
 
 def _printme(something):
@@ -82,14 +55,16 @@ class PrinterMarkupWrapper(object):
 
 class PrettyPrinter(pprint.PrettyPrinter):
     def format(self, object, context, maxlevels, level):
-        if isinstance(object, Markup):
+        if not _use_jinja2 and isinstance(object, Markup):
             object = PrinterMarkupWrapper(object)
-        elif isinstance(object, str):
+        elif isinstance(object, bytes):
             object = object.decode('utf-8')
         return pprint.PrettyPrinter.format(self, object, context, maxlevels, level)
 
 
 class ImporterBaseTestCase(unittest.TestCase):
+
+    maxDiff = None
 
     def setUp(self):
         self.TICKET_TIME = 1190909220
@@ -137,7 +112,8 @@ class ImporterBaseTestCase(unittest.TestCase):
            pass
         req.authname = 'testuser'
         #req.hdf = HDFWrapper([]) # replace by this if you want to generate HTML: req.hdf = HDFWrapper(loadpaths=chrome.get_all_templates_dirs())
-        template, data, content_type = self.mod._do_preview(filename, 1, req, encoding='cp1252')
+        template, data = self.mod._do_preview(filename, 1, req,
+                                              encoding='cp1252')
         #sys.stdout = tempstdout
         #req.display(template, content_type or 'text/html')
         #open('/tmp/out.html', 'w').write(req.hdf.render(template, None))
@@ -153,14 +129,14 @@ class ImporterBaseTestCase(unittest.TestCase):
         req.authname = 'testuser'
         #req.hdf = HDFWrapper([]) # replace by this if you want to generate HTML: req.hdf = HDFWrapper(loadpaths=chrome.get_all_templates_dirs())
         with self.env.db_query as db:
-            enums_before = db("SELECT * FROM enum")
+            enums_before = db("SELECT type, name, value FROM enum")
             components_before = db("SELECT * FROM component")
             #print enums_before
             # when testing, always use the same time so that the results are comparable
             #print "importing " + filename + " with tickettime " + str(self.TICKET_TIME)
-            template, data, content_type = \
-                self.mod._do_import(filename, sheet, req, filename,
-                                    self.TICKET_TIME, encoding='cp1252')
+            template, data = self.mod._do_import(filename, sheet, req,
+                                                 filename, self.TICKET_TIME,
+                                                 encoding='cp1252')
             #sys.stdout = tempstdout
             #req.display(template, content_type or 'text/html')
             #open('/tmp/out.html', 'w').write(req.hdf.render(template, None))
@@ -176,53 +152,36 @@ class ImporterBaseTestCase(unittest.TestCase):
             tickets = normalize_rows(db("SELECT * FROM ticket ORDER BY id"))
             tickets_custom = normalize_rows(db("SELECT * FROM ticket_custom "
                                                "ORDER BY ticket, name"))
-            tickets_change = normalize_rows(db("SELECT * FROM ticket_change"))
-            enums = sorted(set(db("SELECT * FROM enum")) - set(enums_before))
+            tickets_change = normalize_rows(db("SELECT * FROM ticket_change "
+                                               "ORDER BY ticket, time, field"))
+            enums = sorted(set(db("SELECT type, name, value FROM enum")) -
+                           set(enums_before))
             components = sorted(set(db("SELECT * FROM component")) -
                                 set(components_before))
             return self._pformat([tickets, tickets_custom, tickets_change, enums,
                                   components])
 
     def _readfile(self, path):
-        f = open(path, 'rb')
-        try:
+        with io.open(path, 'r', encoding='utf-8') as f:
             return f.read()
-        finally:
-            f.close()
 
     def _writefile(self, path, data):
-        f = open(path, 'wb')
-        try:
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        with open(path, 'wb') as f:
             return f.write(data)
-        finally:
-            f.close()
 
     def _evalfile(self, path):
-        contents = self._readfile(path)
-        return eval(contents), contents
+        return eval(self._readfile(path))
 
     def _do_test(self, filename, testfun):
         join = os.path.join
         outfilename = join(TESTDIR, filename + '.' + testfun.__name__ + '.out')
-        ctlfilename = join(TESTDIR, filename + '.' + testfun.__name__ + CTL_EXT)
+        ctlfilename = join(TESTDIR, filename + '.' + testfun.__name__ + '.ctl')
         self._writefile(outfilename, testfun(join(TESTDIR, filename)))
-        outdata, outprint = self._evalfile(outfilename)
-        ctldata, ctlprint = self._evalfile(ctlfilename)
-        try:
-            self.assertEquals(ctldata, outdata)
-        except AssertionError:
-            ctlprint = self._pformat(ctldata)
-            diffs = list(difflib.ndiff(ctlprint.splitlines(),
-                                       outprint.splitlines()))
-            def contains_diff(diffs, idx, line):
-                for diff in diffs[idx - line:idx + line]:
-                    if not diff.startswith(' '):
-                        return True
-                return False
-            raise AssertionError('Two objects do not match\n' +
-                                 '\n'.join(diff.rstrip()
-                                           for idx, diff in enumerate(diffs)
-                                           if contains_diff(diffs, idx, 2)))
+        outdata = self._evalfile(outfilename)
+        ctldata = self._evalfile(ctlfilename)
+        self.assertEqual(ctldata, outdata)
 
     def _do_test_diffs(self, filename, testfun):
         self._do_test(filename, testfun)
@@ -230,7 +189,7 @@ class ImporterBaseTestCase(unittest.TestCase):
     def _do_test_with_exception(self, filename, testfun):
         try:
            self._do_test(filename, testfun)
-        except TracError, e:
+        except TracError as e:
            return str(e)
 
     def _insert_ticket(self, id=None, type=None, time=None, changetime=None,
@@ -281,8 +240,8 @@ class ImporterTestCase(ImporterBaseTestCase):
            pass
            # TODO: this should throw an exception (a ticket has been modified between preview and import)
            #_do_test(env, 'simple-copy.csv', self._test_import)
-        except TracError, err_string:
-            print err_string
+        except TracError as err_string:
+            print(err_string)
         #TODO: change the test case to modify the second or third row, to make sure that db.rollback() works
 
     def test_import_with_comments(self):
@@ -314,8 +273,8 @@ class ImporterTestCase(ImporterBaseTestCase):
         try:
            self._do_test_diffs('with-id.csv', self._test_preview)
            self.assert_(False)
-        except TracError, e:
-           self.assertEquals(str(e), 'Ticket 1 found in file, but not present in Trac: cannot import.')
+        except TracError as e:
+           self.assertEqual(str(e), 'Ticket 1 found in file, but not present in Trac: cannot import.')
 
     def test_import_4(self):
         with self.env.db_transaction as db:
@@ -330,9 +289,10 @@ class ImporterTestCase(ImporterBaseTestCase):
                 reporter=u'anonymous2', status=u'new',
                 summary=u'summarybefore change')
             cursor = db.cursor()
-            cursor.executemany("INSERT INTO enum VALUES (%s,%s,%s)",
-                               [('priority', 'mypriority', '1'),
-                                ('priority', 'yourpriority', '2')])
+            cursor.executemany(
+                "INSERT INTO enum ('type','name','value') VALUES (%s,%s,%s)",
+                [('priority', 'mypriority', '1'),
+                 ('priority', 'yourpriority', '2')])
             cursor.executemany("INSERT INTO component VALUES (%s,%s,%s)",
                                [('mycomp', '', ''), ('yourcomp', '', '')])
         self._do_test_diffs('with-id.csv', self._test_preview)
@@ -355,7 +315,7 @@ class ImporterTestCase(ImporterBaseTestCase):
                 component=u'component2', priority=u'major', owner=u'somebody2',
                 reporter=u'anonymous2', status=u'new',
                 summary=u'a summary that is duplicated')
-        self.assertEquals(
+        self.assertEqual(
             'Tickets #1, #2 and #3 have the same summary "a summary that is '
             'duplicated" in Trac. Ticket reconciliation by summary can not be '
             'done. Please modify the summaries to ensure that they are '
@@ -365,7 +325,7 @@ class ImporterTestCase(ImporterBaseTestCase):
                 self._test_preview))
 
     def test_import_6(self):
-        self.assertEquals(
+        self.assertEqual(
             'Summary "test & integration" is duplicated in the spreadsheet. '
             'Ticket reconciliation by summary can not be done. Please modify '
             'the summaries in the spreadsheet to ensure that they are unique.',
@@ -445,9 +405,10 @@ class ImporterTestCase(ImporterBaseTestCase):
                 reporter=u'anonymous2', status=u'new',
                 summary=u'summarybefore change')
             cursor = db.cursor()
-            cursor.executemany("INSERT INTO enum VALUES (%s,%s,%s)",
-                               [('priority', 'mypriority', '1'),
-                                ('priority', 'yourpriority', '2')])
+            cursor.executemany(
+                "INSERT INTO enum ('type','name','value') VALUES (%s,%s,%s)",
+                [('priority', 'mypriority', '1'),
+                 ('priority', 'yourpriority', '2')])
             cursor.executemany("INSERT INTO component VALUES (%s,%s,%s)",
                                [('mycomp', '', ''), ('yourcomp', '', '')])
         self._do_test_diffs('with-id-called-id.csv', self._test_preview)
@@ -542,8 +503,8 @@ class ImporterTestCase(ImporterBaseTestCase):
             self._do_test('test-handling-csv-error.csv',
                           self._test_preview)
             assert False, 'No TracError'
-        except TracError, e:
-            self.assertEquals('Error while reading from line 4 to 6',
+        except TracError as e:
+            self.assertEqual('Error while reading from line 4 to 6',
                               unicode(e).split(':', 1)[0])
 
     def test_same_results_between_xls_and_xlsx(self):
@@ -558,8 +519,8 @@ class ImporterTestCase(ImporterBaseTestCase):
                 xlsx_reader = self._get_reader(name + '.xlsx', 1, format)
                 xls_header, xls_data = xls_reader.readers()
                 xlsx_header, xlsx_data = xlsx_reader.readers()
-                self.assertEquals(xls_header, xlsx_header)
-                self.assertEquals(list(xls_data), list(xlsx_data))
+                self.assertEqual(xls_header, xlsx_header)
+                self.assertEqual(list(xls_data), list(xlsx_data))
             finally:
                 if xls_reader:
                     xls_reader.close()
@@ -602,7 +563,7 @@ class MasterTicketsPluginTestCase(ImporterBaseTestCase):
 
     def _verify_mastertickets_table(self):
         rows = self.db_query('SELECT * FROM mastertickets')
-        self.assertEquals([], rows)
+        self.assertEqual([], rows)
 
     def test_ticket_bug_10188(self): #FAILING
         self._verify_mastertickets_table()

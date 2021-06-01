@@ -1,8 +1,8 @@
 {   'headers': [   {'col': 'ticket', 'title': 'ticket'},
-                   {'col': u'owner', 'title': u'Owner'},
-                   {'col': u'priority', 'title': u'Priority'},
-                   {'col': u'component', 'title': u'Component'},
-                   {'col': u'mycustomfield', 'title': u'Mycustomfield'}],
+                   {'col': 'owner', 'title': 'Owner'},
+                   {'col': 'priority', 'title': 'Priority'},
+                   {'col': 'component', 'title': 'Component'},
+                   {'col': 'mycustomfield', 'title': 'Mycustomfield'}],
     'message': Markup(u"""\
 <style type="text/css">
 .ticket-imported, .modified-ticket-imported { width: 40px; }
@@ -17,14 +17,14 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>Default value</strong>
-</td></tr><tr><td>Description, Cc, Milestone, Version, Keywords, Severity</td><td><i>(Empty value)</i>
-</td></tr><tr><td>Status</td><td>new
-</td></tr><tr><td>Changetime</td><td><i>(now)</i>
-</td></tr><tr><td>Reporter</td><td>testuser
-</td></tr><tr><td>Resolution</td><td><i>(None)</i>
-</td></tr><tr><td>Time</td><td><i>(now)</i>
-</td></tr><tr><td>Type</td><td>task
+<tr><td> <strong>field</strong> </td><td> <strong>Default value</strong> 
+</td></tr><tr><td> Cc, Description, Keywords, Milestone, Severity, Version </td><td> <em>(Empty value)</em> 
+</td></tr><tr><td> Changetime </td><td> <em>(now)</em> 
+</td></tr><tr><td> Reporter </td><td> testuser 
+</td></tr><tr><td> Resolution </td><td> <em>(None)</em> 
+</td></tr><tr><td> Status </td><td> new 
+</td></tr><tr><td> Time </td><td> <em>(now)</em> 
+</td></tr><tr><td> Type </td><td> task 
 </td></tr></table>
 </blockquote>
 </blockquote>
@@ -36,17 +36,15 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>New values</strong>
-</td></tr><tr><td>Priority</td><td>herpriority
-</td></tr><tr><td>Component</td><td>hercomp
+<tr><td> <strong>field</strong> </td><td> <strong>New values</strong> 
+</td></tr><tr><td> Component </td><td> hercomp 
+</td></tr><tr><td> Priority </td><td> herpriority 
 </td></tr></table>
 </blockquote>
 </blockquote>
 <ul><li>Some user names do not exist in the system: me, you, she. Make sure that they are valid users.
-</li></ul><br/>"""),
-    'rows': [   {   'cells': [   {   'col': 'ticket',
-                                     'style': '',
-                                     'value': u'1'},
+</li></ul>"""),
+    'rows': [   {   'cells': [   {'col': 'ticket', 'style': '', 'value': 1},
                                  {   'col': 'owner',
                                      'style': 'modified-owner',
                                      'value': u'me'},
@@ -60,9 +58,7 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
                                      'style': 'modified-mycustomfield',
                                      'value': u'mycustomfield1'}],
                     'style': ''},
-                {   'cells': [   {   'col': 'ticket',
-                                     'style': '',
-                                     'value': u'2'},
+                {   'cells': [   {'col': 'ticket', 'style': '', 'value': 2},
                                  {   'col': 'owner',
                                      'style': 'modified-owner',
                                      'value': u'you'},

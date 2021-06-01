@@ -11,10 +11,13 @@ def PatchedTicket(*args, **argv):
     # So import at the latest moment...
     from trac.ticket.model import Ticket
     class PatchedTicketClass(Ticket):
-        ''' patched version of the Ticket class, that doesn't make the difference between a field defaulting to an empty string, and a field not defaulted
-        '''
+        """Patched version of the Ticket class, that doesn't make the
+        difference between a field defaulting to an empty string, and a field
+        not defaulted
+        """
 
-        # TODO: report it as a bug, and/or check if it is fixed in more recent versions
+        # TODO: report it as a bug, and/or check if it is fixed in more recent
+        # versions
         def _init_defaults(self, db=None):
             for field in self.fields:
                 default = None
@@ -36,7 +39,7 @@ def PatchedTicket(*args, **argv):
                                                  % (default, field['name']))
                 if default or default == '':
                     self.values.setdefault(field['name'], default)
-    
+
         def is_modified(self):
             return self._old
 

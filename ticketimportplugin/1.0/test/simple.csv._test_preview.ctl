@@ -18,14 +18,14 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>Default value</strong>
-</td></tr><tr><td>Description, Cc, Milestone, Version, Keywords, Severity</td><td><i>(Empty value)</i>
-</td></tr><tr><td>Status</td><td>new
-</td></tr><tr><td>Changetime</td><td><i>(now)</i>
-</td></tr><tr><td>Reporter</td><td>testuser
-</td></tr><tr><td>Resolution</td><td><i>(None)</i>
-</td></tr><tr><td>Time</td><td><i>(now)</i>
-</td></tr><tr><td>Type</td><td>task
+<tr><td> <strong>field</strong> </td><td> <strong>Default value</strong> 
+</td></tr><tr><td> Cc, Description, Keywords, Milestone, Severity, Version </td><td> <em>(Empty value)</em> 
+</td></tr><tr><td> Changetime </td><td> <em>(now)</em> 
+</td></tr><tr><td> Reporter </td><td> testuser 
+</td></tr><tr><td> Resolution </td><td> <em>(None)</em> 
+</td></tr><tr><td> Status </td><td> new 
+</td></tr><tr><td> Time </td><td> <em>(now)</em> 
+</td></tr><tr><td> Type </td><td> task 
 </td></tr></table>
 </blockquote>
 </blockquote>
@@ -37,14 +37,14 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>New values</strong>
-</td></tr><tr><td>Priority</td><td>mypriority, yourpriority
-</td></tr><tr><td>Component</td><td>mycomp, yourcomp
+<tr><td> <strong>field</strong> </td><td> <strong>New values</strong> 
+</td></tr><tr><td> Component </td><td> mycomp, yourcomp 
+</td></tr><tr><td> Priority </td><td> mypriority, yourpriority 
 </td></tr></table>
 </blockquote>
 </blockquote>
 <ul><li>Some user names do not exist in the system: me, you. Make sure that they are valid users.
-</li></ul><br/>"""),
+</li></ul>"""),
     'rows': [   {   'cells': [   {   'col': 'ticket',
                                      'style': '',
                                      'value': '(new)'},

@@ -14,15 +14,15 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>Default value</strong>
-</td></tr><tr><td>Description, Cc, Milestone, Component, Version, Keywords, Severity</td><td><i>(Empty value)</i>
-</td></tr><tr><td>Status</td><td>new
-</td></tr><tr><td>Changetime</td><td><i>(now)</i>
-</td></tr><tr><td>Reporter</td><td>testuser
-</td></tr><tr><td>Resolution</td><td><i>(None)</i>
-</td></tr><tr><td>Priority</td><td>major
-</td></tr><tr><td>Time</td><td><i>(now)</i>
-</td></tr><tr><td>Type</td><td>task
+<tr><td> <strong>field</strong> </td><td> <strong>Default value</strong> 
+</td></tr><tr><td> Cc, Component, Description, Keywords, Milestone, Severity, Version </td><td> <em>(Empty value)</em> 
+</td></tr><tr><td> Changetime </td><td> <em>(now)</em> 
+</td></tr><tr><td> Priority </td><td> major 
+</td></tr><tr><td> Reporter </td><td> testuser 
+</td></tr><tr><td> Resolution </td><td> <em>(None)</em> 
+</td></tr><tr><td> Status </td><td> new 
+</td></tr><tr><td> Time </td><td> <em>(now)</em> 
+</td></tr><tr><td> Type </td><td> task 
 </td></tr></table>
 </blockquote>
 </blockquote>
@@ -37,7 +37,7 @@ WBS numbers processed in: wbs.
 </p>
 </blockquote>
 </blockquote>
-<br/>"""),
+"""),
     u'rows': [   {   u'cells': [   {   u'col': u'ticket',
                                        u'style': u'',
                                        u'value': u'(new)'},

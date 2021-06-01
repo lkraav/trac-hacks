@@ -5,8 +5,9 @@
 #
 
 from datetime import datetime
-import codecs
 import csv
+import io
+import sys
 try:
     import xlrd
 except ImportError:
@@ -19,6 +20,8 @@ except ImportError:
 from trac.core import TracError
 from trac.util.text import exception_to_unicode, to_unicode
 
+from .compat import iteritems, unicode, xrange, _numtypes
+
 
 def get_reader(env, filename, sheet_index, datetime_format, encoding='utf-8'):
     errors = {}
@@ -27,32 +30,35 @@ def get_reader(env, filename, sheet_index, datetime_format, encoding='utf-8'):
         try:
             return XLSXReader(filename, sheet_index, datetime_format)
         except IndexError:
-            raise TracError('The sheet index (%s) does not seem to correspond to an existing sheet in the spreadsheet'
-                            % sheet_index)
-        except Exception, e:
+            raise TracError('The sheet index (%s) does not seem to correspond '
+                            'to an existing sheet in the spreadsheet' %
+                            sheet_index)
+        except Exception as e:
             errors['XLSXReader'] = exception_to_unicode(e, traceback=True)
 
     if xlrd:
         try:
             return XLSReader(filename, sheet_index, datetime_format)
         except IndexError:
-            raise TracError('The sheet index (%s) does not seem to correspond to an existing sheet in the spreadsheet'
-                            % sheet_index)
-        except xlrd.XLRDError, e:
+            raise TracError('The sheet index (%s) does not seem to correspond '
+                            'to an existing sheet in the spreadsheet' %
+                            sheet_index)
+        except xlrd.XLRDError as e:
             errors['XLSReader'] = exception_to_unicode(e)
-        except Exception, e:
+        except Exception as e:
             errors['XLSReader'] = exception_to_unicode(e, traceback=True)
 
     try:
         return CSVReader(filename, encoding)
     except UnicodeDecodeError:
         raise TracError('Unable to read the CSV file with "%s"' % encoding)
-    except csv.Error, e:
+    except csv.Error as e:
         errors['CSVReader'] = exception_to_unicode(e)
-    except Exception, e:
+    except Exception as e:
         errors['CSVReader'] = exception_to_unicode(e, traceback=True)
 
-    for name, error in errors.iteritems():
+    for name, error in iteritems(errors):
+        print(error)
         env.log.warning('Exception caught while reading the file using %s: %s',
                         name, error)
     if xlrd or openpyxl:
@@ -63,38 +69,53 @@ def get_reader(env, filename, sheet_index, datetime_format, encoding='utf-8'):
                   'valid CSV file: unable to read file.'
     raise TracError(message)
 
+
 def _to_unicode(val):
     if val is None or isinstance(val, unicode):
         return val
     return val.decode('utf-8')
 
+
 class UTF8Reader(object):
-    def __init__(self, file, encoding):
-        self.reader = codecs.getreader(encoding)(file, 'replace')
+
+    def __init__(self, filename, encoding):
+        self.file = io.open(filename, 'r', encoding=encoding, errors='replace')
         self.line_num = 0
 
     def __iter__(self):
         return self
 
-    def next(self):
-        line = self.reader.next()
+    if sys.version_info[0] == 2:
+        next = lambda self: self._next_line().encode("utf-8")
+    else:
+        __next__ = lambda self: self._next_line()
+
+    def _next_line(self):
+        line = next(self.file)
         self.line_num += 1
-        return line.encode("utf-8")
+        return line
+
+    def close(self):
+        if self.file:
+            self.file.close()
+            self.file = None
+
 
 class CSVDialect(csv.excel):
     strict = True
+
 
 class CSVDictReader(csv.DictReader):
     def __init__(self, reader, fields):
         csv.DictReader.__init__(self, reader, fields, dialect=CSVDialect)
         self.__reader = reader
 
-    def next(self):
+    def _next(self):
         reader = self.__reader
         begin = reader.line_num + 1
         try:
-            d = csv.DictReader.next(self)
-        except csv.Error, e:
+            d = self._next_raw()
+        except csv.Error as e:
             end = reader.line_num
             if begin == end:
                 message = 'Error while reading line %(num)d: %(error)s'
@@ -105,28 +126,39 @@ class CSVDictReader(csv.DictReader):
                 kwargs = {'begin': begin, 'end': end, 'error': to_unicode(e)}
             raise TracError(message % kwargs)
         return dict((_to_unicode(key), _to_unicode(val))
-                    for key, val in d.iteritems()
-                    if key is not None)
+                    for key, val in iteritems(d) if key is not None)
+
+    if sys.version_info[0] == 2:
+        _next_raw = lambda self: csv.DictReader.next(self)
+        next = _next
+    else:
+        _next_raw = lambda self: csv.DictReader.__next__(self)
+        __next__ = _next
+
 
 class CSVReader(object):
     def __init__(self, filename, encoding):
-        self.file = open(filename, 'rb')
-        self.file_reader = UTF8Reader(self.file, encoding)
-        self.csv_reader = csv.reader(self.file_reader)
-        fields = [_to_unicode(val) for val in self.csv_reader.next()]
-        if fields and fields[0] and fields[0].startswith(u'\uFEFF'):
-            # Skip BOM
-            fields[0] = fields[0][1:]
-        self.csvfields = fields
-        
+        self.file_reader = UTF8Reader(filename, encoding)
+        try:
+            self.csv_reader = csv.reader(self.file_reader)
+            fields = [_to_unicode(val) for val in next(self.csv_reader)]
+            if fields and fields[0] and fields[0].startswith(u'\uFEFF'):
+                # Skip BOM
+                fields[0] = fields[0][1:]
+            self.csvfields = fields
+        except:
+            self.file_reader.close()
+            raise
+
     def get_sheet_count(self):
         return 1
-        
+
     def readers(self):
         return self.csvfields, CSVDictReader(self.file_reader, self.csvfields)
-            
+
     def close(self):
-        self.file.close()
+        self.file_reader.close()
+
 
 class XLSReader(object):
     def __init__(self, filename, sheet_index, datetime_format):
@@ -137,9 +169,9 @@ class XLSReader(object):
 
     def get_sheet_count(self):
         return self.sheetcount
-        
+
     def readers(self):
-        # TODO: do something with sh.name. Probably add it as a column. 
+        # TODO: do something with sh.name. Probably add it as a column.
         # TODO: read the other sheets. What if they don't have the same columns ?
 
         def to_s(val, cell_type):
@@ -180,12 +212,16 @@ class XLSXReader(object):
 
     def __init__(self, filename, sheet_index, datetime_format):
         self.fileobj = open(filename, 'rb')
-        self.book = openpyxl.load_workbook(filename=self.fileobj,
-                                           read_only=True, data_only=True)
-        worksheets = self.book.worksheets
-        self.sheets_count = len(worksheets)
-        self.sheet = worksheets[sheet_index - 1]
-        self._datetime_format = datetime_format
+        try:
+            self.book = openpyxl.load_workbook(filename=self.fileobj,
+                                               read_only=True, data_only=True)
+            worksheets = self.book.worksheets
+            self.sheets_count = len(worksheets)
+            self.sheet = worksheets[sheet_index - 1]
+            self._datetime_format = datetime_format
+        except:
+            self.fileobj.close()
+            raise
 
     def get_sheet_count(self):
         return self.sheets_count
@@ -203,7 +239,7 @@ class XLSXReader(object):
                 return 'FALSE'
             if isinstance(val, datetime):
                 return val.strftime(self._datetime_format)
-            if isinstance(val, (long, int, float)):
+            if isinstance(val, _numtypes):
                 return '%g' % val
             return to_unicode(val)
 

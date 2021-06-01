@@ -18,12 +18,12 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>Default value</strong>
-</td></tr><tr><td>Description, Cc, Milestone, Component, Version, Keywords, Severity</td><td><i>(Empty value)</i>
-</td></tr><tr><td>Changetime</td><td><i>(now)</i>
-</td></tr><tr><td>Reporter</td><td>testuser
-</td></tr><tr><td>Resolution</td><td><i>(None)</i>
-</td></tr><tr><td>Time</td><td><i>(now)</i>
+<tr><td> <strong>field</strong> </td><td> <strong>Default value</strong> 
+</td></tr><tr><td> Cc, Component, Description, Keywords, Milestone, Severity, Version </td><td> <em>(Empty value)</em> 
+</td></tr><tr><td> Changetime </td><td> <em>(now)</em> 
+</td></tr><tr><td> Reporter </td><td> testuser 
+</td></tr><tr><td> Resolution </td><td> <em>(None)</em> 
+</td></tr><tr><td> Time </td><td> <em>(now)</em> 
 </td></tr></table>
 </blockquote>
 </blockquote>
@@ -35,13 +35,13 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 </li></ul><blockquote>
 <blockquote>
 <table class="wiki">
-<tr><td><strong>field</strong></td><td><strong>New values</strong>
-</td></tr><tr><td>Priority</td><td>String, 1234, 2011-05-18 01:37, TRUE, #N/A!
+<tr><td> <strong>field</strong> </td><td> <strong>New values</strong> 
+</td></tr><tr><td> Priority </td><td> String, 1234, 2011-05-18 01:37, TRUE, #N/A 
 </td></tr></table>
 </blockquote>
 </blockquote>
 <ul><li>Some user names do not exist in the system: jun66j5. Make sure that they are valid users.
-</li></ul><br/>"""),
+</li></ul>"""),
     u'rows': [   {   u'cells': [   {   u'col': u'ticket',
                                        u'style': u'',
                                        u'value': u'(new)'},
@@ -154,6 +154,6 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
                                        u'value': u'open'},
                                    {   u'col': u'priority',
                                        u'style': u'priority',
-                                       u'value': u'#N/A!'}],
+                                       u'value': u'#N/A'}],
                      u'style': u'color-new-odd'}],
     u'title': u'Preview Import'}
