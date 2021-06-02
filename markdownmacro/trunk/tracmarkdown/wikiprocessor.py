@@ -101,7 +101,6 @@ class WikiProcessorFencePreprocessor(Preprocessor):
             elif self.ALPHANUM.match(txt):
                 # Do we have any language specifier following? If yes add '#!'.
                 # The re returns 'None' if the text holds a '\n' before any alphanums
-                print('-->', repr("{{{#!%s}}}\n" % match.group(2)))
                 return "{{{#!%s}}}\n" % match.group(2)
             else:
                 return "{{{%s}}}\n" % match.group(2)
