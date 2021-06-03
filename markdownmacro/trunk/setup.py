@@ -9,9 +9,15 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
-
+import sys
 import os.path
 from setuptools import setup
+
+if sys.version_info.major == 2:
+    markdown = ['Markdown < 3.2']
+else:
+    markdown = ['Markdown']
+
 
 setup(
     name='TracMarkdownMacro',
@@ -44,5 +50,5 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
     ],
-    install_requires=['Trac', 'Markdown < 3.2'],
+    install_requires=['Trac'] + markdown,
 )
