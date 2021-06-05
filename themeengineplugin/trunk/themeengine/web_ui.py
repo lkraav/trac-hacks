@@ -57,12 +57,20 @@ class ThemeEngineModule(Component):
     def get_templates_dirs(self):
         try:
             theme = self.system.theme
-            if theme and 'template' in theme:
-                theme_templates = os.path.dirname(theme['template'])
-                if not os.path.isabs(theme_templates):
-                    theme_templates = resource_filename(theme['module'],
-                                                        theme_templates)
-                yield theme_templates
+            if theme:
+                if 'template' in theme:
+                    theme_templates = os.path.dirname(theme['template'])
+                    if not os.path.isabs(theme_templates):
+                        theme_templates = resource_filename(theme['module'],
+                                                            theme_templates)
+                    yield theme_templates
+                if 'jinja_template' in theme:
+                    theme_templates = os.path.dirname(theme['jinja_template'])
+                    if not os.path.isabs(theme_templates):
+                        theme_templates = resource_filename(theme['module'],
+                                                            theme_templates)
+                    yield theme_templates
+
         except ThemeNotFound:
             pass
 
@@ -102,9 +110,12 @@ class ThemeEngineModule(Component):
                     for script_def in theme['scripts']:
                         if (isinstance(script_def, tuple) and
                                 1 <= len(script_def) <= 4):
-                            add_script(req, *script_def)
+                            temp = [item for item in script_def]
+                            if not temp[0].startswith('theme'):
+                                temp[0] = 'theme/' + temp[0].lstrip('/')
+                            add_script(req, *temp)
                         else:
-                            self.log.warning('Bad script def %s for theme %s',
+                            self.log.warning('Bad script def %s for theme %s. Is definition a tuple?',
                                              script_def, theme['name'])
                 if theme and theme.get('disable_trac_css'):
                     links = req.chrome.get('links')
