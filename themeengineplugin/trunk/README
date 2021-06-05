@@ -1,7 +1,19 @@
-Notes
-=====
+Description
+===========
 
-Adds a simple API and GUI for packaging and configuring Trac themes.
+Adds a simple API and GUI for packaging and configuring Trac themes. Themes may just change
+colors but can also replace templates and add javascript.
+
+Compatibility
+=============
+
+Trac 1.4 and Trac 1.6 are supported. For Trac 1.4 theme authors should provide both Genshi and
+Jinja2 templates. This way older plugins with a web UI which are still using Genshi are
+fully supported.
+
+The theme engine gracefully handles missing theme templates when rendering
+so if a theme author doesn't provide Genshi templates all UI pages still depending on
+Genshi will just be rendered without the theme.
 
 Configuration
 =============
@@ -91,10 +103,16 @@ be used directly.
 The available options as follows (all are optional):
 
 ``template`` : *default: $name_theme.html*
-    The filename of the replacement template.
+    The filename of the Genshi replacement template.
+
+``jinja_template`` : *default: $name_theme_jinja.html*
+    The filename of the Jinja2 replacement template.
 
 ``css`` : *default: $name.css*
     Filename for a stylesheet to include.
+
+``disable_trac_css`` : *default: True*
+    A boolean indicating if the core Trac CSS should be diabled.
 
 ``htdocs`` : *default: htdocs*
     Subfolder containing static content.
@@ -156,9 +174,13 @@ For more advanced control you can implement ``IThemeProvider`` from
              description::
                A brief description of the theme.
              template::
-               The name of the theme template file. 
+               The name of the Genshi theme template file.
+             jinja_template::
+               The name of the Jinja2 theme template file.
              css::
                The filename of the CSS file.
+             disable_trac_css::
+               A boolean indicating if the core Trac CSS should be diabled.
              htdocs::
                The folder containing the static content.
              screenshot::
@@ -178,6 +200,50 @@ For more advanced control you can implement ``IThemeProvider`` from
 
 Most of these are the same as the simple API above, except ``description``
 is explicit.
+
+Example
+~~~~~~~
+
+See the following code example from a theme plugin providing Genshi and Jinja2 templates.
+
+::
+
+    class TracFlatTheme(ThemeBase):
+        """A flat Trac theme using Tracs colors."""
+
+        screenshot = False
+        htdocs = True
+        template = jinja_template = True
+
+        # IThemeProvider methods
+
+        def get_theme_names(self):
+            yield "TracFlat"
+            yield "TracSidebar"
+            yield "TracFlatSidebar"
+
+        def get_theme_info(self, name):
+            if name == 'TracFlat':
+                return {'description': _("A flat Trac theme using Tracs colors."),
+                        'css': 'css/tracflattheme.css',
+                        'htdocs': 'htdocs',
+                        'disable_trac_css': True}
+            elif name == "TracSidebar":
+                return {'description': _("A theme using a sidebar for the main navigation menu."),
+                        'css': 'css/tftsidebar.css',
+                        'jinja_template': 'templates/theme_jinja.html',
+                        'template': 'templates/genshi/theme_genshi.html',
+                        'htdocs': 'htdocs',
+                        'scripts': [('js/tftsidebar.js',)],
+                        'disable_trac_css': False}
+            elif name == "TracFlatSidebar":
+                return {'description': _("A theme using a sidebar for the main navigation menu and flat elements."),
+                        'css': 'css/tracflattheme.css',
+                        'jinja_template': 'templates/theme_jinja.html',
+                        'template': 'templates/genshi/theme_genshi.html',
+                        'htdocs': 'htdocs',
+                        'scripts': [('theme/js/tftsidebar.js',)],
+                        'disable_trac_css': True}
 
 Customizing specific views
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
