@@ -1,0 +1,110 @@
+ /* The side navigation menu */
+.sidebar {
+  height: 100%; /* 100% Full-height */
+  width: 200px; /* 0 width - change this with JavaScript */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Stay on top */
+  top: 0;
+  left: 0.75em;
+  /* overflow-x: hidden; */ /* Disable horizontal scroll */
+  margin-top: 160px; /* Place content 60px from the top */
+  transition: 0.5s;  /* 0.5 second transition effect to slide in the sidebar */
+}
+
+/* Sidebar links */
+.sidebar li {
+    background-color: #f7f7f7;
+    border: 1px solid #e4e4e4;
+    margin: 0px .3em 0 -.4em;
+    padding: 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: block;
+}
+
+.sidebar :link, .sidebar :visited {
+    border-bottom: none;
+    color: #666;
+    padding: .5em 20px;
+    display: block;
+}
+
+/* Links on mouse-over */
+.sidebar :link:hover, .sidebar :visited:hover {
+    background-color: #888;
+    color: #eee;
+    padding: .5em 20px;
+
+    display: block;
+}
+
+/* Active/current link */
+.sidebar .active :link, .sidebar .active :visited {
+    background: #444;
+    color: #eee;
+    display: block
+}
+
+/* Page content. The value of the margin-left property should match the value of the sidebar's width property */
+div#content, div#footer {
+  margin-left: 200px;
+  padding: 1px 16px;
+  height: 100%;
+  transition: 0.5s;  /* 0.5 second transition effect to slide in the sidebar */
+}
+
+/* On screens that are less than 700px wide, make the sidebar into a topbar */
+@media screen and (max-width: 700px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  .sidebar a {float: left;}
+  div#content {margin-left: 0;}
+}
+
+/* On screens that are less than 400px, display the bar vertically, instead of horizontally */
+@media screen and (max-width: 400px) {
+  .sidebar a {
+    text-align: center;
+    float: none;
+  }
+}
+
+.sidebar .closebtn {
+  position: relative;
+  top: -10px;
+  left: 160px;
+  font-size: 200%;
+  display: inline;
+}
+
+.closebtn:link, .closebtn:link:hover {
+    padding: .1em 10px;
+    display: inline;
+}
+
+#_opensidebar :link:hover {
+    background: #000 url(../topbar_gradient2.png) 0 0 repeat-x;
+    background: linear-gradient(to bottom,#888 0%,#555 25%,#333 49%,#333 51%,#444 85%,#888 100%);
+        background-color: rgba(0, 0, 0, 0);
+    color: #eee;
+    padding: .1em 10px;
+}
+
+#opensidebar{
+  position: fixed;
+  background: white;
+
+  top: 180px;
+  left: -60px;
+  color: #666;
+  font-size: 200%;
+  transition: 0.5s;
+  z-index: 1;
+    padding: 0 0.25em 0.25em 0.25em;
+}
+#opensblink, #opensblink:visited {
+  color: #666;
+}

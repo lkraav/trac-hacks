@@ -1,0 +1,11 @@
+Description
+===========
+
+A collection of themes modifying the default Trac theme.
+
+* ``TracSidebar``: A theme moving the main navigation to a sidebar.
+* ``TracFlat``: a flat theme without rounded borders and shadows.
+* ``TracFlatSidebar``: a flat theme without rounded borders and shadows. The main navigation is moved to a sidebar.
+
+The Trac colors and general appearance are preserved. The sidebar may
+be hidden using a ``close`` button.
