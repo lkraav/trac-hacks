@@ -71,7 +71,7 @@ class IThemeProvider(Interface):
          jinja_template::
            The name of the Jinja2 theme template file.
          css::
-           The filename of the CSS file.
+           The filename of the CSS file or a list/tuple of filenames.
          disable_trac_css::
            A boolean indicating if the core Trac CSS should be diabled.
          htdocs::

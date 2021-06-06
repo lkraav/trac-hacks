@@ -109,7 +109,7 @@ The available options as follows (all are optional):
     The filename of the Jinja2 replacement template.
 
 ``css`` : *default: $name.css*
-    Filename for a stylesheet to include.
+    Filename for a stylesheet to include or a list/tuple of filenames.
 
 ``disable_trac_css`` : *default: True*
     A boolean indicating if the core Trac CSS should be diabled.
@@ -178,7 +178,7 @@ For more advanced control you can implement ``IThemeProvider`` from
              jinja_template::
                The name of the Jinja2 theme template file.
              css::
-               The filename of the CSS file.
+               The filename of the CSS file or a list/tuple of filenames.
              disable_trac_css::
                A boolean indicating if the core Trac CSS should be diabled.
              htdocs::
@@ -238,7 +238,7 @@ See the following code example from a theme plugin providing Genshi and Jinja2 t
                         'disable_trac_css': False}
             elif name == "TracFlatSidebar":
                 return {'description': _("A theme using a sidebar for the main navigation menu and flat elements."),
-                        'css': 'css/tracflattheme.css',
+                        'css': ['css/tracflattheme.css', 'css/tftsidebar_flat.css'],
                         'jinja_template': 'templates/theme_jinja.html',
                         'template': 'templates/genshi/theme_genshi.html',
                         'htdocs': 'htdocs',

@@ -89,7 +89,12 @@ class ThemeEngineModule(Component):
                         "the theme\'s plugin." % e.theme_name)
             else:
                 if theme and 'css' in theme:
-                    add_stylesheet(req, 'theme/'+theme['css'])
+                    css = theme['css']
+                    if isinstance(css, tuple) or isinstance(css, list):
+                        for css_file in css:
+                            add_stylesheet(req, 'theme/' + css_file)
+                    else:
+                        add_stylesheet(req, 'theme/' + theme['css'])
                 if hasattr(Chrome, 'jenv'):
                     # Trac 1.4 supports Genshi and Jinja2 templates. content_type is 'None' in Trac 1.4
                     # when a Genshi template is being rendered.
