@@ -125,12 +125,13 @@ class ChildTicketsModule(Component):
                     tag.thead(
                         tag.tr(tag.th("Ticket", class_="id"),
                                [tag.th(field_names[col], class_=col) for col in treecolumns]
-                               )
+                               ),
+                        class_="ct-tbl-header"
                     ),
                     tag.tbody(self._table_row(req, tkt, treecolumns, field_format),
                               tag.tr(
                                   tag.td(desc, class_="description", colspan="%s" % str(1 + len(treecolumns))),
-                                  class_="hilightrow",
+                                  class_="hilightrow ct-desc-row",
                               ),
                               tag.tr(
                                   tag.td(_("(Rest of the child ticket tree is hidden)"),
@@ -260,7 +261,23 @@ class ChildTicketsModule(Component):
                                          tag.span('(%s)' % len(parents), class_="trac-count"),
                                          class_="foldable"))
                 parsnippet.append(tag.div(parentdiv, id="parenttickets"))
-
+            pref_form = tag.form(tag.fieldset(tag.input(type="checkbox", id="ct-show-desc",
+                                                        checked="checked" if req.session.get('ct_show_desc',
+                                                          'true') == 'true' else ""),
+                                              tag.label("Show description", for_="ct-show-desc"),
+                                              tag.input(type="checkbox", id="ct-show-header",
+                                                        checked="checked" if req.session.get('ct_show_header',
+                                                          'true') == 'true' else ""
+                                                        ),
+                                              tag.label("Show headers", for_="ct-show-header"),
+                                              style="margin: 0em"
+                                              ),
+                                              id="ct-prefs",
+                                              action=req.href('prefs'),
+                                              method="get",
+                                              style="position: absolute; right: 0px"
+                                              )
+            snippet.append(tag.div(pref_form))
             snippet.append(tag.h3("Child Tickets ",
                                   tag.span('(%s)' % len(childtickets), class_="trac-count"),
                                   class_="foldable"))
