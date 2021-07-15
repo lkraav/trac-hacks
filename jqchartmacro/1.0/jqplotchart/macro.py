@@ -4,13 +4,11 @@
 #
 # License: BSD
 
-import re
 import datetime
-import json
 import decimal
-
-from StringIO import StringIO
-from types import *
+import io
+import json
+import re
 
 from trac.core import Component, implements
 from trac.web.api import IRequestFilter
@@ -223,11 +221,9 @@ class QueryRunner(object):
         if value_type == 'time':
             return to_datetime(value).strftime('%Y-%m-%d')
         if value_type == 'date':
-            return str(to_datetime(value));
-        if type(value) == StringType:
+            return str(to_datetime(value))
+        if isinstance(value, bytes):
             return str(value)
-        if type(value) == UnicodeType:
-            return value.encode('ascii', 'xmlcharrefreplace')
         else:
             return value
 
@@ -310,7 +306,7 @@ class JQChartMacro(WikiMacroBase):
 
         json_object = json.loads('{' + json_string + '}')
 
-        buf = StringIO()
+        buf = io.StringIO()
 
         id_generator = ChartIdGenerator(formatter.context)
 
