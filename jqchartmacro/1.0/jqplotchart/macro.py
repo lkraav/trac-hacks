@@ -66,7 +66,7 @@ class QueryRunner(object):
             result = self.get_query_from_report(self.report_id)
 
         query = result[0].replace('$USER', "'" + self.current_user + "'")
-        parameters = result[1];
+        parameters = result[1]
 
         groups = re.match('^(.*)({(\\d+)})(.*)$', query)
         if groups:
@@ -118,15 +118,15 @@ class QueryRunner(object):
             print(query)
             cursor.execute(query, params)
 
-            use_date_axis = 'false';
+            use_date_axis = 'false'
 
-            number_of_columns = len(cursor.description);
+            number_of_columns = len(cursor.description)
 
             data_set = DataSet()
 
             series_name = 0
 
-            number_of_series = 0;
+            number_of_series = 0
 
             for description in cursor.description:
                 column_name = description[0]
