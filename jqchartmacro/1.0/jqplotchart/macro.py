@@ -548,67 +548,67 @@ class Chart(object):
     def draw_table(self, datasets, use_date_axis, additional_info,
             link_to, jqplot_options, buf):
 
-        buf.write("<div style='vertical-align: top; display: inline-block;"
+        buf.write(u"<div style='vertical-align: top; display: inline-block;"
                 + " overflow: auto;")
         if self.height is not None:
-            buf.write(" height:" + str(self.height) + "px;")
+            buf.write(u" height:" + str(self.height) + "px;")
         if self.width is not None:
-            buf.write(" width:" + str(self.width) + "px;'>\n")
-        buf.write("<table id='" + self.chart_id + "' width='100%'>\n")
-        buf.write("  <tr>\n")
-        buf.write("    <th style='font-size:14px;")
-        buf.write(      " border-bottom:1px dotted grey' align='center'")
-        buf.write(     " colspan='%s'>\n" % (2 + len(datasets)))
+            buf.write(u" width:" + str(self.width) + "px;'>\n")
+        buf.write(u"<table id='" + self.chart_id + "' width='100%'>\n")
+        buf.write(u"  <tr>\n")
+        buf.write(u"    <th style='font-size:14px;")
+        buf.write(       u" border-bottom:1px dotted grey' align='center'")
+        buf.write(       u" colspan='%s'>\n" % (2 + len(datasets)))
 
         if link_to is not None:
-            buf.write("    <a href='%s'>" % link_to)
+            buf.write(u"    <a href='%s'>" % link_to)
 
-        buf.write("      %s\n" % jqplot_options['title'])
+        buf.write(u"      %s\n" % jqplot_options['title'])
 
         if link_to is not None:
-            buf.write("</a>")
+            buf.write(u"</a>")
 
-        buf.write("    </th>\n")
-        buf.write("  </tr>\n")
+        buf.write(u"    </th>\n")
+        buf.write(u"  </tr>\n")
 
         if len(datasets) == 0:
-            buf.write("  <tr>\n")
-            buf.write("    <td colspan='%s'>\n" % (2 + len(datasets)))
+            buf.write(u"  <tr>\n")
+            buf.write(u"    <td colspan='%s'>\n" % (2 + len(datasets)))
 
-            buf.write("      %s\n" % 'No data found')
+            buf.write(u"      %s\n" % 'No data found')
 
-            buf.write("    </td>\n")
-            buf.write("  </tr>\n")
+            buf.write(u"    </td>\n")
+            buf.write(u"  </tr>\n")
 
         else:
 
             first_series = datasets[0]
 
             for point_number, point in enumerate(first_series):
-                buf.write("  <tr>\n")
+                buf.write(u"  <tr>\n")
                 for series_number, series in enumerate(datasets):
                     if series_number == 0:
-                        buf.write("  <td valign='top'>\n")
+                        buf.write(u"  <td valign='top'>\n")
                         tid = additional_info[series_number][point_number][2]
                         link = additional_info[series_number][point_number][1]
                         if tid is not None:
-                            buf.write("    <a style='font-weight:bold'")
-                            buf.write(       " href='%s'>#%s</a>\n" %
+                            buf.write(u"    <a style='font-weight:bold'")
+                            buf.write(      u" href='%s'>#%s</a>\n" %
                                     (link, tid))
-                        buf.write("  </td>\n")
-                        buf.write("  <td valign='top'>\n")
-                        buf.write("    %s\n" %
+                        buf.write(u"  </td>\n")
+                        buf.write(u"  <td valign='top'>\n")
+                        buf.write(u"    %s\n" %
                                 datasets[series_number][point_number][0])
-                        buf.write("  </td>\n")
+                        buf.write(u"  </td>\n")
 
-                    buf.write("  <td valign='top'>\n")
-                    buf.write("    %s\n" %
+                    buf.write(u"  <td valign='top'>\n")
+                    buf.write(u"    %s\n" %
                             datasets[series_number][point_number][1])
-                    buf.write("  </td>\n")
-                buf.write("  </tr>\n")
+                    buf.write(u"  </td>\n")
+                buf.write(u"  </tr>\n")
 
-        buf.write("</table>\n")
-        buf.write("</div>\n")
+        buf.write(u"</table>\n")
+        buf.write(u"</div>\n")
 
     def draw_chart(self, chart_type, datasets, use_date_axis, additional_info,
             jqplot_options, buf):
@@ -637,33 +637,33 @@ class Chart(object):
         datasets_str = json.dumps(datasets, cls = DecimalEncoder)
         additional_info_str = json.dumps(additional_info, cls = DecimalEncoder)
 
-        buf.write("<script type='text/javascript'>\n")
+        buf.write(u"<script type='text/javascript'>\n")
         buf.write(
-              "jQuery(document).ready(function() {\n"
-            + "  var series = " + datasets_str + ";\n"
-            + "  var additionalInfo = " + additional_info_str + ";\n"
-            + "  var containerId = '" + self.chart_id + "';\n"
-            + "  var chartType = '" + chart_type + "';\n"
-            + "  var baseOptions = " + options_str + ";\n"
-            + "  var useDateAxis = " + str(use_date_axis) + ";\n"
-            + "  renderChart(containerId, chartType, series, additionalInfo, "
-            +      "useDateAxis, baseOptions);\n"
-            + "});\n")
-        buf.write("</script>\n")
+              u"jQuery(document).ready(function() {\n"
+            + u"  var series = " + datasets_str + ";\n"
+            + u"  var additionalInfo = " + additional_info_str + ";\n"
+            + u"  var containerId = '" + self.chart_id + "';\n"
+            + u"  var chartType = '" + chart_type + "';\n"
+            + u"  var baseOptions = " + options_str + ";\n"
+            + u"  var useDateAxis = " + str(use_date_axis) + ";\n"
+            + u"  renderChart(containerId, chartType, series, additionalInfo, "
+            + u"useDateAxis, baseOptions);\n"
+            + u"});\n")
+        buf.write(u"</script>\n")
 
         # This is a hack: the jqplot gauge looks too big, so we just wrap with
         # hidden overflow.
         if chart_type == 'MeterGauge':
-            buf.write("<a class='gauge-link' style='display: inline-block; "
+            buf.write(u"<a class='gauge-link' style='display: inline-block; "
                 + "width:" + str(gauge_width) + "px; height:"
                 + str(gauge_height) + "px; overflow: hidden '>")
         else:
-            buf.write("<div style='display: inline-block;' >")
-        buf.write("<div id='" + self.chart_id
+            buf.write(u"<div style='display: inline-block;' >")
+        buf.write(u"<div id='" + self.chart_id
             + "' style='height:" + str(height) + "px; width:"
             + str(width) + "px;'></div>")
 
         if chart_type == 'MeterGauge':
-            buf.write("</a>")
+            buf.write(u"</a>")
         else:
-            buf.write("</div>")
+            buf.write(u"</div>")
