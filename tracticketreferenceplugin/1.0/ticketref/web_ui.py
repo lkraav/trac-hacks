@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from pkg_resources import resource_filename
 
-from genshi.builder import tag
 from trac.core import Component, implements
 from trac.web.api import IRequestFilter, ITemplateStreamFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Ticket
+from trac.util.html import tag
 from trac.util.text import shorten_line
 from trac.util.translation import domain_functions
 

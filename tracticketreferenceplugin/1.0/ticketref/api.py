@@ -25,22 +25,25 @@ class TicketRefsPlugin(Component):
 
     # IEnvironmentSetupParticipant methods
     def environment_created(self):
-        self.upgrade_environment(self.env.get_db_cnx())
+        self.upgrade_environment()
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, db=None):
         for field in CUSTOM_FIELDS:
             if field["name"] not in self.config["ticket-custom"]:
                 return True
         return False
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
+        save = False
         custom = self.config["ticket-custom"]
         for field in CUSTOM_FIELDS:
             if field["name"] not in custom:
                 custom.set(field["name"], field["type"])
                 for key, value in field["properties"]:
                     custom.set(key, value)
-                self.config.save()
+                    save = True
+        if save:
+            self.config.save()
 
     def has_ticket_refs(self, ticket):
         refs = ticket[TICKETREF]
