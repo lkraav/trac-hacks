@@ -1,27 +1,35 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:py="http://genshi.edgewall.org/">
-  <xi:include href="downloads-macros.html"/>
-  <xi:include href="admin.html"/>
+# extends 'admin.html'
+# import "downloads-macros.html" as dmacros
+
+<!DOCTYPE html>
+<html>
   <head>
-    <title>Download Architectures</title>
+    <title>
+      # block title
+      #   if title:
+      Download Types ${ super() }
+      #   endif
+      # endblock title
+    </title>
+
+    # block head
+    ${ super() }
+    # endblock head
   </head>
 
   <body>
+    # block content
     <h2>Types</h2>
 
     <form id="{downloads.type.id and 'edit' or 'add'}-type-form" class="addnew" method="post" action="${panel_href()}">
+      ${jmacros.form_token_input()}
       <fieldset>
         <legend>
-          <py:choose>
-            <py:when test="downloads.type.id">
+        # if downloads.type.id:
               Edit Type:
-            </py:when>
-            <py:otherwise>
+        # else:
               Add Type:
-            </py:otherwise>
-          </py:choose>
+        # endif
         </legend>
 
         <div class="field">
@@ -35,39 +43,36 @@
         </div>
 
         <div class="buttons">
-          <py:choose>
-            <py:when test="downloads.type.id">
-              <input type="submit" name="submit" value="Edit"/>
-              <input type="button" name="cancel" value="Cancel" onclick="location.href = '${panel_href()}?order=${downloads.order};desc=${downloads.desc}'"/>
-              <input type="hidden" name="id" value="${downloads.type.id}"/>
-              <input type="hidden" name="action" value="post-edit"/>
-            </py:when>
-            <py:otherwise>
-              <input type="submit" name="submit" value="Add"/>
-              <input type="hidden" name="action" value="post-add"/>
-            </py:otherwise>
-          </py:choose>
+          # if downloads.type.id:
+                        <input type="submit" name="submit" value="Edit"/>
+                        <input type="button" name="cancel" value="Cancel" onclick="location.href = '${panel_href()}?order=${downloads.order};desc=${downloads.desc}'"/>
+                        <input type="hidden" name="id" value="${downloads.type.id}"/>
+                        <input type="hidden" name="action" value="post-edit"/>
+          # else:
+                        <input type="submit" name="submit" value="Add"/>
+                        <input type="hidden" name="action" value="post-add"/>
+          # endif
           <input type="hidden" name="order" value="${downloads.order}"/>
           <input type="hidden" name="desc" value="${downloads.desc}"/>
         </div>
       </fieldset>
     </form>
 
-    <py:choose>
-      <py:when test="len(downloads.types) > 0">
-        <form method="post" action="${panel_href()}?order=${downloads.order};desc=${downloads.desc}">
+    #  if len(downloads.types) > 0:
+            <form method="post" action="${panel_href()}?order=${downloads.order};desc=${downloads.desc}">
+                ${jmacros.form_token_input()}
           <table class="listing">
             <thead>
               <tr>
-                <th class="sel">&nbsp;</th>
-                ${sortable_th(downloads.order, downloads.desc, 'id', 'ID', panel_href())}
-                ${sortable_th(downloads.order, downloads.desc, 'name', 'Name', panel_href())}
-                ${sortable_th(downloads.order, downloads.desc, 'description', 'Description', panel_href())}
+                <th class="sel"> </th>
+                ${dmacros.sortable_th(downloads.order, downloads.desc, 'id', 'ID', panel_href())}
+                ${dmacros.sortable_th(downloads.order, downloads.desc, 'name', 'Name', panel_href())}
+                ${dmacros.sortable_th(downloads.order, downloads.desc, 'description', 'Description', panel_href())}
               </tr>
             </thead>
             <tbody>
-              <py:for each="line, type in enumerate(downloads.types)">
-                <tr class="${line % 2 and 'even' or 'odd'}">
+          # for type in downloads.types:
+                <tr class="${loop.index0 % 2 and 'even' or 'odd'}">
                   <td class="sel">
                     <input type="checkbox" name="selection" value="${type.id}"/>
                   </td>
@@ -96,7 +101,7 @@
                     </div>
                   </td>
                 </tr>
-              </py:for>
+          # endfor
             </tbody>
           </table>
 
@@ -106,12 +111,10 @@
           </div>
 
         </form>
-      </py:when>
-      <py:otherwise>
-        <p class="help">As long as you don't add any items to the list, this field
-          will remain completely hidden from the user interface.</p>
+    #  else:
+        <p class="help">As long as you don't add any items to the list, this field will remain completely hidden from the user interface.</p>
         <br style="clear: right"/>
-      </py:otherwise>
-    </py:choose>
+    #  endif
+    # endblock content
   </body>
 </html>

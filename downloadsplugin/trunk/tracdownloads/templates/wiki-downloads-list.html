@@ -1,15 +1,13 @@
-<div xmlns:xi="http://www.w3.org/2001/XInclude"
-     xmlns:py="http://genshi.edgewall.org/"
-     class="discussion" py:strip="">
-  <xi:include href="downloads-macros.html"/>
-  <div id="downloads" class="downloads">
-    <py:choose>
-      <py:when test="'DOWNLOADS_VIEW' in perm">
-        ${display_downloads(downloads, href.wiki(downloads.page_name))}
-      </py:when>
-      <py:otherwise>
-        <span class="system-message">You have no rights to see list of downloads.</span>
-      </py:otherwise>
-    </py:choose>
-  </div>
+# import "downloads-macros.html" as dmacros
+
+<!DOCTYPE html>
+
+<div class="discussion">
+    <div id="downloads" class="downloads">
+        # if 'DOWNLOADS_VIEW' in perm:
+        ${dmacros.display_downloads(downloads, href.wiki(downloads.page_name), href, context(parent), perm, wiki_to_oneliner, pretty_size, format_datetime, pretty_timedelta)}
+        # else:
+        <span class="system-message">You have no rights to see the list of downloads.</span>
+        # endif
+    </div>
 </div>

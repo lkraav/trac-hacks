@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from trac.db import Column, DatabaseManager, Table
+from trac.db.api import DatabaseManager
+from trac.db.schema import Table, Column
 
 tables = [
     Table('download', key='id')[
@@ -56,12 +57,7 @@ values = [
 
 
 def do_upgrade(env, cursor):
-    db_connector = DatabaseManager(env)._get_connector()[0]
-
-    # Create tables
-    for table in tables:
-        for statement in db_connector.to_sql(table):
-            cursor.execute(statement)
+    DatabaseManager(env).create_tables(tables)
 
     # Insert default values
     for statement in values:

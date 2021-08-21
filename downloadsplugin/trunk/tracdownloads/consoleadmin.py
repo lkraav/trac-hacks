@@ -7,7 +7,7 @@ import unicodedata
 from trac.admin import AdminCommandError, IAdminCommandProvider
 from trac.config import Option
 from trac.core import Component, ExtensionPoint, TracError, implements
-from trac.mimeview import Context
+from trac.mimeview import RenderingContext
 from trac.perm import PermissionCache
 from trac.util import as_int
 from trac.util.datefmt import format_datetime, to_timestamp, utc
@@ -82,7 +82,7 @@ class DownloadsConsoleAdmin(Component):
         api = self.env[DownloadsApi]
 
         # Create context.
-        context = Context('downloads-consoleadmin')
+        context = RenderingContext('downloads-consoleadmin')
         context.req = FakeRequest(self.env, self.consoleadmin_user)
 
         # Open file object.
@@ -133,7 +133,7 @@ class DownloadsConsoleAdmin(Component):
         api = self.env[DownloadsApi]
 
         # Create context.
-        context = Context('downloads-consoleadmin')
+        context = RenderingContext('downloads-consoleadmin')
         context.req = FakeRequest(self.env, self.consoleadmin_user)
 
         # Get download by ID or filename.

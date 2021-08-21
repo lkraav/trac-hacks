@@ -66,7 +66,7 @@ class DownloadsCore(Component):
     def process_request(self, req):
         context = web_context(req, 'downloads-core')
         api = self.env[DownloadsApi]
-        return api.process_downloads(context) + (None,)
+        return api.process_downloads(context)
 
     # IResourceManager methods.
 
@@ -92,7 +92,7 @@ class DownloadsCore(Component):
 
     def get_htdocs_dirs(self):
         from pkg_resources import resource_filename
-        return [('downloads', resource_filename(__name__, 'htdocs'))]
+        yield 'downloads', resource_filename(__name__, 'htdocs')
 
     def get_templates_dirs(self):
         from pkg_resources import resource_filename

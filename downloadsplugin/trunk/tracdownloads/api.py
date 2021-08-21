@@ -122,6 +122,8 @@ class DownloadsApi(Component):
                            db.quote(table), where, order_by),
                           values):
                 row = dict(zip(columns, row))
+                if table == 'download' and row['id'] is not None:
+                    row['perm'] = Resource('downloads', row['id'])
                 items.append(row)
         return items
 
@@ -201,6 +203,8 @@ class DownloadsApi(Component):
                            db.quote(table), where),
                           values):
                 row = dict(zip(columns, row))
+                if table == 'download' and row['id'] is not None:
+                    row['perm'] = Resource('downloads', row['id'])
                 return row
         return None
 

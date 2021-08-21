@@ -17,19 +17,19 @@ class DownloadsInit(Component):
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self):
         return self._get_db_version() != last_db_version
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self):
         db_version = self._get_db_version()
-
-        # Perform incremental upgrades
-        for I in range(db_version + 1, last_db_version + 1):
-            script_name = 'db%i' % I
-            module = __import__('tracdownloads.db.%s' % script_name,
-                                globals(), locals(), ['do_upgrade'])
-            cursor = db.cursor()
-            module.do_upgrade(self.env, cursor)
+        with self.env.db_transaction as db:
+            # Perform incremental upgrades
+            for I in range(db_version + 1, last_db_version + 1):
+                script_name = 'db%i' % I
+                module = __import__('tracdownloads.db.%s' % script_name,
+                                    globals(), locals(), ['do_upgrade'])
+                cursor = db.cursor()
+                module.do_upgrade(self.env, cursor)
 
     def _get_db_version(self):
         for value, in self.env.db_query("""

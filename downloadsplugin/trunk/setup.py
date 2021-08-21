@@ -5,11 +5,11 @@ from setuptools import setup
 
 setup(
     name='TracDownloads',
-    version='1.0.0',
+    version='1.4.0',
     author="Radek Bartoň",
     author_email="blackhex@post.cz",
-    maintainer="Ryan J Ollos",
-    maintainer_email="ryan.j.ollos@gmail.com",
+    maintainer="Thomas Tressieres",
+    maintainer_email="ttressieres@gmail.com",
     url='https://trac-hacks.org/wiki/DownloadsPlugin',
     description='Project release downloads plugin for Trac',
     license="GPL",
