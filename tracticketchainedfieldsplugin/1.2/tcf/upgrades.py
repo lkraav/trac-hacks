@@ -8,18 +8,12 @@
 #----------------------------------------------------------------------------
 
 
-"""Automated upgrades for the TracTicketChainedFields database tables, and other data stored
-in the Trac environment."""
-
-import os
-import sys
-import time
-
-global ENV
+"""Automated upgrades for the TracTicketChainedFields database tables,
+and other data stored in the Trac environment.
+"""
 
 def add_tcf_table(env, db):
     """Migrate db."""
-
     pass
 
 map = {

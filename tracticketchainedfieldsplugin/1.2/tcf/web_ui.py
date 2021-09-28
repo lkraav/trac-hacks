@@ -6,47 +6,30 @@
 # Author:       Richard Liao <richard.liao.i@gmail.com>
 #----------------------------------------------------------------------------
 
-import inspect
 import json
-import os
-import textwrap
-import time
 from pkg_resources import resource_filename
 
+from trac.admin import IAdminPanelProvider
 from trac.core import Component, implements
 from trac.db import DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
-from trac.perm import IPermissionRequestor
-from trac.util.html import html
-from trac.web.chrome import (
-    INavigationContributor, ITemplateProvider, add_script)
 from trac.web.api import (
     IRequestHandler, ITemplateStreamFilter, RequestDone)
-
-from trac.admin import IAdminPanelProvider
-from trac.ticket import (
-    ITicketManipulator, Milestone, Ticket, TicketSystem)
+from trac.web.chrome import (
+    INavigationContributor, ITemplateProvider, add_script)
 
 from model import (
     schema, schema_version, TracTicketChainedFields_List)
-
-__all__ = ['TracTicketChainedFieldsModule']
 
 
 class TracTicketChainedFieldsModule(Component):
 
     implements(IAdminPanelProvider,
                IEnvironmentSetupParticipant,
-               IPermissionRequestor,
                IRequestHandler,
                ITemplateProvider,
                ITemplateStreamFilter,
                )
-
-    # IPermissionRequestor methods
-
-    def get_permission_actions(self):
-        return ['TCF_ADMIN', 'TCF_VIEW']
 
     # IEnvironmentSetupParticipant methods
 
@@ -80,12 +63,12 @@ class TracTicketChainedFieldsModule(Component):
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):
-        if 'TCF_ADMIN' in req.perm:
+        if 'TICKET_ADMIN' in req.perm:
             yield 'ticket', 'Ticket System', 'tcf_admin', \
                   'Chained Fields'
 
     def render_admin_panel(self, req, cat, page, path_info):
-        req.perm.require('TCF_ADMIN')
+        req.perm.require('TICKET_ADMIN')
 
         data = {}
 
