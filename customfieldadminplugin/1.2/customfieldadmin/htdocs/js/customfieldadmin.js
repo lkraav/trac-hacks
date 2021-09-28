@@ -26,12 +26,12 @@
                 label('#format').show();
                 setOptions('text');
                 break;
-            case 1: // select
+            case 1: // checkbox
+                label('#options, #rows, #format').hide();
+                break;
+            case 2: // select
                 label('#options').show();
                 label('#rows, #format').hide();
-                break;
-            case 2: // checkbox
-                label('#options, #rows, #format').hide();
                 break;
             case 3: // radio
                 label('#options').show();
