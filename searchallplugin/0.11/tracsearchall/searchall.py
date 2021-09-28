@@ -129,7 +129,8 @@ class SearchAllPlugin(Component):
 
             for result in results:
                 yield (result[0],
-                       Markup('%s<br/> %s' % (env.project_name, result[1]))) \
+                       Markup('<span class="searchall_project">%s</span><br/> %s'
+                              % (env.project_name, result[1]))) \
                     + result[2:]
 
     # IPermissionRequestor methods
