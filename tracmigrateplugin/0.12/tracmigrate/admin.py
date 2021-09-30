@@ -12,10 +12,15 @@ from tempfile import mkdtemp
 from trac.core import Component, implements, TracError
 from trac.admin.api import IAdminCommandProvider, get_dir_list
 from trac.db import sqlite_backend
-from trac.db.api import DatabaseManager, get_column_names, _parse_db_str
+from trac.db.api import DatabaseManager, get_column_names
 from trac.env import Environment
 from trac.util.compat import any, close_fds
 from trac.util.text import printerr, printout
+
+try:
+    from trac.db.api import _parse_db_str
+except ImportError:
+    from trac.db.api import parse_connection_uri as _parse_db_str
 
 
 def get_connection(env):
@@ -300,9 +305,16 @@ sys.exit(load_entry_point('Trac', 'console_scripts', 'trac-admin')())"""
         return []
 
     def _get_directories(self, db):
-        version = self.env.get_version()
+        version = self._get_database_version()
         path = ('attachments', 'files')[version >= 28]
         return (path, 'htdocs', 'templates', 'plugins')
+
+    if hasattr(Environment, 'database_version'):
+        def _get_database_version(self):
+            return self.env.database_version
+    else:
+        def _get_database_version(self):
+            return self.env.get_version()
 
     def _printout(self, message, *args, **kwargs):
         if args:

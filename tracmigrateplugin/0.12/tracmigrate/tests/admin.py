@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import with_statement
+
 from cStringIO import StringIO
+from contextlib import contextmanager
 from glob import glob
 from pkg_resources import resource_filename
 from subprocess import PIPE, Popen
@@ -12,7 +15,6 @@ import sys
 import tempfile
 import unittest
 
-from trac import db_default
 from trac.attachment import Attachment
 from trac.config import Option
 from trac.db.api import get_column_names
@@ -22,6 +24,7 @@ from trac.util import create_file, hex_entropy, read_file
 from trac.util.compat import close_fds
 from trac.util.text import to_unicode
 from trac.wiki.admin import WikiAdmin
+from trac import db_default  # avoid circular imports
 
 from tracmigrate.admin import TracMigrationCommand
 
@@ -65,17 +68,41 @@ class MigrationTestCase(unittest.TestCase):
                           [('trac', 'database', dburi),
                            ('trac', 'base_url', 'http://localhost/'),
                            ('project', 'name', u'Pŕójéćŧ Ńáḿé')])
-        @env.with_transaction()
         def fn(db):
             cursor = db.cursor()
             cursor.execute("UPDATE %s SET value='21' "
                            "WHERE name='initial_database_version'" %
                            db.quote('system'))
+        self._db_transaction(env, fn)
         pages_dir = resource_filename('trac.wiki', 'default-pages')
         WikiAdmin(env).load_pages(pages_dir)
         att = Attachment(env, 'wiki', 'WikiStart')
         att.insert('filename.txt', StringIO('test'), 4)
         env.shutdown()
+
+    if hasattr(Environment, 'db_transaction'):
+        def _db_transaction(self, env, fn):
+            with env.db_transaction as db:
+                fn(db)
+    else:
+        def _db_transaction(self, env, fn):
+            @env.with_transaction()
+            def _fn(db):
+                fn(db)
+
+    if hasattr(Environment, 'db_query'):
+        @contextmanager
+        def _db_query(self, env):
+            with env.db_query as db:
+                yield db
+    else:
+        @contextmanager
+        def _db_query(self, env):
+            db = env.get_read_db()
+            try:
+                yield db
+            finally:
+                del db
 
     if 'destroying' in inspect.getargspec(EnvironmentStub.__init__)[0]:
         def _destroy_db(self):
@@ -91,20 +118,20 @@ class MigrationTestCase(unittest.TestCase):
             else:
                 return tuple(row[col] for col in columns)
 
-        db = env.get_read_db()
-        cursor = db.cursor()
-        records = {}
-        for table in db_default.schema:
-            primary_cols = ','.join(db.quote(col) for col in table.key)
-            query = "SELECT * FROM %s ORDER BY %s" % (db.quote(table.name),
-                                                      primary_cols)
-            cursor.execute(query)
-            columns = get_column_names(cursor)
-            rows = {}
-            for row in cursor:
-                row = dict(zip(columns, row))
-                rows[primary(row, table.key)] = row
-            records[table.name] = rows
+        with self._db_query(env) as db:
+            cursor = db.cursor()
+            records = {}
+            for table in db_default.schema:
+                primary_cols = ','.join(db.quote(col) for col in table.key)
+                query = "SELECT * FROM %s ORDER BY %s" % (db.quote(table.name),
+                                                          primary_cols)
+                cursor.execute(query)
+                columns = get_column_names(cursor)
+                rows = {}
+                for row in cursor:
+                    row = dict(zip(columns, row))
+                    rows[primary(row, table.key)] = row
+                records[table.name] = rows
         return records
 
     def _generate_module_name(self):
@@ -348,10 +375,10 @@ class Setup(Component):
     def environment_created(self):
         create_file(self._created_file)
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, db=None):
         return not os.path.exists(self._upgraded_file)
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         create_file(self._upgraded_file)
 """
 
