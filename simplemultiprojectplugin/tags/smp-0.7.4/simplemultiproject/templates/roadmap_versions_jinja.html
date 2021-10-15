@@ -1,0 +1,34 @@
+{#
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+
+# if smp_render == 'versions':
+<div class="milestones">
+    # for version in versions:
+    <div class="milestone">
+        # set vstats = version_stats[loop.index0]
+        <div class="${infodivclass}">
+            <h2><a href="${href.version(version.name)}">
+              Version: <em>${version.name}</em>
+            </a></h2>
+            # if version.time:
+              <p class="date">
+                  Released ${dateinfo(version.time)} ago (${format_datetime(version.time)})
+              </p>
+            # else:
+              <p class="date">
+                No date set
+              </p>
+            # endif
+        </div>
+        <div class="description">
+        ${wiki_to_html(context, version.description)}
+        </div>
+    </div>
+    # endfor
+</div>
+# endif

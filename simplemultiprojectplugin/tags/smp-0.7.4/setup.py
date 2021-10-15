@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='TracSimpleMultiProject',
-    version='0.7.5',
+    version='0.7.4',
     packages=['simplemultiproject'],
     package_data={
         'simplemultiproject': [

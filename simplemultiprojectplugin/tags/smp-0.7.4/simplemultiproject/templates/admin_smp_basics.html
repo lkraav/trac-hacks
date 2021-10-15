@@ -1,0 +1,119 @@
+<!--!
+ (c) Cinc 2021, License 3-clause BSD
+ -->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n">
+  <xi:include href="admin.html" />
+<head>
+    <title>${_("Basic Settings")}</title>
+</head>
+<body>
+    <h2>${_("Basic Settings")}</h2>
+    <div py:if="not custom_field">
+        <form action="" method="POST">
+            <fieldset>
+                <legend>Ticket Custom Field</legend>
+                <div class="system-message warning">${_("Ticket custom field 'project' not configured. See installation instructions.")}</div>
+                <p>Do you want to create the ticket custom field now?</p>
+                <p class="help">Without the proper ticket custom field it's not possible to link tickets to projects.</p>
+                <div py:if="'PROJECT_ADMIN' in perm">
+                    <div class="buttons">
+                        <input type="submit" name="create-ticket-custom" value="${_('Create')}"/>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <!--! Milestones -->
+    <div>
+        <form action="" method="POST">
+            <fieldset>
+                <legend>Milestone Configuration</legend>
+                <div class="field">
+                    <label>
+                        <input type="checkbox" name="cb-allow-no-prj-ms" value="allow_no_prj_ms"
+                               checked="${'checked' if allow_no_prj_ms else None}"/>
+                        ${_("Allow milestones without a project")}
+                    </label>
+                    <p class="help">${_("Check this option if you want to create milestones without linked projects. Such milestones can be used freely in any project.")}</p>
+                </div>
+                <p></p>
+                <div class="field">
+                    <label>
+                        <input type="checkbox" name="cb-single-prj-ms" value="single_prj_ms"
+                               checked="${'checked' if single_prj_ms else None}"/>
+                        ${_("Single project milestones")}
+                    </label>
+                    <p class="help">${_("Check this option if you want to link milestones only to a single project.")}</p>
+                </div>
+
+                <div py:if="'PROJECT_ADMIN' in perm">
+                    <div class="buttons">
+                        <input type="submit" name="save-ms" value="${_('Save')}"/>
+                    </div>
+                </div>
+
+            </fieldset>
+        </form>
+    </div>
+    <!--! Versions -->
+    <div>
+        <form action="" method="POST">
+            <fieldset>
+                <legend>Version Configuration</legend>
+                <div class="field">
+                    <label>
+                        <input type="checkbox" name="cb-allow-no-prj-ver" value="allow_no_prj_ver"
+                               checked="${'checked' if allow_no_prj_ver else None}"/>
+                        ${_("Allow versions without a project")}
+                    </label>
+                    <p class="help">${_("Check this option if you want to create versions without linked projects. Such versions can be used freely in any project.")}</p>
+                </div>
+                <p></p>
+                <div class="field">
+                    <label>
+                        <input type="checkbox" name="cb-single-prj-ver" value="single_prj_ver"
+                               checked="${'checked' if single_prj_ver else None}"/>
+                        ${_("Single project versions")}
+                    </label>
+                    <p class="help">${_("Check this option if you want to link versions only to a single project.")}</p>
+                </div>
+
+                <div py:if="'PROJECT_ADMIN' in perm">
+                    <div class="buttons">
+                        <input type="submit" name="save-ver" value="${_('Save')}"/>
+                    </div>
+                </div>
+
+            </fieldset>
+        </form>
+    </div>
+    <!--! Permission policy -->
+    <div>
+        <form action="" method="POST">
+            <fieldset>
+                <legend>${_("Permission policies")}</legend>
+                <div class="field">
+                    <div py:if="not permission_policy" class="system-message warning">
+                        ${_("Permission policy 'SmpPermissionPolicy' is not installed.")}</div>
+                    <p>${_("Specify the permission policies to be used.")}</p>
+                    <p class="help">${_("'SmpPermissionPolicy' checks user permissions for projects. Without installing it you still may link items to projects but no restrictions are enforced.")}</p>
+                    <p class="help">${_("Note that the order of policies is important here.")}</p>
+                    <input type="text" class="form-control trac-fullwidth" value="${permission_list}" name="permission-policies" />
+                    <div py:if="'PROJECT_ADMIN' in perm">
+                        <div class="buttons">
+                            <input type="submit" name="save-permission-policy" value="${_('Submit changes')}"/>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
+</body>
+</html>

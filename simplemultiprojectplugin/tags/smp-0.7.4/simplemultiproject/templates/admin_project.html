@@ -1,0 +1,190 @@
+<!--!
+ (c) Cinc 2020, License 3-clause BSD
+ -->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n" py:strip="">
+  <xi:include href="admin.html" />
+<head>
+    <title>${_("Manage Projects")}</title>
+    <!--! script taken and modified from milestone_edit_form.html Trac 2.2-->
+      <script type="text/javascript">
+          /*<![CDATA[*/
+            jQuery(document).ready(function($) {
+              function updateCompletedDate() {
+                var checked = $("#completed").checked();
+                $("#completeddate").enable(checked);
+              }
+              $("#completed").click(updateCompletedDate);
+              updateCompletedDate();
+            });
+          /*]]>*/
+      </script>
+
+</head>
+<body>
+    <h2>${_("Manage Projects")} <span py:if="view != 'details'" class="trac-count">(${len(all_projects)})</span>
+</h2>
+    <py:choose test="view">
+        <py:when test="'detail'">
+
+            <form class="mod" id="edit" method="post" action="">
+                <div>
+                    <input class="" name="old_name" value="${project.name}" type="hidden"/>
+                    <input class="" name="project_id" value="${project.id}" type="hidden"/>
+                </div>
+                <fieldset>
+                    <legend>${_("Modify Project:")}</legend>
+                    <div class="field">
+                        <label>${_("Name:")}
+                            <br/>
+                            <input class="trac-autofocus" name="name" size="32" value="${project.name}"
+                                   type="text" id="name"/>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>${_("Summary:")}
+                            <br />
+                            <input type="text" name="summary" size="52" value="${project.summary}"/>
+                        </label>
+                    </div>
+                    <div class="field description">
+                        <label for="description" i18n:msg="">
+                            Description: (you may use <a tabindex="42" href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here)
+                        </label>
+                        <div>
+                            <textarea id="description" class="wikitext trac-fullwidth trac-resizable" name="description"
+                                      rows="10" cols="50">${project.description}</textarea>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>
+                            <input type="checkbox" name="restricted" value="restricted"
+                                   checked="${'checked' if project.restricted else None}"/>
+                            ${_("Restrict Project")}
+                        </label>
+                        <p class="help">${_("Select this if you want to restrict this project and associated data to specific users or groups.")}<br/>
+                        ${_("Users can be associated with this project using the 'Permissions' panel.")}
+                            ${_('Permission for this project is "PROJECT_%s_MEMBER".') % project.id}</p>
+                    </div>
+                    <div class="field">
+                        <label>
+                            <input type="checkbox" id="completed" name="completed" value="completed"
+                                   checked="${'checked' if project.closed else None}"/>
+                            ${_("Mark as completed")}<br />
+                        </label>
+                        <label class="disabled">
+                            <input type="text" id="completeddate" name="completeddate" class="trac-datetimepicker"
+                                   size="${len(datetime_hint) + 2}"
+                                   title="${_('Format: %(datehint)s', datehint=datetime_hint)}"
+                                   disabled=""
+                                   value="${format_datetime(project.closed if project.closed else None)}"/>
+                            <span class="trac-datetimehint">${_("Format:")} ${datetime_hint}</span>
+                        </label>
+                    </div>
+
+                </fieldset>
+                <div py:if="'PROJECT_ADMIN' in perm" class="buttons">
+                    <input class="trac-disable-on-submit" type="submit" name="save" value="${_('Submit changes')}"/>
+                    <input type="submit" name="cancel" value="${_('Cancel')}"/>
+                </div>
+            </form>
+        </py:when>
+        <py:otherwise>
+            <!--! Main page -->
+            <div py:if="not custom_field" class="system-message warning">${_("Ticket custom field 'project' not configured. See installation instructions.")}</div>
+            <form py:if="'PROJECT_ADMIN' in perm" class="mod" id="addproject" method="post" action="">
+                <fieldset>
+                    <legend>${_("Add Project:")}</legend>
+                    <div class="field">
+                        <label>${_("Name:")}
+                            <br/>
+                            <input type="text" name="name" value="${name}"/>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>${_("Summary:")}
+                            <br />
+                            <input type="text" name="summary" size="52" value="${summary}"/>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>
+                            ${_("Description:")}
+                            <br />
+                            <div>
+                                <textarea class="trac-resizable" name="description"
+                                          rows="3" cols="50">${description}</textarea>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="field">
+                        <label>
+                            <input type="checkbox" name="restricted" value="restricted"
+                                   checked="${'checked' if restricted else None}"/>
+                            ${_("Restrict Project")}
+                        </label>
+                        <p class="help">${_("Select this if you want to restrict this project and associated data to specific users or groups.")}<br/>
+                        ${_("Users can be associated with this project using the 'Permissions' panel.")}</p>
+                    </div>
+                    <div>
+                        <div class="buttons">
+                            <input type="submit" name="add" value="${_('Add')}"/>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+
+            <form id="project_table" method="post" action="">
+                <table class="listing" id="projectlist">
+                    <thead>
+                        <tr>
+                            <th class="sel">&nbsp;</th>
+                            <th>${_("ID")}</th>
+                            <th>${_("Name")}</th>
+                            <th>${_("Summary")}</th>
+                            <th>${_("Completed")}</th>
+                            <th>${_("Is restricted")}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr py:for="prj in all_projects">
+                            <td class="sel"><input py:if="'PROJECT_ADMIN' in perm" type="checkbox" name="sel"
+                                                   value="${prj.id}"/>
+                            </td>
+                            <td class="project_id">
+                                <a href="${href.admin('smproject', 'projects', prj[1])}">${prj.id}</a>
+                            </td>
+                            <td class="name">
+                                <a href="${href.admin('smproject', 'projects', prj[1])}">${prj.name}</a>
+                            </td>
+                            <td class="summary">
+                                ${prj.summary}
+                            </td>
+                            <td class="completed">
+                                ${format_datetime(prj.closed if prj.closed else None) if prj.closed else ''}
+                            </td>
+
+                            <td class="restricted">
+                                <div py:if="prj.restricted">Yes
+                                <p class="help">Use permission PROJECT_${prj.id}_MEMBER to assign users to the project.</p></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div py:if="'PROJECT_ADMIN' in perm" class="buttons">
+                    <input type="submit" name="remove"
+                        value="${_('Remove selected items')}"/>
+                </div>
+            </form>
+        </py:otherwise>
+    </py:choose>
+
+
+
+</body>
+</html>

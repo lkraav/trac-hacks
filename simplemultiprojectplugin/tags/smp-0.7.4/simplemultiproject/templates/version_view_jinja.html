@@ -1,0 +1,134 @@
+{#
+# Copyright (C) falkb
+# Copyright (C) 2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+# extends 'layout.html'
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            # block title
+            ${_("Version")} ${version.name}
+            ${ super() }
+            # endblock title
+        </title>
+        # block head
+        ${ super() }
+        <script type="text/javascript">
+      jQuery(document).ready(function($) {
+        $("#content").find("h1,h2,h3,h4,h5,h6").addAnchor("Link to this section");
+        $(".foldable").enableFolding(true, true);
+      });
+        </script>
+        # endblock
+    </head>
+    <body>
+    # block content
+    <div id="content" class="milestone">
+        <h1>${_("Version")} ${version.name}</h1>
+        <div class="${infodivclass}">
+            #if version.time:
+            <p class="date">Date ${dateinfo(version.time)} (${format_datetime(version.time)})</p>
+            # else:
+            <p class="date">${_("No date set")}</p>
+            #endif
+            # if stats.count:
+            #   include "progress_bar.html" ignore missing
+            # endif
+        </div>
+
+        # if available_groups and stats.count:
+        <form id="stats" class="trac-groupprogress" action="">
+            ${jmacros.form_token_input()}
+            <fieldset>
+                <legend>
+                    <label for="by">${stats.title.capitalize()} by</label>
+                    <select id="by" name="by" onchange="this.form.submit()">
+                        # for group in available_groups:
+                        <option ${{'selected': grouped_by == group.name,
+                                   'value': group.name
+                                  }|htmlattr}>${group.label}</option>
+                        # endfor
+                    </select>
+                    <input type="submit" value="${_('Update')}" class="noscript" />
+                    <script type="text/javascript">
+                      jQuery(document).ready(function ($) { $(".noscript").attr("style", "display: none"); });
+                    </script>
+                </legend>
+                # if groups:
+                <table summary="Shows the version completion status grouped by ${grouped_by}">
+                    # for group in groups:
+                    <tr>
+                        <th scope="row">
+                            # if not group.name:
+                            <i><a href="${group.stats_href}">(none)</a></i>
+                            # elif grouped_by in ['owner', 'reporter']:
+                            #  with
+                            #    set obfus_name = format_author(group.name)
+                            #    if obfus_name != group.name:
+                            ${obfus_name}
+                            #    else:
+                            <a href="${group.stats_href}">${obfus_name}</a>
+                            #    endif
+                            #  endwith
+                            # else:
+                            <a href="${group.stats_href}">${group.name}</a>
+                            # endif
+                        </th>
+                        <td>
+                            # with
+                            #   set stats = group.stats
+                            #   set interval_hrefs = group.interval_hrefs if not (grouped_by in ('owner', 'reporter') and group.name and obfuscated)
+                            #   set percent = '%d / %d' % (group.stats.done_count, group.stats.count)
+                            #   set legend = false
+                            #   set style = 'width: %d%%' % (group.percent_of_max_total * 0.8)
+                            #   include 'progress_bar.html' ignore missing
+                            # endwith
+                        </td>
+                    </tr>
+                    # endfor
+              </table>
+                # endif
+            </fieldset>
+        </form>
+        # endif
+
+        # if version.description:
+        <div class="description" xml:space="preserve">
+            ${wiki_to_html(context, version.description)}
+        </div>
+        # endif
+
+        # if 'MILESTONE_MODIFY' in perm or 'MILESTONE_DELETE' in perm:
+        <div class="buttons">
+            # if 'MILESTONE_MODIFY' in perm:
+            <form method="get" action="" id="editversion">
+              <div>
+                <input type="hidden" name="action" value="edit" />
+                <input type="submit" value="${_('Edit version')}" />
+              </div>
+            </form>
+            # endif
+            # if 'MILESTONE_DELETE' in perm:
+            <form method="get" action="" id="deleteversion">
+              <div>
+                <input type="hidden" name="action" value="delete" />
+                <input type="submit" value="${_('Delete version')}" />
+              </div>
+            </form>
+            #endif
+        </div>
+        # endif
+        <div class="trac-help"><strong>Note:</strong> See
+            <a href="${href.wiki('TracRoadmap')}">TracRoadmap</a> for help on using
+            the roadmap.
+        </div>
+    </div>
+    ${ super() }
+    # endblock
+    </body>
+</html>

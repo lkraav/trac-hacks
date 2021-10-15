@@ -1,0 +1,198 @@
+{#
+# Copyright (C) 2020-2021 Cinc
+#
+# All rights reserved.
+#
+# License: 3-clause BSD
+#}
+
+<div class="projects">
+    # if ms_without_prj and milestones:
+    <div class="milestone">
+        <div class="smp-project-group">
+            <div class="info">
+                <h2>Milestones without a Project</h2>
+            </div>
+            <div class="smp-grouped-ms">
+                # for milestone in milestones:
+                    # if not milestone.id_project:
+                    <div class="milestone">
+                        # set mstats = milestone_stats[loop.index0]
+                        <div class="info trac-progress">
+                            <h3>
+                                <a href="${href.milestone(milestone.name)}">Milestone: <em>${milestone.name}</em></a>
+                            </h3>
+                            # if milestone.completed:
+                            <p class="date">
+                                Completed ${dateinfo(milestone.completed)} ago (${format_datetime(milestone.completed)})
+                            </p>
+                            #elif milestone.is_late:
+                            <p class="date">
+                                <strong>${dateinfo(milestone.due)} late</strong> (${format_datetime(milestone.due)})
+                            </p>
+                            #elif milestone.due:
+                            <p class="date">
+                                Due in ${dateinfo(milestone.due)} (${format_datetime(milestone.due)})
+                            </p>
+                            # else:
+                            <p class="date">
+                                No date set
+                            </p>
+                            #endif
+                            # if mstats.stats.count:
+                            # with
+                            #   set stats = mstats.stats
+                            #   set interval_hrefs = mstats.interval_hrefs
+                            #   set stats_href = mstats.stats_href
+                            #   include "progress_bar.html" ignore missing
+                            # endwith
+                            # endif
+                        </div>
+                        <div class="description" xml:space="preserve">
+                            ${wiki_to_html(context(milestone.resource), milestone.description)}
+                        </div>
+                    </div>
+                    # endif
+                # endfor
+            </div>
+        </div>
+    </div>
+    # endif
+
+    # if version_without_prj:
+    <div class="milestone">
+        <div class="smp-project-group">
+            <div class="info">
+                <h2>Versions without a Project</h2>
+            </div>
+            <div class="smp-grouped-ms">
+                # for version in versions:
+                    # if not version.id_project:
+                    <div class="milestone">
+                        # set vstats = version_stats[loop.index0]
+                        <div class="info trac-progress">
+                            <h3>
+                                <a href="${href.version(version.name)}">Version: <em>${version.name}</em></a>
+                            </h3>
+                            # if version.time:
+                            <p class="date">
+                                Released ${dateinfo(version.time)} ago (${format_datetime(version.time)})
+                            </p>
+                            # else:
+                            <p class="date">
+                                No date set
+                            </p>
+                            #endif
+                            # if vstats.stats.count:
+                            # with
+                            #   set stats = vstats.stats
+                            #   set interval_hrefs = vstats.interval_hrefs
+                            #   set stats_href = vstats.stats_href
+                            #   include "progress_bar.html" ignore missing
+                            # endwith
+                            # endif
+                        </div>
+                        <div class="description" xml:space="preserve">
+                            ${wiki_to_html(context(version.resource), version.description)}
+                        </div>
+                    </div>
+                    # endif
+                # endfor
+            </div>
+        </div>
+    </div>
+    # endif
+
+    # for proj in projects:
+    <div class="milestone">
+        <div class="smp-project-group">
+            <div class="info">
+                <h2>${_("Project: ")}<em>${proj.name}</em>
+                    # if proj.summary:
+                    <span> - ${proj.summary}</span>
+                    # endif
+                </h2>
+            </div>
+            <div class="smp-grouped-ms">
+                ${wiki_to_html(context, proj.description)}
+                # if milestones:
+                <hr />
+                #endif
+                # for milestone in milestones:
+                    # if proj.id in milestone.id_project:
+                    <div class="milestone">
+                        # set mstats = milestone_stats[loop.index0]
+                        <div class="info trac-progress">
+                            <h3>
+                                <a href="${href.milestone(milestone.name)}">Milestone: <em>${milestone.name}</em></a>
+                            </h3>
+                            # if milestone.completed:
+                            <p class="date">
+                                Completed ${dateinfo(milestone.completed)} ago (${format_datetime(milestone.completed)})
+                            </p>
+                            # elif milestone.is_late:
+                            <p class="date">
+                                <strong>${dateinfo(milestone.due)} late</strong> (${format_datetime(milestone.due)})
+                            </p>
+                            # elif milestone.due:
+                            <p class="date">
+                                Due in ${dateinfo(milestone.due)} (${format_datetime(milestone.due)})
+                            </p>
+                            # else:
+                            <p class="date">
+                                No date set
+                            </p>
+                            #endif
+                            # if mstats.stats.count:
+                            # with
+                            #   set stats = mstats.stats
+                            #   set interval_hrefs = mstats.interval_hrefs
+                            #   set stats_href = mstats.stats_href
+                            #   include "progress_bar.html" ignore missing
+                            # endwith
+                            # endif
+                        </div>
+                        <div class="description">
+                            ${wiki_to_html(context(milestone.resource), milestone.description)}
+                        </div>
+                    </div>
+                    # endif
+                # endfor
+
+                # for version in versions:
+                    # if proj.id in version.id_project:
+                    <div class="milestone">
+                        # set vstats = version_stats[loop.index0]
+                        <div class="info trac-progress">
+                            <h3>
+                                <a href="${href.version(version.name)}">Version: <em>${version.name}</em></a>
+                            </h3>
+                            # if version.time:
+                            <p class="date">
+                                Released ${dateinfo(version.time)} ago (${format_datetime(version.time)})
+                            </p>
+                            # else:
+                            <p class="date">
+                                No date set
+                            </p>
+                            #endif
+                            # if vstats.stats.count:
+                            # with
+                            #   set stats = vstats.stats
+                            #   set interval_hrefs = vstats.interval_hrefs
+                            #   set stats_href = vstats.stats_href
+                            #   include "progress_bar.html" ignore missing
+                            # endwith
+                            # endif
+                        </div>
+                        <div class="description">
+                            ${wiki_to_html(context(version.resource), version.description)}
+                        </div>
+                    </div>
+                    # endif
+                # endfor
+            </div>
+        </div>
+    </div>
+    # endfor
+</div>

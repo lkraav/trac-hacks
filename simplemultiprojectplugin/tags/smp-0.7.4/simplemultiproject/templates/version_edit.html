@@ -1,0 +1,85 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="layout.html" />
+  <head>
+    <py:choose test="version.exists">
+      <title py:when="True">Edit Version ${version.name}</title>
+      <title py:otherwise="">New Version</title>
+    </py:choose>
+    <link rel="stylesheet" type="text/css"
+          href="${chrome.htdocs_location}css/roadmap.css" />
+    <script type="text/javascript">/*<![CDATA[*/
+      jQuery(document).ready(function($) {
+        function updateDueDate() {
+          $("#versiondate").enable($("#due").checked());
+        }
+        $("#due").click(updateDueDate);
+        updateDueDate();
+        $("#name").get(0).focus()
+      });
+    /*]]>*/</script>
+  </head>
+
+  <body>
+    <div id="content" class="milestone">
+      <py:choose test="version.exists">
+        <h1 py:when="True">Edit Version ${version.name}</h1>
+        <h1 py:otherwise="">New Version</h1>
+      </py:choose>
+
+      <form id="edit" action="" method="post">
+        <fieldset>
+          <py:choose test="version.exists">
+            <legend py:when="True">${_("Modify Version")}</legend>
+            <legend py:otherwise="">${_("New Version")}</legend>
+          </py:choose>
+
+          <div class="field">
+            <input type="hidden" name="id" value="${version.name}" />
+            <input type="hidden" name="action" value="edit" />
+            <label>Name of the version:<br />
+              <input type="text" id="name" class ="trac-autofocus" name="name" size="32" value="${version.name or req.args.get('name')}" />
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              <input type="checkbox" id="due" name="due" checked="${version.time or None}" />
+              Due:<br />
+            </label>
+            <label>
+              <input type="text" id="versiondate" name="time"
+                     class="trac-datetimepicker"
+                     size="${len(datetime_hint) + 1}"
+                     value="${format_datetime(version.time)}"
+                     title="${_('Format: %(datehint)s', datehint=datetime_hint)}" />
+              <span class="trac-datetimehint">Format: ${datetime_hint}</span>
+            </label>
+          </div>
+
+          <div class="field" style="margin-top: 1em">
+              <label for="description" i18n:msg="">
+                Description (you may use <a tabindex="42" href="${href.wiki('WikiFormatting')}">WikiFormatting</a> here):
+              </label>
+              <p>
+                <textarea id="description" name="description" class="wikitext trac-resizable" rows="6" cols="60">$version.description</textarea>
+              </p>
+          </div>
+        </fieldset>
+        <div class="buttons">
+          <input type="submit" name="save" value="${_('Submit changes')}"/>
+          <input type="submit" name="cancel" value="${_('Cancel')}"/>
+        </div>
+      </form>
+      <div id="help" i18n:msg=""><strong>Note:</strong> See
+        <a href="${href.wiki('TracRoadmap')}">TracRoadmap</a> for help on using
+        the roadmap.
+    </div>
+    </div>
+  </body>
+</html>
