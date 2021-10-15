@@ -51,6 +51,10 @@ __all__ = ['TracDragDropModule']
 add_domain, _ = domain_functions('tracdragdrop', 'add_domain', '_')
 
 
+def gettext_messages(msgid, **args):
+    return dgettext('messages', msgid, **args)
+
+
 def _list_message_files(dir):
     if not os.path.isdir(dir):
         return set()
@@ -164,8 +168,8 @@ class TracDragDropModule(Component):
                     get_resource_url(self.env, resource.child('attachment'),
                                      req.href, format='raw'),
                 'parent_name': get_resource_name(self.env, resource),
-                'no_image_msg': dgettext(
-                    'messages', 'No image "%(id)s" attached to %(parent)s'),
+                'no_image_msg': gettext_messages('No image "%(id)s" attached '
+                                                 'to %(parent)s'),
                 'can_create': attachments.get('can_create') or False,
                 'max_size': AttachmentModule(self.env).max_size,
             },
@@ -370,10 +374,9 @@ class PseudoAttachmentObject(object):
 
     def __verify_size(self, size, max_size):
         if max_size >= 0 and size > max_size:
-            message = dgettext('messages',
-                               'Maximum attachment size: %(num)s bytes',
-                               num=max_size)
-            raise TracError(message, dgettext('messages', 'Upload failed'))
+            message = gettext_messages(
+                'Maximum attachment size: %(num)s bytes', num=max_size)
+            raise TracError(message, gettext_messages('Upload failed'))
 
     def __read_content(self, req, out, size, max_size):
         input = req.environ['wsgi.input']
