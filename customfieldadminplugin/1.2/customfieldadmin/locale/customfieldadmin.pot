@@ -1,32 +1,32 @@
 # Translations template for TracCustomFieldAdmin.
-# Copyright (C) 2017 CodeResort.com (BV Network AS)
+# Copyright (C) 2021 CodeResort.com (BV Network AS)
 # This file is distributed under the same license as the
 # TracCustomFieldAdmin project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: TracCustomFieldAdmin 0.2.13\n"
+"Project-Id-Version: TracCustomFieldAdmin 0.4.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2017-06-26 06:39+0000\n"
+"POT-Creation-Date: 2021-10-15 10:10-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 0.9.6\n"
+"Generated-By: Babel 2.9.1\n"
 
-#: customfieldadmin/admin.py:34
+#: customfieldadmin/admin.py:29
 msgid "Ticket System"
 msgstr ""
 
-#: customfieldadmin/admin.py:35
+#: customfieldadmin/admin.py:30
 msgid "Custom Fields"
 msgstr ""
 
-#: customfieldadmin/admin.py:66
+#: customfieldadmin/admin.py:65
 #, python-format
 msgid "Custom field %(name)s does not exist."
 msgstr ""
@@ -41,171 +41,188 @@ msgid ""
 "when viewing tickets."
 msgstr ""
 
-#: customfieldadmin/api.py:95
+#: customfieldadmin/api.py:81
 msgid "Custom field requires attributes 'name' and 'type'."
 msgstr ""
 
-#: customfieldadmin/api.py:101
+#: customfieldadmin/api.py:87
 #, python-format
 msgid "Field name '%(name)s' is reserved"
 msgstr ""
 
-#: customfieldadmin/api.py:105
+#: customfieldadmin/api.py:91
 msgid ""
 "Only alphanumeric characters allowed for custom field name ('a-z' or "
 "'0-9' or '_'), with 'a-z' as first character."
 msgstr ""
 
-#: customfieldadmin/api.py:111
+#: customfieldadmin/api.py:97
 msgid "Custom field name must begin with a character (a-z)."
 msgstr ""
 
-#: customfieldadmin/api.py:115
+#: customfieldadmin/api.py:100
 #, python-format
 msgid "%(field_type)s is not a valid field type"
 msgstr ""
 
-#: customfieldadmin/api.py:120
+#: customfieldadmin/api.py:105
 msgid "Can not create as field already exists."
 msgstr ""
 
-#: customfieldadmin/api.py:123
+#: customfieldadmin/api.py:108
 msgid "Can't create a custom field with the same name as a built-in field."
 msgstr ""
 
-#: customfieldadmin/api.py:174
+#: customfieldadmin/api.py:159
 #, python-format
 msgid "Custom Field '%(name)s' does not exist. Cannot update."
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:11
+#: customfieldadmin/templates/customfieldadmin_genshi.html:11
+#: customfieldadmin/templates/customfieldadmin_jinja.html:7
 msgid "Custom Fields Admin"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:16
+#: customfieldadmin/templates/customfieldadmin_genshi.html:16
+#: customfieldadmin/templates/customfieldadmin_jinja.html:19
 msgid "Manage Custom Fields"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:21
+#: customfieldadmin/templates/customfieldadmin_genshi.html:21
+#: customfieldadmin/templates/customfieldadmin_jinja.html:26
 msgid "Modify Custom Field:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:23
+#: customfieldadmin/templates/customfieldadmin_genshi.html:23
+#: customfieldadmin/templates/customfieldadmin_jinja.html:28
 msgid "Name (cannot modify):"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:28
-#: customfieldadmin/templates/customfieldadmin.html:94
+#: customfieldadmin/templates/customfieldadmin_genshi.html:28
+#: customfieldadmin/templates/customfieldadmin_genshi.html:86
+#: customfieldadmin/templates/customfieldadmin_jinja.html:33
+#: customfieldadmin/templates/customfieldadmin_jinja.html:96
 msgid "Type:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:39
-#: customfieldadmin/templates/customfieldadmin.html:103
+#: customfieldadmin/templates/customfieldadmin_genshi.html:38
+#: customfieldadmin/templates/customfieldadmin_genshi.html:94
+#: customfieldadmin/templates/customfieldadmin_jinja.html:44
+#: customfieldadmin/templates/customfieldadmin_jinja.html:106
 msgid "Label:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:44
+#: customfieldadmin/templates/customfieldadmin_genshi.html:43
+#: customfieldadmin/templates/customfieldadmin_jinja.html:50
 msgid ""
 "Default value\n"
 "                  (regular text for Text, Textarea, Radio or Select):"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:50
+#: customfieldadmin/templates/customfieldadmin_genshi.html:49
+#: customfieldadmin/templates/customfieldadmin_jinja.html:57
 msgid "Format (Text or Textarea):"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:60
+#: customfieldadmin/templates/customfieldadmin_genshi.html:55
 msgid ""
 "Options for Radio or Select\n"
 "                  (for Select, empty first line makes field optional):"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:71
-msgid "Size of Textarea for entry (Textarea only):"
-msgstr ""
-
-#: customfieldadmin/templates/customfieldadmin.html:71
-msgid "Columns:"
-msgstr ""
-
-#: customfieldadmin/templates/customfieldadmin.html:74
-#: customfieldadmin/templates/customfieldadmin.html:133
+#: customfieldadmin/templates/customfieldadmin_genshi.html:66
+#: customfieldadmin/templates/customfieldadmin_genshi.html:119
+#: customfieldadmin/templates/customfieldadmin_jinja.html:74
+#: customfieldadmin/templates/customfieldadmin_jinja.html:132
 msgid "Rows:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:79
-msgid "Cancel"
-msgstr ""
-
-#: customfieldadmin/templates/customfieldadmin.html:80
+#: customfieldadmin/templates/customfieldadmin_genshi.html:71
+#: customfieldadmin/templates/customfieldadmin_jinja.html:78
 msgid "Save"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:87
+#: customfieldadmin/templates/customfieldadmin_genshi.html:72
+#: customfieldadmin/templates/customfieldadmin_jinja.html:79
+msgid "Cancel"
+msgstr ""
+
+#: customfieldadmin/templates/customfieldadmin_genshi.html:79
+#: customfieldadmin/templates/customfieldadmin_jinja.html:89
 msgid "Add Custom Field:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:89
+#: customfieldadmin/templates/customfieldadmin_genshi.html:81
+#: customfieldadmin/templates/customfieldadmin_jinja.html:91
 msgid "Name:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:108
+#: customfieldadmin/templates/customfieldadmin_genshi.html:99
+#: customfieldadmin/templates/customfieldadmin_jinja.html:111
 msgid "Default value:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:113
+#: customfieldadmin/templates/customfieldadmin_genshi.html:104
+#: customfieldadmin/templates/customfieldadmin_jinja.html:116
 msgid "Format:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:122
+#: customfieldadmin/templates/customfieldadmin_genshi.html:111
+#: customfieldadmin/templates/customfieldadmin_jinja.html:123
 msgid "Options:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:130
-msgid "Size of Textarea:"
-msgstr ""
-
-#: customfieldadmin/templates/customfieldadmin.html:130
-msgid "Cols:"
-msgstr ""
-
-#: customfieldadmin/templates/customfieldadmin.html:138
+#: customfieldadmin/templates/customfieldadmin_genshi.html:124
+#: customfieldadmin/templates/customfieldadmin_jinja.html:136
 msgid "Add"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:144
+#: customfieldadmin/templates/customfieldadmin_genshi.html:130
 msgid "No Custom Fields defined for this project."
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:152
+#: customfieldadmin/templates/customfieldadmin_genshi.html:138
+#: customfieldadmin/templates/customfieldadmin_jinja.html:155
 msgid "Name"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:153
+#: customfieldadmin/templates/customfieldadmin_genshi.html:139
+#: customfieldadmin/templates/customfieldadmin_jinja.html:156
 msgid "Type"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:154
+#: customfieldadmin/templates/customfieldadmin_genshi.html:140
+#: customfieldadmin/templates/customfieldadmin_jinja.html:157
 msgid "Label"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:155
+#: customfieldadmin/templates/customfieldadmin_genshi.html:141
+#: customfieldadmin/templates/customfieldadmin_jinja.html:158
 msgid "Order"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:162
+#: customfieldadmin/templates/customfieldadmin_genshi.html:148
+#: customfieldadmin/templates/customfieldadmin_jinja.html:168
 msgid "Field cannot be deleted (declared in source code)"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:176
+#: customfieldadmin/templates/customfieldadmin_genshi.html:162
 msgid "Currently outside regular range"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:185
+#: customfieldadmin/templates/customfieldadmin_genshi.html:171
+#: customfieldadmin/templates/customfieldadmin_jinja.html:195
 msgid "Remove selected items"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:187
+#: customfieldadmin/templates/customfieldadmin_genshi.html:173
+#: customfieldadmin/templates/customfieldadmin_jinja.html:196
 msgid "Apply changes"
+msgstr ""
+
+#: customfieldadmin/templates/customfieldadmin_jinja.html:64
+msgid ""
+"Options for Radio or Select (for Select, empty first line makes field"
+" optional):"
 msgstr ""
 

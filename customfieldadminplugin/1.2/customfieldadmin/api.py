@@ -13,18 +13,10 @@ import re
 
 from trac.core import *
 from trac.ticket.api import TicketSystem
+from trac.util.translation import domain_functions
 
-try:
-    from  trac.util.translation import domain_functions
-except:
-    # fall back to 0.11 behavior, i18n functions are no-ops then
-    from trac.util.html import html as tag_
-    from trac.util.translation import gettext as _
-    def add_domain(*args, **kwargs):
-        pass
-else:
-    add_domain, _, tag_ = \
-        domain_functions('customfieldadmin', ('add_domain', '_', 'tag_'))
+add_domain, _, tag_ = \
+    domain_functions('customfieldadmin', ('add_domain', '_', 'tag_'))
 
 
 class CustomFields(Component):

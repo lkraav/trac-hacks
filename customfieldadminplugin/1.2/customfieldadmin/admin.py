@@ -128,7 +128,7 @@ class CustomFieldAdminPage(Component):
         if hasattr(Chrome(self.env), 'jenv'):
             return 'customfieldadmin_jinja.html', cf_admin, {'domain': 'customfieldadmin'}
         else:
-            return 'customfieldadmin.html', cf_admin
+            return 'customfieldadmin_genshi.html', cf_admin
 
     # ITemplateProvider methods
 
