@@ -1,0 +1,72 @@
+{#
+	admin_theme
+	Created by Noah Kantrowitz on 2007-08-05.
+	Copyright (c) 2009 Noah Kantrowitz. All rights reserved.
+    Copyright (c) 2021 Cinc. All rights reserved.
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block admintitle
+      Theme
+      # endblock admintitle
+    </title>
+    # block head
+    ${ super() }
+    # endblock head
+  </head>
+  <body>
+  # block adminpanel
+    <h2>Theme</h2>
+
+    <form method="post">
+      ${jmacros.form_token_input()}
+      <div id="themelistdiv">
+        <ul id="themelist" class="cycle-slideshow" data-cycle-fx="fade"
+            data-cycle-prev="#prevbutton" data-cycle-next="#nextbutton"
+            data-cycle-timeout="0" data-cycle-slides="&gt; li"
+            data-starting-slide="${themeengine.current_index}"
+            data-cycle-overlay-template="&lt;p&gt; &lt;strong&gt;{{title}}&lt;/strong&gt; &lt;span class=&quot;pull-right&quot;&gt;({{slideNum}} / {{slideCount}})&lt;/span&gt; &lt;/p&gt;&lt;p&gt;&lt;small&gt;{{desc}}&lt;/small&gt;&lt;/p&gt;">
+          <div class="cycle-overlay"></div>
+          # for name, theme in themeengine.info:
+          <li data-title="${theme.name.islower() and theme.name.title() or theme.name}"
+              data-cycle-desc="${theme.description}">
+            <p>
+              <input type="radio" id="theme_${name}_radio" name="theme" value="${name}"
+                     ${{"checked": themeengine.current == name}|htmlattr} />
+              <label for="theme_${name}_radio" class="themename">${theme.name.islower() and theme.name.title() or theme.name}</label>
+            </p>
+            <p>
+              <label for="theme_${name}_radio">
+                <img height="240" width="420" src="${href.themeengine('screenshot', name)}" id="theme_${name}_img" alt="${theme.description}"/>
+              </label>
+            </p>
+          </li>
+          # endfor
+        </ul>
+      </div>
+      <div id="themebuttons">
+        <img src="${href.chrome('themeengine', 'img', 'next.gif')}" border="0" id="nextbutton" />
+        <img src="${href.chrome('themeengine', 'img', 'prev.gif')}" border="0" id="prevbutton" />
+        <input type="submit" value="${dgettext('themeengine', 'Use this theme')}"
+               ${{"class": 'btn' if bhdb}|htmlattr} />
+      </div>
+    </form>
+
+    <script type="text/javascript">
+      $(function() {
+        $('#themelist input').remove();
+        $('#themelist .themename').hide();
+        $('#nextbutton, #prevbutton, #themename, #themedesc ').show();
+        $('#themebuttons').append('<input type="hidden" id="themehidden" name="theme" value="${themeengine.current}" />');
+        $('#themelist').on('cycle-after', function( e, opts, old, elm ) {
+          var value = $(elm).find('label.themename').text();
+          $('#themehidden').val(value);
+        })
+      });
+    </script>
+  # endblock adminpanel
+  </body>
+</html>

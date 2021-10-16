@@ -1,0 +1,45 @@
+{#
+	admin_theme
+	Created by Noah Kantrowitz on 2009-03-29.
+	Copyright (c) 2009 Noah Kantrowitz. All rights reserved.
+    Copyright (c) 2021 Cinc. All rights reserved.
+#}
+# extends 'admin.html'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      # block admintitle
+      Customize theme
+      # endblock admintitle
+    </title>
+    # block head
+    ${ super() }
+    # endblock head
+  </head>
+  <body>
+  # block adminpanel
+    <h2>Customize theme: Advanced</h2>
+
+    <form method="post" id="advanced" class="theme">
+      ${jmacros.form_token_input()}
+      <fieldset>
+        <legend>General</legend>
+        <div>
+          <label for="enable_css">Enable:</label>
+          <input type="checkbox" id="enable_css" name="enable_css" value="1"
+                 ${{"checked": enable}|htmlattr} />
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Style</legend>
+        <textarea name="css" rows="40" cols="80">${css}</textarea>
+      </fieldset>
+      <div class="buttons">
+        <input type="submit" value="${dgettext('themeengine', 'Submit')}"
+               ${{"class": 'btn' if bhdb}|htmlattr} />
+      </div>
+    </form>
+  # endblock adminpanel
+  </body>
+</html>
