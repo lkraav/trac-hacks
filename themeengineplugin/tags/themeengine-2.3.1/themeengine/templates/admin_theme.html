@@ -1,0 +1,67 @@
+<!--!
+	admin_theme
+	Created by Noah Kantrowitz on 2007-08-05.
+	Copyright (c) 2009 Noah Kantrowitz. All rights reserved.
+-->
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:i18n="http://genshi.edgewall.org/i18n"
+      i18n:domain="themeengine">
+      <xi:include href="admin.html" />
+  <?python
+    if _dgettext is not None:
+        dgettext = _dgettext ?>
+  <head>
+    <title>Theme</title>
+  </head>
+  <body>
+    <h2>Theme</h2>
+
+    <form method="post">
+      <div id="themelistdiv">
+        <ul id="themelist" class="cycle-slideshow" data-cycle-fx="fade"
+            data-cycle-prev="#prevbutton" data-cycle-next="#nextbutton"
+            data-cycle-timeout="0" data-cycle-slides="&gt; li"
+            data-starting-slide="${themeengine.current_index}"
+            data-cycle-overlay-template="&lt;p&gt; &lt;strong&gt;{{title}}&lt;/strong&gt; &lt;span class=&quot;pull-right&quot;&gt;({{slideNum}} / {{slideCount}})&lt;/span&gt; &lt;/p&gt;&lt;p&gt;&lt;small&gt;{{desc}}&lt;/small&gt;&lt;/p&gt;">
+          <div class="cycle-overlay"></div>
+          <li py:for="name, theme in themeengine.info"
+              data-title="${theme.name.islower() and theme.name.title() or theme.name}"
+              data-cycle-desc="${theme.description}">
+            <p>
+              <input type="radio" id="theme_${name}_radio" name="theme" value="$name" checked="${themeengine.current == name or None}" />
+              <label for="theme_${name}_radio" class="themename">${theme.name.islower() and theme.name.title() or theme.name}</label>
+            </p>
+            <p>
+              <label for="theme_${name}_radio">
+                <img height="240" width="420" src="${href.themeengine('screenshot', name)}" id="theme_${name}_img" alt="$theme.description"/>
+              </label>
+            </p>
+          </li>
+        </ul>
+      </div>
+      <div id="themebuttons">
+        <img src="${href.chrome('themeengine', 'img', 'next.gif')}" border="0" id="nextbutton" />
+        <img src="${href.chrome('themeengine', 'img', 'prev.gif')}" border="0" id="prevbutton" />
+        <input type="submit" value="${dgettext('themeengine', 'Use this theme')}" class="${bhdb and 'btn' or None}"/>
+      </div>
+    </form>
+
+    <script type="text/javascript">
+      $(function() {
+        $('#themelist input').remove();
+        $('#themelist .themename').hide();
+        $('#nextbutton, #prevbutton, #themename, #themedesc ').show();
+        $('#themebuttons').append('<input type="hidden" id="themehidden" name="theme" value="$themeengine.current" />');
+        $('#themelist').on('cycle-after', function( e, opts, old, elm ) {
+          var value = $(elm).find('label.themename').text();
+          $('#themehidden').val(value);
+        })
+      });
+    </script>
+  </body>
+</html>
