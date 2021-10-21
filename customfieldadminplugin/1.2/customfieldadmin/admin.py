@@ -22,6 +22,9 @@ class CustomFieldAdminPage(Component):
 
     implements(ITemplateProvider, IAdminPanelProvider)
 
+    def __init__(self):
+        CustomFields(self.env)  # load our message catalog
+
     # IAdminPanelProvider methods
 
     def get_admin_panels(self, req):

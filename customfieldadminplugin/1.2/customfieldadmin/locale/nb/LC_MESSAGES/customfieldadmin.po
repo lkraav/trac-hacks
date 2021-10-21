@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TracCustomFieldAdmin 0.2.8\n"
 "Report-Msgid-Bugs-To: simon-code@bvnetwork.no\n"
-"POT-Creation-Date: 2021-10-21 09:17-0700\n"
+"POT-Creation-Date: 2021-10-21 09:22-0700\n"
 "PO-Revision-Date: 2012-01-19 11:51+0100\n"
 "Last-Translator: Odd Simon Simonsen <simon-code@bvnetwork.no>\n"
 "Language: nb\n"
@@ -19,24 +19,24 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
 
-#: customfieldadmin/admin.py:29
+#: customfieldadmin/admin.py:32
 msgid "Ticket System"
 msgstr "Sakssystem"
 
-#: customfieldadmin/admin.py:30
+#: customfieldadmin/admin.py:33
 msgid "Custom Fields"
 msgstr "Egendefinerte felt"
 
-#: customfieldadmin/admin.py:65
+#: customfieldadmin/admin.py:68
 #, python-format
 msgid "Custom field %(name)s does not exist."
 msgstr "Egendefinert felt %(name)s eksisterer ikke."
 
-#: customfieldadmin/admin.py:95
+#: customfieldadmin/admin.py:98
 msgid "No custom field selected"
 msgstr "Egendefinert felt er ikke valgt"
 
-#: customfieldadmin/admin.py:125
+#: customfieldadmin/admin.py:128
 msgid ""
 "Custom Fields are not correctly sorted. This may affect appearance when "
 "viewing tickets."
@@ -84,48 +84,48 @@ msgid "Custom Field '%(name)s' does not exist. Cannot update."
 msgstr "Egendefinert felt %(name)s eksisterer ikke. Kan ikke oppdatere."
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:11
-#: customfieldadmin/templates/customfieldadmin_jinja.html:7
 msgid "Custom Fields Admin"
 msgstr "Brukerfefinert felt administrasjon"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:16
-#: customfieldadmin/templates/customfieldadmin_jinja.html:19
+#: customfieldadmin/templates/customfieldadmin_jinja.html:7
+#: customfieldadmin/templates/customfieldadmin_jinja.html:17
 msgid "Manage Custom Fields"
 msgstr "Administrere Egendefinerte felt"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:21
-#: customfieldadmin/templates/customfieldadmin_jinja.html:26
+#: customfieldadmin/templates/customfieldadmin_jinja.html:24
 msgid "Modify Custom Field:"
 msgstr "Endre Egendefinert felt"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:23
-#: customfieldadmin/templates/customfieldadmin_jinja.html:28
+#: customfieldadmin/templates/customfieldadmin_jinja.html:26
 msgid "Name (cannot modify):"
 msgstr "Navn (kan ikke endres):"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:28
 #: customfieldadmin/templates/customfieldadmin_genshi.html:86
-#: customfieldadmin/templates/customfieldadmin_jinja.html:33
-#: customfieldadmin/templates/customfieldadmin_jinja.html:96
+#: customfieldadmin/templates/customfieldadmin_jinja.html:31
+#: customfieldadmin/templates/customfieldadmin_jinja.html:94
 msgid "Type:"
 msgstr "Type:"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:38
 #: customfieldadmin/templates/customfieldadmin_genshi.html:94
-#: customfieldadmin/templates/customfieldadmin_jinja.html:44
-#: customfieldadmin/templates/customfieldadmin_jinja.html:106
+#: customfieldadmin/templates/customfieldadmin_jinja.html:42
+#: customfieldadmin/templates/customfieldadmin_jinja.html:104
 msgid "Label:"
 msgstr "Etikett:"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:43
-#: customfieldadmin/templates/customfieldadmin_jinja.html:50
+#: customfieldadmin/templates/customfieldadmin_jinja.html:48
 msgid ""
 "Default value\n"
 "                  (regular text for Text, Textarea, Radio or Select):"
 msgstr "Standardverdi (vanlig tekst for Text, Textarea, Radio og Select):"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:49
-#: customfieldadmin/templates/customfieldadmin_jinja.html:57
+#: customfieldadmin/templates/customfieldadmin_jinja.html:55
 msgid "Format (Text or Textarea):"
 msgstr "Format (Text og Textarea):"
 
@@ -139,48 +139,48 @@ msgstr ""
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:66
 #: customfieldadmin/templates/customfieldadmin_genshi.html:119
-#: customfieldadmin/templates/customfieldadmin_jinja.html:74
-#: customfieldadmin/templates/customfieldadmin_jinja.html:132
+#: customfieldadmin/templates/customfieldadmin_jinja.html:72
+#: customfieldadmin/templates/customfieldadmin_jinja.html:130
 msgid "Rows:"
 msgstr "Rader:"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:71
-#: customfieldadmin/templates/customfieldadmin_jinja.html:78
+#: customfieldadmin/templates/customfieldadmin_jinja.html:76
 msgid "Save"
 msgstr "Lagre"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:72
-#: customfieldadmin/templates/customfieldadmin_jinja.html:79
+#: customfieldadmin/templates/customfieldadmin_jinja.html:77
 msgid "Cancel"
 msgstr "Avbryt"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:79
-#: customfieldadmin/templates/customfieldadmin_jinja.html:89
+#: customfieldadmin/templates/customfieldadmin_jinja.html:87
 msgid "Add Custom Field:"
 msgstr "Legg til Egendefinert felt"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:81
-#: customfieldadmin/templates/customfieldadmin_jinja.html:91
+#: customfieldadmin/templates/customfieldadmin_jinja.html:89
 msgid "Name:"
 msgstr "Navn:"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:99
-#: customfieldadmin/templates/customfieldadmin_jinja.html:111
+#: customfieldadmin/templates/customfieldadmin_jinja.html:109
 msgid "Default value:"
 msgstr "Standardverdi:"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:104
-#: customfieldadmin/templates/customfieldadmin_jinja.html:116
+#: customfieldadmin/templates/customfieldadmin_jinja.html:114
 msgid "Format:"
 msgstr "Format:"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:111
-#: customfieldadmin/templates/customfieldadmin_jinja.html:123
+#: customfieldadmin/templates/customfieldadmin_jinja.html:121
 msgid "Options:"
 msgstr "Alternativer:"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:124
-#: customfieldadmin/templates/customfieldadmin_jinja.html:136
+#: customfieldadmin/templates/customfieldadmin_jinja.html:134
 msgid "Add"
 msgstr "Legg til"
 
@@ -189,27 +189,27 @@ msgid "No Custom Fields defined for this project."
 msgstr "Ingen Egendefinerte felt definert for dette prosjektet."
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:138
-#: customfieldadmin/templates/customfieldadmin_jinja.html:155
+#: customfieldadmin/templates/customfieldadmin_jinja.html:153
 msgid "Name"
 msgstr "Navn"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:139
-#: customfieldadmin/templates/customfieldadmin_jinja.html:156
+#: customfieldadmin/templates/customfieldadmin_jinja.html:154
 msgid "Type"
 msgstr "Type"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:140
-#: customfieldadmin/templates/customfieldadmin_jinja.html:157
+#: customfieldadmin/templates/customfieldadmin_jinja.html:155
 msgid "Label"
 msgstr "Etikett"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:141
-#: customfieldadmin/templates/customfieldadmin_jinja.html:158
+#: customfieldadmin/templates/customfieldadmin_jinja.html:156
 msgid "Order"
 msgstr "Sortering"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:148
-#: customfieldadmin/templates/customfieldadmin_jinja.html:168
+#: customfieldadmin/templates/customfieldadmin_jinja.html:166
 msgid "Field cannot be deleted (declared in source code)"
 msgstr "Felt kan ikke slettes (definert i kode)"
 
@@ -218,16 +218,16 @@ msgid "Currently outside regular range"
 msgstr "Utenfor gjeldende verdier"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:171
-#: customfieldadmin/templates/customfieldadmin_jinja.html:195
+#: customfieldadmin/templates/customfieldadmin_jinja.html:193
 msgid "Remove selected items"
 msgstr "Fjern Egendefinert felt"
 
 #: customfieldadmin/templates/customfieldadmin_genshi.html:173
-#: customfieldadmin/templates/customfieldadmin_jinja.html:196
+#: customfieldadmin/templates/customfieldadmin_jinja.html:194
 msgid "Apply changes"
 msgstr "Lagre endringer"
 
-#: customfieldadmin/templates/customfieldadmin_jinja.html:64
+#: customfieldadmin/templates/customfieldadmin_jinja.html:62
 #, fuzzy
 msgid ""
 "Options for Radio or Select (for Select, empty first line makes field "

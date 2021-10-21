@@ -4,9 +4,7 @@
   <head>
     <title>
       # block admintitle
-      # trans
-      Custom Fields Admin
-      # endtrans
+      ${dgettext(domain, "Manage Custom Fields")}
       # endblock
     </title>
     # block head
@@ -23,14 +21,14 @@
     <form class="mod" id="addcf" method="POST">
       ${jmacros.form_token_input()}
       <fieldset>
-        <legend>${_("Modify Custom Field:")}</legend>
+        <legend>${dgettext(domain, "Modify Custom Field:")}</legend>
         <div class="field">
-          <label>${_("Name (cannot modify):")} <strong>${cfield.name}</strong></label>
+          <label>${dgettext(domain, "Name (cannot modify):")} <strong>${cfield.name}</strong></label>
         </div>
         <input name="name" value="${cfield.name}" type="hidden" />
         <input name="order" value="${cfield.order}" type="hidden" />
         <div class="field">
-          <label>${_("Type:")}<br />
+          <label>${dgettext(domain, "Type:")}<br />
             <select name="type" id="type">
               # for value in field_types:
               <option
@@ -41,27 +39,27 @@
           </label>
         </div>
         <div class="field">
-          <label>${_("Label:")}<br />
+          <label>${dgettext(domain, "Label:")}<br />
             <input type="text" name="label" value="${cfield.label}" />
           </label>
         </div>
         <div class="field">
           <label>
-            ${_("Default value
+            ${dgettext(domain, "Default value
                   (regular text for Text, Textarea, Radio or Select):")}
             <br />
             <input type="text" name="value" value="${cfield.value}" />
           </label>
         </div>
         <div class="field">
-          <label>${_("Format (Text or Textarea):")}<br />
+          <label>${dgettext(domain, "Format (Text or Textarea):")}<br />
             <select name="format" id="format"></select>
           </label>
         </div>
         <div class="field">
           <fieldset class="iefix">
             <label for="options">
-              ${_("Options for Radio or Select (for Select, empty first line makes field optional):")}
+              ${dgettext(domain, "Options for Radio or Select (for Select, empty first line makes field optional):")}
             </label>
             <p>
               <textarea id="options" name="options"
@@ -71,12 +69,12 @@
         </div>
         <div class="field">
           <label>
-            ${_("Rows:")} <input type="text" size="5" name="rows" id="rows" value="${cfield.rows}" />
+            ${dgettext(domain, "Rows:")} <input type="text" size="5" name="rows" id="rows" value="${cfield.rows}" />
           </label>
         </div>
         <div class="buttons">
-          <input type="submit" name="save" value="${_('Save')}" />
-          <input type="submit" name="cancel" value="${_('Cancel')}" />
+          <input type="submit" name="save" value="${dgettext(domain, 'Save')}" />
+          <input type="submit" name="cancel" value="${dgettext(domain, 'Cancel')}" />
         </div>
       </fieldset>
     </form>
@@ -86,14 +84,14 @@
     <form class="addnew" id="addcf" method="POST">
       ${jmacros.form_token_input()}
       <fieldset>
-        <legend>${_("Add Custom Field:")}</legend>
+        <legend>${dgettext(domain, "Add Custom Field:")}</legend>
         <div class="field">
-          <label>${_('Name:')}<br />
+          <label>${dgettext(domain, 'Name:')}<br />
             <input type="text" name="name" id="name" />
           </label>
         </div>
         <div class="field">
-          <label>${_('Type:')}<br />
+          <label>${dgettext(domain, 'Type:')}<br />
             <select name="type" id="type">
               # for value in field_types:
               <option
@@ -103,24 +101,24 @@
           </label>
         </div>
         <div class="field">
-          <label>${_('Label:')}<br />
+          <label>${dgettext(domain, 'Label:')}<br />
             <input type="text" name="label" id="label" />
           </label>
         </div>
         <div class="field">
-          <label for="value">${_('Default value:')}<br />
+          <label for="value">${dgettext(domain, 'Default value:')}<br />
             <input type="text" name="value" id="value" />
           </label>
         </div>
         <div class="field">
-          <label>${_('Format:')}<br />
+          <label>${dgettext(domain, 'Format:')}<br />
             <select name="format" id="format">
             </select>
           </label>
         </div>
         <div class="field">
           <fieldset class="iefix">
-            <label for="options">${_('Options:')}</label>
+            <label for="options">${dgettext(domain, 'Options:')}</label>
             <p>
               <textarea id="options" name="options"
                         rows="4" cols="17"></textarea>
@@ -129,11 +127,11 @@
         </div>
         <div class="field">
           <label for="rows">
-            ${_('Rows:')} <input type="text" size="2" name="rows" id="rows" />
+            ${dgettext(domain, 'Rows:')} <input type="text" size="2" name="rows" id="rows" />
           </label>
         </div>
         <div class="buttons">
-          <input type="submit" name="add" value="${_('Add')}" />
+          <input type="submit" name="add" value="${dgettext(domain, 'Add')}" />
         </div>
       </fieldset>
     </form>
@@ -152,10 +150,10 @@
           <thead>
             <tr>
               <th class="sel">&nbsp;</th>
-              <th>${_('Name')}</th>
-              <th>${_('Type')}</th>
-              <th>${_('Label')}</th>
-              <th>${_('Order')}</th>
+              <th>${dgettext(domain, 'Name')}</th>
+              <th>${dgettext(domain, 'Type')}</th>
+              <th>${dgettext(domain, 'Label')}</th>
+              <th>${dgettext(domain, 'Order')}</th>
             </tr>
           </thead>
           <tbody>
@@ -165,7 +163,7 @@
               <td><input type="checkbox" name="sel"
                 value="${cf.name}"/></td>
               # else:
-              <td title="${_('Field cannot be deleted (declared in source code)')}"></td>
+              <td title="${dgettext(domain, 'Field cannot be deleted (declared in source code)')}"></td>
               # endif
               <td><a href="${cf.href}">${cf.name}</a></td>
               <td>${cf.type}</td>
@@ -192,8 +190,8 @@
         </table>
         <div class="buttons">
           <input class="trac-disable-on-submit" type="submit" name="remove"
-                 value="${_('Remove selected items')}" />
-          <input type="submit" name="apply" value="${_('Apply changes')}" />
+                 value="${dgettext(domain, 'Remove selected items')}" />
+          <input type="submit" name="apply" value="${dgettext(domain, 'Apply changes')}" />
         </div>
       </form>
       # endif
