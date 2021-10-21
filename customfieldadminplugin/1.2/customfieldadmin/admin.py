@@ -126,7 +126,8 @@ class CustomFieldAdminPage(Component):
                          "This may affect appearance when viewing tickets."))
 
         if hasattr(Chrome(self.env), 'jenv'):
-            return 'customfieldadmin_jinja.html', cf_admin, {'domain': 'customfieldadmin'}
+            cf_admin['domain'] = 'customfieldadmin'
+            return 'customfieldadmin_jinja.html', cf_admin
         else:
             return 'customfieldadmin_genshi.html', cf_admin
 

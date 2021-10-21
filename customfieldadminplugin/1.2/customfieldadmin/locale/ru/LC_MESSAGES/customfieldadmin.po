@@ -8,22 +8,23 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TracCustomFieldAdmin 0.2.5\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2012-01-24 13:47+0100\n"
+"POT-Creation-Date: 2021-10-21 09:17-0700\n"
 "PO-Revision-Date: 2010-10-04 01:07+0300\n"
 "Last-Translator: Dmitri Bogomolov <4glitch@gmail.com>\n"
+"Language: ru\n"
 "Language-Team: ru <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 0.9.6\n"
+"Generated-By: Babel 2.9.1\n"
 
-#: customfieldadmin/admin.py:33
+#: customfieldadmin/admin.py:29
 msgid "Ticket System"
 msgstr "Билеты"
 
-#: customfieldadmin/admin.py:34
+#: customfieldadmin/admin.py:30
 msgid "Custom Fields"
 msgstr "Дополнительные поля"
 
@@ -32,21 +33,26 @@ msgstr "Дополнительные поля"
 msgid "Custom field %(name)s does not exist."
 msgstr "Дополнительное поле %(name)s не существует."
 
-#: customfieldadmin/admin.py:94
+#: customfieldadmin/admin.py:95
 msgid "No custom field selected"
 msgstr "Не выбрано ни одного поля"
 
-#: customfieldadmin/admin.py:123
+#: customfieldadmin/admin.py:125
 msgid ""
 "Custom Fields are not correctly sorted. This may affect appearance when "
 "viewing tickets."
 msgstr ""
 
-#: customfieldadmin/api.py:87
+#: customfieldadmin/api.py:81
 msgid "Custom field requires attributes 'name' and 'type'."
 msgstr ""
 
-#: customfieldadmin/api.py:92
+#: customfieldadmin/api.py:87
+#, python-format
+msgid "Field name '%(name)s' is reserved"
+msgstr ""
+
+#: customfieldadmin/api.py:91
 #, fuzzy
 msgid ""
 "Only alphanumeric characters allowed for custom field name ('a-z' or "
@@ -55,62 +61,76 @@ msgstr ""
 "В имени дополнительного поля допустимы только алфавитно-цифровые символы "
 "(a-z, 0-9 и -_)."
 
-#: customfieldadmin/api.py:98
+#: customfieldadmin/api.py:97
 msgid "Custom field name must begin with a character (a-z)."
 msgstr "Имя дополнительного поля должно начинаться с буквы (a-z."
 
-#: customfieldadmin/api.py:102
+#: customfieldadmin/api.py:100
 #, python-format
 msgid "%(field_type)s is not a valid field type"
 msgstr "%(field_type)s недопустимый тип поля"
 
-#: customfieldadmin/api.py:107
+#: customfieldadmin/api.py:105
 msgid "Can not create as field already exists."
 msgstr "Не удалось создать, поскольку поле уже существует."
 
-#: customfieldadmin/api.py:157
+#: customfieldadmin/api.py:108
+msgid "Can't create a custom field with the same name as a built-in field."
+msgstr ""
+
+#: customfieldadmin/api.py:159
 #, fuzzy, python-format
 msgid "Custom Field '%(name)s' does not exist. Cannot update."
 msgstr "Дополнительное поле %(name)s не существует."
 
-#: customfieldadmin/templates/customfieldadmin.html:11
+#: customfieldadmin/templates/customfieldadmin_genshi.html:11
+#: customfieldadmin/templates/customfieldadmin_jinja.html:7
 msgid "Custom Fields Admin"
 msgstr "Дополнительные поля"
 
-#: customfieldadmin/templates/customfieldadmin.html:16
+#: customfieldadmin/templates/customfieldadmin_genshi.html:16
+#: customfieldadmin/templates/customfieldadmin_jinja.html:19
 msgid "Manage Custom Fields"
 msgstr "Управление дополнительными полями"
 
-#: customfieldadmin/templates/customfieldadmin.html:21
+#: customfieldadmin/templates/customfieldadmin_genshi.html:21
+#: customfieldadmin/templates/customfieldadmin_jinja.html:26
 msgid "Modify Custom Field:"
 msgstr "Изменить дополнительное поле:"
 
-#: customfieldadmin/templates/customfieldadmin.html:23
+#: customfieldadmin/templates/customfieldadmin_genshi.html:23
+#: customfieldadmin/templates/customfieldadmin_jinja.html:28
 msgid "Name (cannot modify):"
 msgstr "Имя (неизменяемое):"
 
-#: customfieldadmin/templates/customfieldadmin.html:28
-#: customfieldadmin/templates/customfieldadmin.html:91
+#: customfieldadmin/templates/customfieldadmin_genshi.html:28
+#: customfieldadmin/templates/customfieldadmin_genshi.html:86
+#: customfieldadmin/templates/customfieldadmin_jinja.html:33
+#: customfieldadmin/templates/customfieldadmin_jinja.html:96
 msgid "Type:"
 msgstr "Тип:"
 
-#: customfieldadmin/templates/customfieldadmin.html:39
-#: customfieldadmin/templates/customfieldadmin.html:100
+#: customfieldadmin/templates/customfieldadmin_genshi.html:38
+#: customfieldadmin/templates/customfieldadmin_genshi.html:94
+#: customfieldadmin/templates/customfieldadmin_jinja.html:44
+#: customfieldadmin/templates/customfieldadmin_jinja.html:106
 msgid "Label:"
 msgstr "Описание:"
 
-#: customfieldadmin/templates/customfieldadmin.html:44
+#: customfieldadmin/templates/customfieldadmin_genshi.html:43
+#: customfieldadmin/templates/customfieldadmin_jinja.html:50
 #, fuzzy
 msgid ""
 "Default value\n"
 "                  (regular text for Text, Textarea, Radio or Select):"
 msgstr "По умолчанию (обычный текст для Text, Textarea, Radio или Select):"
 
-#: customfieldadmin/templates/customfieldadmin.html:50
+#: customfieldadmin/templates/customfieldadmin_genshi.html:49
+#: customfieldadmin/templates/customfieldadmin_jinja.html:57
 msgid "Format (Text or Textarea):"
 msgstr "Формат (Text или Textarea):"
 
-#: customfieldadmin/templates/customfieldadmin.html:60
+#: customfieldadmin/templates/customfieldadmin_genshi.html:55
 #, fuzzy
 msgid ""
 "Options for Radio or Select\n"
@@ -119,95 +139,117 @@ msgstr ""
 "Варианты для Radio или Select (для Select пустой первый вариант делает "
 "поле необязательным):"
 
-#: customfieldadmin/templates/customfieldadmin.html:71
-msgid "Size of Textarea for entry (Textarea only):"
-msgstr "Размер поля ввода (только для Textarea):"
-
-#: customfieldadmin/templates/customfieldadmin.html:71
-msgid "Columns:"
-msgstr "Столбцы:"
-
-#: customfieldadmin/templates/customfieldadmin.html:72
-#: customfieldadmin/templates/customfieldadmin.html:128
+#: customfieldadmin/templates/customfieldadmin_genshi.html:66
+#: customfieldadmin/templates/customfieldadmin_genshi.html:119
+#: customfieldadmin/templates/customfieldadmin_jinja.html:74
+#: customfieldadmin/templates/customfieldadmin_jinja.html:132
 msgid "Rows:"
 msgstr "Строки:"
 
-#: customfieldadmin/templates/customfieldadmin.html:76
-msgid "Cancel"
-msgstr "Отмена"
-
-#: customfieldadmin/templates/customfieldadmin.html:77
+#: customfieldadmin/templates/customfieldadmin_genshi.html:71
+#: customfieldadmin/templates/customfieldadmin_jinja.html:78
 msgid "Save"
 msgstr "Сохранить"
 
-#: customfieldadmin/templates/customfieldadmin.html:84
+#: customfieldadmin/templates/customfieldadmin_genshi.html:72
+#: customfieldadmin/templates/customfieldadmin_jinja.html:79
+msgid "Cancel"
+msgstr "Отмена"
+
+#: customfieldadmin/templates/customfieldadmin_genshi.html:79
+#: customfieldadmin/templates/customfieldadmin_jinja.html:89
 msgid "Add Custom Field:"
 msgstr "Добавить дополнительное поле:"
 
-#: customfieldadmin/templates/customfieldadmin.html:86
+#: customfieldadmin/templates/customfieldadmin_genshi.html:81
+#: customfieldadmin/templates/customfieldadmin_jinja.html:91
 msgid "Name:"
 msgstr "Имя:"
 
-#: customfieldadmin/templates/customfieldadmin.html:105
+#: customfieldadmin/templates/customfieldadmin_genshi.html:99
+#: customfieldadmin/templates/customfieldadmin_jinja.html:111
 msgid "Default value:"
 msgstr "Значение по умолчанию:"
 
-#: customfieldadmin/templates/customfieldadmin.html:110
+#: customfieldadmin/templates/customfieldadmin_genshi.html:104
+#: customfieldadmin/templates/customfieldadmin_jinja.html:116
 msgid "Format:"
 msgstr "Формат:"
 
-#: customfieldadmin/templates/customfieldadmin.html:119
+#: customfieldadmin/templates/customfieldadmin_genshi.html:111
+#: customfieldadmin/templates/customfieldadmin_jinja.html:123
 msgid "Options:"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:127
-msgid "Size of Textarea:"
-msgstr "Размер текстового поля:"
-
-#: customfieldadmin/templates/customfieldadmin.html:127
-msgid "Cols:"
-msgstr ""
-
-#: customfieldadmin/templates/customfieldadmin.html:133
+#: customfieldadmin/templates/customfieldadmin_genshi.html:124
+#: customfieldadmin/templates/customfieldadmin_jinja.html:136
 msgid "Add"
 msgstr "Добавить"
 
-#: customfieldadmin/templates/customfieldadmin.html:139
+#: customfieldadmin/templates/customfieldadmin_genshi.html:130
 msgid "No Custom Fields defined for this project."
 msgstr "В этом проекте не объявлено ни одного дополнительного поля."
 
-#: customfieldadmin/templates/customfieldadmin.html:147
+#: customfieldadmin/templates/customfieldadmin_genshi.html:138
+#: customfieldadmin/templates/customfieldadmin_jinja.html:155
 msgid "Name"
 msgstr "Имя"
 
-#: customfieldadmin/templates/customfieldadmin.html:148
+#: customfieldadmin/templates/customfieldadmin_genshi.html:139
+#: customfieldadmin/templates/customfieldadmin_jinja.html:156
 msgid "Type"
 msgstr "Тип"
 
-#: customfieldadmin/templates/customfieldadmin.html:149
+#: customfieldadmin/templates/customfieldadmin_genshi.html:140
+#: customfieldadmin/templates/customfieldadmin_jinja.html:157
 msgid "Label"
 msgstr "Описание"
 
-#: customfieldadmin/templates/customfieldadmin.html:150
+#: customfieldadmin/templates/customfieldadmin_genshi.html:141
+#: customfieldadmin/templates/customfieldadmin_jinja.html:158
 msgid "Order"
 msgstr "Порядок"
 
-#: customfieldadmin/templates/customfieldadmin.html:157
+#: customfieldadmin/templates/customfieldadmin_genshi.html:148
+#: customfieldadmin/templates/customfieldadmin_jinja.html:168
 msgid "Field cannot be deleted (declared in source code)"
 msgstr "Поле не может быть удалено (объявлено в исходнике)"
 
-#: customfieldadmin/templates/customfieldadmin.html:171
+#: customfieldadmin/templates/customfieldadmin_genshi.html:162
 msgid "Currently outside regular range"
 msgstr ""
 
-#: customfieldadmin/templates/customfieldadmin.html:180
+#: customfieldadmin/templates/customfieldadmin_genshi.html:171
+#: customfieldadmin/templates/customfieldadmin_jinja.html:195
 msgid "Remove selected items"
 msgstr "Удалить выбранные"
 
-#: customfieldadmin/templates/customfieldadmin.html:182
+#: customfieldadmin/templates/customfieldadmin_genshi.html:173
+#: customfieldadmin/templates/customfieldadmin_jinja.html:196
 msgid "Apply changes"
 msgstr "Применить изменения"
 
+#: customfieldadmin/templates/customfieldadmin_jinja.html:64
+#, fuzzy
+msgid ""
+"Options for Radio or Select (for Select, empty first line makes field "
+"optional):"
+msgstr ""
+"Варианты для Radio или Select (для Select пустой первый вариант делает "
+"поле необязательным):"
+
 #~ msgid "Custom field needs at least a name, type and label."
 #~ msgstr "Для создания дополнительного поля требуются имя, тип и описание."
+
+#~ msgid "Size of Textarea for entry (Textarea only):"
+#~ msgstr "Размер поля ввода (только для Textarea):"
+
+#~ msgid "Columns:"
+#~ msgstr "Столбцы:"
+
+#~ msgid "Size of Textarea:"
+#~ msgstr "Размер текстового поля:"
+
+#~ msgid "Cols:"
+#~ msgstr ""
 

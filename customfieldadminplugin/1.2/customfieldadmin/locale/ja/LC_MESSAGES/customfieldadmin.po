@@ -8,25 +8,26 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TracCustomFieldAdmin 0.2.13\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2017-06-26 06:39+0000\n"
+"POT-Creation-Date: 2021-10-21 09:17-0700\n"
 "PO-Revision-Date: 2012-03-21 16:53+0900\n"
 "Last-Translator: Jun Omae <jun66j5@gmail.com>\n"
+"Language: ja\n"
 "Language-Team: ja <LL@li.org>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 0.9.6\n"
+"Generated-By: Babel 2.9.1\n"
 
-#: customfieldadmin/admin.py:34
+#: customfieldadmin/admin.py:29
 msgid "Ticket System"
 msgstr "チケットシステム"
 
-#: customfieldadmin/admin.py:35
+#: customfieldadmin/admin.py:30
 msgid "Custom Fields"
 msgstr "カスタムフィールド"
 
-#: customfieldadmin/admin.py:66
+#: customfieldadmin/admin.py:65
 #, python-format
 msgid "Custom field %(name)s does not exist."
 msgstr "カスタムフィールド %(name)s は存在しません。"
@@ -41,171 +42,201 @@ msgid ""
 "viewing tickets."
 msgstr "カスタムフィールドの順序が正しくないため、チケット参照時の見た目に影響がある可能性があります。"
 
-#: customfieldadmin/api.py:95
+#: customfieldadmin/api.py:81
 msgid "Custom field requires attributes 'name' and 'type'."
 msgstr "カスタムフィールドには'名前'と'タイプ'の属性が必要になります。"
 
-#: customfieldadmin/api.py:101
+#: customfieldadmin/api.py:87
 #, python-format
 msgid "Field name '%(name)s' is reserved"
 msgstr "カスタムフィールド名 '%(name)s' は予約されています。"
 
-#: customfieldadmin/api.py:105
+#: customfieldadmin/api.py:91
 msgid ""
 "Only alphanumeric characters allowed for custom field name ('a-z' or "
 "'0-9' or '_'), with 'a-z' as first character."
 msgstr "カスタムフィールド名には、英数字のみ ('a-z', '0-9', '_')、最初の文字には 'a-z' が使えます。"
 
-#: customfieldadmin/api.py:111
+#: customfieldadmin/api.py:97
 msgid "Custom field name must begin with a character (a-z)."
 msgstr "カスタムフィールド名は a から z の文字で始めなけれはなりません。"
 
-#: customfieldadmin/api.py:115
+#: customfieldadmin/api.py:100
 #, python-format
 msgid "%(field_type)s is not a valid field type"
 msgstr "%(field_type)s は正しいタイプではありません"
 
-#: customfieldadmin/api.py:120
+#: customfieldadmin/api.py:105
 msgid "Can not create as field already exists."
 msgstr "既に存在するフィールドは作成できません。"
 
-#: customfieldadmin/api.py:123
+#: customfieldadmin/api.py:108
 msgid "Can't create a custom field with the same name as a built-in field."
 msgstr "ビルトインのフィールドと同じ名前のものは作成できません。"
 
-#: customfieldadmin/api.py:174
+#: customfieldadmin/api.py:159
 #, python-format
 msgid "Custom Field '%(name)s' does not exist. Cannot update."
 msgstr "カスタムフィールド '%(name)s' が存在しないため、更新できません。"
 
-#: customfieldadmin/templates/customfieldadmin.html:11
+#: customfieldadmin/templates/customfieldadmin_genshi.html:11
+#: customfieldadmin/templates/customfieldadmin_jinja.html:7
 msgid "Custom Fields Admin"
 msgstr "カスタムフィールド管理"
 
-#: customfieldadmin/templates/customfieldadmin.html:16
+#: customfieldadmin/templates/customfieldadmin_genshi.html:16
+#: customfieldadmin/templates/customfieldadmin_jinja.html:19
 msgid "Manage Custom Fields"
 msgstr "カスタムフィールドの管理"
 
-#: customfieldadmin/templates/customfieldadmin.html:21
+#: customfieldadmin/templates/customfieldadmin_genshi.html:21
+#: customfieldadmin/templates/customfieldadmin_jinja.html:26
 msgid "Modify Custom Field:"
 msgstr "カスタムフィールドの変更:"
 
-#: customfieldadmin/templates/customfieldadmin.html:23
+#: customfieldadmin/templates/customfieldadmin_genshi.html:23
+#: customfieldadmin/templates/customfieldadmin_jinja.html:28
 msgid "Name (cannot modify):"
 msgstr "名前 (変更出来ません):"
 
-#: customfieldadmin/templates/customfieldadmin.html:28
-#: customfieldadmin/templates/customfieldadmin.html:94
+#: customfieldadmin/templates/customfieldadmin_genshi.html:28
+#: customfieldadmin/templates/customfieldadmin_genshi.html:86
+#: customfieldadmin/templates/customfieldadmin_jinja.html:33
+#: customfieldadmin/templates/customfieldadmin_jinja.html:96
 msgid "Type:"
 msgstr "タイプ:"
 
-#: customfieldadmin/templates/customfieldadmin.html:39
-#: customfieldadmin/templates/customfieldadmin.html:103
+#: customfieldadmin/templates/customfieldadmin_genshi.html:38
+#: customfieldadmin/templates/customfieldadmin_genshi.html:94
+#: customfieldadmin/templates/customfieldadmin_jinja.html:44
+#: customfieldadmin/templates/customfieldadmin_jinja.html:106
 msgid "Label:"
 msgstr "ラベル:"
 
-#: customfieldadmin/templates/customfieldadmin.html:44
+#: customfieldadmin/templates/customfieldadmin_genshi.html:43
+#: customfieldadmin/templates/customfieldadmin_jinja.html:50
 msgid ""
 "Default value\n"
 "                  (regular text for Text, Textarea, Radio or Select):"
 msgstr "デフォルト値 (テキスト、テキストエリア、ラジオボタン、ドロップダウンに対する正規の文字列):"
 
-#: customfieldadmin/templates/customfieldadmin.html:50
+#: customfieldadmin/templates/customfieldadmin_genshi.html:49
+#: customfieldadmin/templates/customfieldadmin_jinja.html:57
 msgid "Format (Text or Textarea):"
 msgstr "書式 (テキスト、テキストエリア):"
 
-#: customfieldadmin/templates/customfieldadmin.html:60
+#: customfieldadmin/templates/customfieldadmin_genshi.html:55
 msgid ""
 "Options for Radio or Select\n"
 "                  (for Select, empty first line makes field optional):"
 msgstr "ラジオボタン、ドロップダウンで選択させる値 (ドロップダウンの場合、最初の行を空にすると任意の選択になります):"
 
-#: customfieldadmin/templates/customfieldadmin.html:71
-msgid "Size of Textarea for entry (Textarea only):"
-msgstr "テキストエリアのサイズ (テキストエリアのみ):"
-
-#: customfieldadmin/templates/customfieldadmin.html:71
-msgid "Columns:"
-msgstr "幅:"
-
-#: customfieldadmin/templates/customfieldadmin.html:74
-#: customfieldadmin/templates/customfieldadmin.html:133
+#: customfieldadmin/templates/customfieldadmin_genshi.html:66
+#: customfieldadmin/templates/customfieldadmin_genshi.html:119
+#: customfieldadmin/templates/customfieldadmin_jinja.html:74
+#: customfieldadmin/templates/customfieldadmin_jinja.html:132
 msgid "Rows:"
 msgstr "行数:"
 
-#: customfieldadmin/templates/customfieldadmin.html:79
-msgid "Cancel"
-msgstr "取り消し"
-
-#: customfieldadmin/templates/customfieldadmin.html:80
+#: customfieldadmin/templates/customfieldadmin_genshi.html:71
+#: customfieldadmin/templates/customfieldadmin_jinja.html:78
 msgid "Save"
 msgstr "保存"
 
-#: customfieldadmin/templates/customfieldadmin.html:87
+#: customfieldadmin/templates/customfieldadmin_genshi.html:72
+#: customfieldadmin/templates/customfieldadmin_jinja.html:79
+msgid "Cancel"
+msgstr "取り消し"
+
+#: customfieldadmin/templates/customfieldadmin_genshi.html:79
+#: customfieldadmin/templates/customfieldadmin_jinja.html:89
 msgid "Add Custom Field:"
 msgstr "カスタムフィールドの追加:"
 
-#: customfieldadmin/templates/customfieldadmin.html:89
+#: customfieldadmin/templates/customfieldadmin_genshi.html:81
+#: customfieldadmin/templates/customfieldadmin_jinja.html:91
 msgid "Name:"
 msgstr "名称:"
 
-#: customfieldadmin/templates/customfieldadmin.html:108
+#: customfieldadmin/templates/customfieldadmin_genshi.html:99
+#: customfieldadmin/templates/customfieldadmin_jinja.html:111
 msgid "Default value:"
 msgstr "デフォルト値:"
 
-#: customfieldadmin/templates/customfieldadmin.html:113
+#: customfieldadmin/templates/customfieldadmin_genshi.html:104
+#: customfieldadmin/templates/customfieldadmin_jinja.html:116
 msgid "Format:"
 msgstr "書式:"
 
-#: customfieldadmin/templates/customfieldadmin.html:122
+#: customfieldadmin/templates/customfieldadmin_genshi.html:111
+#: customfieldadmin/templates/customfieldadmin_jinja.html:123
 msgid "Options:"
 msgstr "選択させる値:"
 
-#: customfieldadmin/templates/customfieldadmin.html:130
-msgid "Size of Textarea:"
-msgstr "テキストエリアのサイズ:"
-
-#: customfieldadmin/templates/customfieldadmin.html:130
-msgid "Cols:"
-msgstr "幅:"
-
-#: customfieldadmin/templates/customfieldadmin.html:138
+#: customfieldadmin/templates/customfieldadmin_genshi.html:124
+#: customfieldadmin/templates/customfieldadmin_jinja.html:136
 msgid "Add"
 msgstr "追加"
 
-#: customfieldadmin/templates/customfieldadmin.html:144
+#: customfieldadmin/templates/customfieldadmin_genshi.html:130
 msgid "No Custom Fields defined for this project."
 msgstr "このプロジェクトにはカスタムフィールドは設定されていません。"
 
-#: customfieldadmin/templates/customfieldadmin.html:152
+#: customfieldadmin/templates/customfieldadmin_genshi.html:138
+#: customfieldadmin/templates/customfieldadmin_jinja.html:155
 msgid "Name"
 msgstr "名称"
 
-#: customfieldadmin/templates/customfieldadmin.html:153
+#: customfieldadmin/templates/customfieldadmin_genshi.html:139
+#: customfieldadmin/templates/customfieldadmin_jinja.html:156
 msgid "Type"
 msgstr "タイプ"
 
-#: customfieldadmin/templates/customfieldadmin.html:154
+#: customfieldadmin/templates/customfieldadmin_genshi.html:140
+#: customfieldadmin/templates/customfieldadmin_jinja.html:157
 msgid "Label"
 msgstr "ラベル"
 
-#: customfieldadmin/templates/customfieldadmin.html:155
+#: customfieldadmin/templates/customfieldadmin_genshi.html:141
+#: customfieldadmin/templates/customfieldadmin_jinja.html:158
 msgid "Order"
 msgstr "順序"
 
-#: customfieldadmin/templates/customfieldadmin.html:162
+#: customfieldadmin/templates/customfieldadmin_genshi.html:148
+#: customfieldadmin/templates/customfieldadmin_jinja.html:168
 msgid "Field cannot be deleted (declared in source code)"
 msgstr "削除出来ません (ソースコードにて定義されている)"
 
-#: customfieldadmin/templates/customfieldadmin.html:176
+#: customfieldadmin/templates/customfieldadmin_genshi.html:162
 msgid "Currently outside regular range"
 msgstr "現在、正しい範囲から外れています"
 
-#: customfieldadmin/templates/customfieldadmin.html:185
+#: customfieldadmin/templates/customfieldadmin_genshi.html:171
+#: customfieldadmin/templates/customfieldadmin_jinja.html:195
 msgid "Remove selected items"
 msgstr "選択した項目を削除"
 
-#: customfieldadmin/templates/customfieldadmin.html:187
+#: customfieldadmin/templates/customfieldadmin_genshi.html:173
+#: customfieldadmin/templates/customfieldadmin_jinja.html:196
 msgid "Apply changes"
 msgstr "変更を適用"
+
+#: customfieldadmin/templates/customfieldadmin_jinja.html:64
+#, fuzzy
+msgid ""
+"Options for Radio or Select (for Select, empty first line makes field "
+"optional):"
+msgstr "ラジオボタン、ドロップダウンで選択させる値 (ドロップダウンの場合、最初の行を空にすると任意の選択になります):"
+
+#~ msgid "Size of Textarea for entry (Textarea only):"
+#~ msgstr "テキストエリアのサイズ (テキストエリアのみ):"
+
+#~ msgid "Columns:"
+#~ msgstr "幅:"
+
+#~ msgid "Size of Textarea:"
+#~ msgstr "テキストエリアのサイズ:"
+
+#~ msgid "Cols:"
+#~ msgstr "幅:"
 
