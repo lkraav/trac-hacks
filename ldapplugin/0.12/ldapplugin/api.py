@@ -174,8 +174,8 @@ class LdapPermissionGroupProvider(Component):
             parents.extend(srresult)
             for groupdn in srresult:
                 if groupdn not in checked:
-                    parents = parents + self._get_group_parents(groupdn)
                     checked.append(groupdn)
+                    parents = parents + self._get_group_parents(groupdn)
         return parents
 
 
