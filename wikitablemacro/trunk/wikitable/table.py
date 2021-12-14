@@ -60,7 +60,7 @@ class SQLTable(WikiMacroBase):
                 cursor.execute(content)
                 rows = cursor.fetchall()
                 cols = get_column_names(cursor)
-        except self.env.db_exc.DatabaseError, e:
+        except self.env.db_exc.DatabaseError as e:
             return system_message(_("Invalid SQL"), exception_to_unicode(e))
 
         add_stylesheet(formatter.req, 'wikitable/css/wikitable.css')

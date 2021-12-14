@@ -34,7 +34,7 @@ class SQLScalar(WikiMacroBase):
     def expand_macro(self, formatter, name, content):
         try:
             rows = self.env.db_query(content)
-        except self.env.db_exc.DatabaseError, e:
+        except self.env.db_exc.DatabaseError as e:
             return system_message(_("Invalid SQL"), exception_to_unicode(e))
         else:
             value = rows[0][0] if len(rows) else "(NULL)"
