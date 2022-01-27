@@ -6,6 +6,7 @@ setup.py
 checklist/__init__.py
 checklist/macros.py
 checklist/plugin.py
+checklist/plugin.wk
 checklist/htdocs/checklist.css
 checklist/htdocs/checklist.js
 checklist/htdocs/checklist.png

@@ -34,6 +34,11 @@ the plugins directory of that environment:
 
 ## Setup
 
+Enable the plugin in your trac.ini file:
+
+    [components]
+    checklist.* = enabled
+
 The plugin requires a new database table; update the environment to create it:
 
     $ trac-admin /path/to/env upgrade 
@@ -78,4 +83,5 @@ checklist in your ticket.
 ## Revision Log
 
 0.1.1 - Initial upload to PyPI / TracHacks  
-0.1.2 - fixed URL's in setup.py to point to TrackHacks page  
+0.1.2 - fixed URL's in setup.py to point to TrackHacks page 
+0.1.3 - fixed install bugs (no db table creation) 
