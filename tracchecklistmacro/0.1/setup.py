@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name             = 'TracChecklist',
-    version          = '0.1.3',
+    version          = '0.1.4',
     author           = 'Ralph Ewig',
     author_email     = 'ralph.ewig@sydereal.com',
     description      = "Include checklists in ticket, sourced from wiki pages",
