@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name = 'WeekPlan',
-    version = '1.4',
+    version = '1.5',
     author = 'Peter Suter',
     author_email = 'peter@lucid.ch',
     description = 'Week-by-week planning macro for calendar events',
@@ -16,6 +16,8 @@ setup(
     entry_points = {'trac.plugins': [
             'weekplan.core = weekplan.core',
             'weekplan.macro = weekplan.macro',
+            'weekplan.ical_provider = weekplan.ical_provider',
         ]
     },
+    install_requires=['icalendar'],
 )
