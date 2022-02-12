@@ -16,8 +16,8 @@ setup(
     entry_points = {'trac.plugins': [
             'weekplan.core = weekplan.core',
             'weekplan.macro = weekplan.macro',
-            'weekplan.ical_provider = weekplan.ical_provider',
+            'weekplan.ical_provider = weekplan.ical_provider[ical]', 
         ]
     },
-    install_requires=['icalendar'],
+    extras_requires={'ical': 'icalendar'},
 )
