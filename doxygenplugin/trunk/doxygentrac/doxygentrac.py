@@ -11,8 +11,8 @@ import os
 import re
 from operator import itemgetter
 
-from doxyfiletrac import init_doxyfile, post_doxyfile
-from saxygen import search_in_doxygen
+from .doxyfiletrac import init_doxyfile, post_doxyfile
+from .saxygen import search_in_doxygen
 from trac.admin import IAdminPanelProvider
 from trac.config import Option
 from trac.core import *
@@ -109,7 +109,7 @@ class DoxygenPlugin(Component):
 
         try:
             content = file(path).read()
-        except (IOError, OSError), e:
+        except (IOError, OSError) as e:
             raise TracError("Can't read doxygen content: %s" % e)
 
         m = re.match(
@@ -209,7 +209,7 @@ class DoxygenPlugin(Component):
         if req.path_info == '/doxygen':
             req.redirect(req.href.doxygen('/'))
 
-        segments = filter(None, req.path_info.split('/'))
+        segments = [_f for _f in req.path_info.split('/') if _f]
         segments = segments[1:]  # ditch 'doxygen'
         if not segments:
             # Handle /doxygen request

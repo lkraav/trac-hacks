@@ -97,7 +97,7 @@ def init_doxyfile(env, doxygen, doxyfile, input, base_path, default_doc, log):
         sets = OrderedDict()
         prev = first = ''
         inputs = analyze_doxyfile(base_path, default_doc, input, fi, old, log)
-        for k, s in inputs.iteritems():
+        for k, s in inputs.items():
             if s['explain']:
                 if prev and sets:
                     log.debug("fieldset %s first '%s'", prev, first)
@@ -190,7 +190,7 @@ def analyze_doxyfile(base_path, default_doc, input, path, old, log):
 
     try:
         content = file(path).read()
-    except (IOError, OSError), e:
+    except (IOError, OSError) as e:
         raise TracError("Can't read doxygen content: %s" % e)
 
     content = to_unicode(content, 'utf-8')

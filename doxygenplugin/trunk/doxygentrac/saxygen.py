@@ -85,8 +85,8 @@ def search_in_doxygen(file, name, where, multi, log):
     res = {}
     try:
         parser.parse(file)
-    except IndexFound, a:
+    except IndexFound as a:
         res = a.args[0]
-    except xml.sax.SAXException, a:
+    except xml.sax.SAXException as a:
         log.debug("SAX %s", a)
     return res
