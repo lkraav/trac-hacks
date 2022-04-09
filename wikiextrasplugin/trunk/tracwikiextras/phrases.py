@@ -26,7 +26,7 @@ from trac.util.html import Markup, html as tag
 
 from trac.config import ListOption, ConfigSection
 from trac.core import implements, Component
-from trac.util.compat import cleandoc
+from trac.util.text import cleandoc
 from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_stylesheet
 from trac.wiki import IWikiSyntaxProvider, IWikiMacroProvider, format_to_html

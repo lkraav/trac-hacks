@@ -18,7 +18,7 @@ from trac.util.html import html as tag
 
 from trac.config import BoolOption, IntOption
 from trac.core import implements, Component, TracError
-from trac.util.compat import cleandoc
+from trac.util.text import cleandoc
 from trac.util.translation import _
 from trac.web.api import IRequestFilter, IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_stylesheet
@@ -107,7 +107,7 @@ class Boxes(Component):
 
     def __init__(self):
         self.word2type = {}
-        for name, data in self.types.iteritems():
+        for name, data in self.types.items():
             self.word2type[name] = name
             for synonym in data[2]:
                 self.word2type[synonym] = name
@@ -165,10 +165,10 @@ class Boxes(Component):
     def _get_type_description(self, line_prefix=''):
         urgency = {} # {'urgency': ('color', ["type -words"])}
         # color
-        for u, color in self.urgency_bg.iteritems():
+        for u, color in self.urgency_bg.items():
             urgency[u] = (color, [])
         # words
-        for type, data in self.types.iteritems():
+        for type, data in self.types.items():
             urg, icon, words = data
             urgency[urg][1].append(type)
             for w in words:
@@ -272,7 +272,7 @@ class Boxes(Component):
                 `imagebox` macros (processors).
                 """) % {
                 'name': name,
-                'direction': 'right' if name is 'rbox' else 'left',
+                'direction': 'right' if name == 'rbox' else 'left',
                 'type_description': self._get_type_description(' ' * 5),
                 }
         elif name == 'newsbox':
@@ -336,7 +336,7 @@ class Boxes(Component):
         if word in self.word2type:
             return self.word2type[word]
         type_ = ''
-        for w in self.word2type.iterkeys():
+        for w in self.word2type.keys():
             try:
                 if w.startswith(word):
                     t = self.word2type[w]
@@ -382,7 +382,7 @@ class Boxes(Component):
         else:
             type = args.get('type')
             if not type:
-                for flag, value in args.iteritems():
+                for flag, value in args.items():
                     if value is True:
                         type = flag
                         break

@@ -19,7 +19,6 @@ import string
 from trac.util.html import Markup, html as tag
 
 from trac.util import arity
-from trac.util.compat import sorted
 from trac.util.html import TracHTMLSanitizer
 if hasattr(TracHTMLSanitizer, 'sanitize_attrs'):
     sanitizer = TracHTMLSanitizer()
@@ -29,10 +28,14 @@ else:
     from genshi.builder import Stream
 from trac.wiki.api import WikiSystem
 
+# Python 3 compatibility hack
+try:
+    unicode('')
+except NameError:
+    unicode = str
 
 def prepare_regexp(d):
-    syms = d.keys()
-    syms.sort(lambda a, b: cmp(len(b), len(a)))
+    syms = sorted(d.keys(), key=lambda a: len(a))
     return "|".join([r'%s%s%s'
                      % (r'\b' if re.match(r'\w', s[0]) else '',
                         re.escape(s),
@@ -81,7 +84,7 @@ def group_over(iterable, num, predicate=None):
 
     >>> items = [1, 2, 3, 4]
     >>> for item in group(items, 2):
-    ...     print item
+    ...     print(item)
     (1, 3)
     (2, 4)
 
@@ -90,7 +93,7 @@ def group_over(iterable, num, predicate=None):
 
     >>> items = [1, 2, 3, 4, 5]
     >>> for item in group(items, 2):
-    ...     print item
+    ...     print(item)
     (1, 4)
     (2, 5)
     (3, None)
@@ -102,7 +105,7 @@ def group_over(iterable, num, predicate=None):
 
     >>> items = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> for item in group(items, 2, lambda x: x != 4):
-    ...     print item
+    ...     print(item)
     (1, 3)
     (2, None)
     (4,)
@@ -205,8 +208,7 @@ def reduce_names(names, keep=40):
         """Remove one leaf from the largest child node in the tree."""
         c = 0 # longest count
         chars = [] # candidate chars to remove
-        keys = tree.keys()
-        keys.sort()
+        keys = sorted( (k for k in tree.keys() if k is not None) )
         # search candidate chars to remove
         for key in keys:
             if tree[key]:
@@ -238,7 +240,7 @@ def reduce_names(names, keep=40):
     def size_of(tree):
         """Return the number of leafs in the tree"""
         n = 0
-        for value in tree.itervalues():
+        for value in tree.values():
             if value:
                 n += value[0]
         return n
@@ -247,7 +249,7 @@ def reduce_names(names, keep=40):
         """Return a list with names based on Huffman tree"""
         if buf is None:
             buf=[]
-        for key, value in tree.iteritems():
+        for key, value in tree.items():
             if key is None:
                 buf.append(letters)
             else:

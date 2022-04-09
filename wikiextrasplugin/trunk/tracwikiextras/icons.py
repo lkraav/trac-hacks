@@ -52,7 +52,7 @@ from trac.util.html import html as tag
 
 from trac.config import BoolOption, ConfigSection, IntOption, ListOption
 from trac.core import implements, Component
-from trac.util.compat import cleandoc
+from trac.util.text import cleandoc
 from trac.web.chrome import ITemplateProvider
 from trac.wiki import IWikiMacroProvider, IWikiSyntaxProvider, format_to_html
 
@@ -142,8 +142,8 @@ class Icons(Component):
 
     def get_htdocs_dirs(self):
         dirs = []
-        for data in FUGUE_ICONS.itervalues():
-            for d in data.itervalues():
+        for data in FUGUE_ICONS.values():
+            for d in data.values():
                 dirs.append(tuple(d))
         return dirs
 
@@ -502,14 +502,14 @@ class Smileys(Component):
         # Merge smileys for presentation
         # First collect wikitexts for each unique filename
         syelims = {} # key=filename, value=wikitext
-        for wikitext, filename in self.smileys.iteritems():
+        for wikitext, filename in self.smileys.items():
             if filename not in syelims:
                 syelims[filename] = [wikitext]
             else:
                 syelims[filename].append(wikitext)
         # Reverse
         smileys = {}
-        for filename, wikitexts in syelims.iteritems():
+        for filename, wikitexts in syelims.items():
             wikitexts.sort()
             smileys[' '.join(wikitexts)] = filename
         return render_table(smileys.keys(), content,

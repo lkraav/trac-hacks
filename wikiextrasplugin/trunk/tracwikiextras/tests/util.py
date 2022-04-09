@@ -241,12 +241,12 @@ class ReduceNamesTestCase(unittest.TestCase):
         result = reduce_names(names, keep)
         for name in names:
             if name not in result:
-                # print '%s%s' % (' '*8, name)
+                # print('%s%s' % (' '*8, name))
                 pass
             else:
-                # print name
+                # print(name)
                 kept += 1
-        # print '\nKept %d names' % kept
+        # print('\nKept %d names' % kept)
         self.assertEqual(kept, keep)
 
     def test_90(self):
