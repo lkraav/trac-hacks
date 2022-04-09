@@ -6,6 +6,7 @@ import inspect
 import os
 import re
 import socket
+import sys
 from pkg_resources import parse_version, resource_filename
 from tempfile import TemporaryFile
 
@@ -21,6 +22,13 @@ from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
                             add_script, add_script_data
 from trac.util.text import to_unicode, unicode_unquote
 from trac.util.translation import domain_functions, dgettext
+
+if sys.version_info[0] == 2:
+    text_type = unicode
+    binary_type = str
+else:
+    text_type = str
+    binary_type = bytes
 
 _parsed_version = parse_version(__version__)
 
@@ -53,6 +61,10 @@ add_domain, _ = domain_functions('tracdragdrop', 'add_domain', '_')
 
 def gettext_messages(msgid, **args):
     return dgettext('messages', msgid, **args)
+
+
+def _get_except():
+    return sys.exc_info()[1]
 
 
 def _list_message_files(dir):
@@ -204,8 +216,8 @@ class TracDragDropModule(Component):
                 req.args['action'] = match.group(1)
                 req.args['realm'] = match.group(2)
                 req.args['path'] = match.group(3)
-            except (IOError, socket.error), e:
-                if _is_disconnected(req, e):
+            except (IOError, socket.error):
+                if _is_disconnected(req, _get_except()):
                     raise RequestDone
                 raise
             return True
@@ -246,14 +258,13 @@ class TracDragDropModule(Component):
 
         except RequestDone:
             raise
-        except TracError, e:
-            return self._send_message_on_except(req, e, 500)
-        except PermissionError, e:
-            return self._send_message_on_except(req, e, 403)
-        except Exception, e:
-            self.log.error('Internal error in tracdragdrop',
-                           exc_info=True)
-            return self._send_message_on_except(req, e, 500)
+        except TracError:
+            return self._send_message_on_except(req, _get_except(), 500)
+        except PermissionError:
+            return self._send_message_on_except(req, _get_except(), 403)
+        except:
+            self.log.error('Internal error in tracdragdrop', exc_info=True)
+            return self._send_message_on_except(req, _get_except(), 500)
 
     def _delegate_new_request(self, req):
         attachments = req.args.get('attachment')
@@ -265,7 +276,8 @@ class TracDragDropModule(Component):
             req.args['attachment'] = val
             try:
                 mod.process_request(req)
-            except OSError, e:
+            except OSError:
+                e = _get_except()
                 if e.args[0] == errno.ENAMETOOLONG:
                     raise TracError(_("Can't attach due to too long file "
                                       "name"))
@@ -290,7 +302,7 @@ class TracDragDropModule(Component):
         try:
             AttachmentModule(self.env).process_request(req)
         except RedirectListened:
-            req.send('Ok', status=200)
+            req.send(binary_type(), status=200)
 
     def _render_attachments(self, req):
         realm = req.args['realm']
@@ -321,7 +333,7 @@ class TracDragDropModule(Component):
             return Attachment.select(self.env, realm, path)
 
     def _send_message_on_except(self, req, message, status):
-        if not isinstance(message, unicode):
+        if not isinstance(message, text_type):
             message = to_unicode(message)
         req.send_header('Connection', 'close')
         if self._is_xhr(req):
@@ -359,7 +371,7 @@ class PseudoAttachmentObject(object):
         value = req.get_header('Content-Length')
         if value is None:
             return None
-        if isinstance(value, unicode):
+        if isinstance(value, text_type):
             value = value.encode('utf-8')
 
         size = None
@@ -388,8 +400,8 @@ class PseudoAttachmentObject(object):
                 n = min(self.CHUNK_SIZE, size - readbytes)
             try:
                 buf = input.read(n)
-            except (IOError, socket.error), e:
-                if _is_disconnected(req, e):
+            except (IOError, socket.error):
+                if _is_disconnected(req, _get_except()):
                     raise RequestDone
                 raise
             if not buf:
