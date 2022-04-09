@@ -13,7 +13,7 @@
 
     #   if chrome.script_data:
     <script>
-      #   for key, value in chrome.script_data.iteritems():
+      #   for key, value in chrome.script_data.items():
       var ${key}=${to_json(value)|safe};
       #   endfor
     </script>

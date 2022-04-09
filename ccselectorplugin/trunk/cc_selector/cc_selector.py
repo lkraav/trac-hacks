@@ -77,7 +77,7 @@ class TicketWebUiAddon(Component):
         all_users = self.env.get_known_users()
 
         developers = filter(lambda u: u[0] in privileged_users, all_users)
-        cc_developers = filter(lambda u: not u[0] in blacklist, developers)
+        cc_developers = list(filter(lambda u: not u[0] in blacklist, developers))
         # TRANSLATOR: text added per list item in popup window like
         #   [_] CC to username
         cc_to = _("Cc to")
