@@ -44,7 +44,7 @@ class ProjectMenuModule(Component):
                                     selected=True, value=''),
                          self.env.project_name,))
         # Sort on the project names
-        projects.sort(lambda a, b: cmp(a[1], b[1]))
+        projects.sort(key=lambda a: a[1])
 
         yield ('metanav', 'projectmenu',
                tag.select([e for e, _ in projects], name='projectmenu',
