@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import email
 import os.path
 import re
-from email.MIMEText import MIMEText
-from email.MIMEMultipart import MIMEMultipart
+import sys
 from pkg_resources import parse_version, resource_filename
-
-try:
-    from trac.util.html import tag
-except ImportError:
-    from genshi.builder import tag
 
 try:
     from babel.core import Locale
@@ -34,6 +27,8 @@ from trac.web.api import Request
 from trac.web.chrome import Chrome, ITemplateProvider
 from trac.web.main import FakeSession
 
+text_type = unicode if sys.version_info[0] == 2 else str
+
 try:
     from trac.web.chrome import web_context
 except ImportError:
@@ -56,9 +51,14 @@ else:
 
 
 if _use_jinja2:
+    from trac.util.html import tag
     _template_dir = resource_filename(__name__, 'templates/jinja2')
 else:
     _template_dir = resource_filename(__name__, 'templates/genshi')
+    try:
+        from trac.util.html import tag
+    except ImportError:
+        from genshi.builder import tag
 
 
 _TICKET_URI_RE = re.compile(r'/ticket/(?P<tktid>[0-9]+)'
@@ -116,10 +116,10 @@ class HtmlNotificationModule(Component):
             finally:
                 reactivate(tx)
         except:
-            self.log.warn('Caught exception while generating html part',
-                          exc_info=True)
+            self.log.warning('Caught exception while generating html part',
+                             exc_info=True)
             raise
-        if isinstance(content, unicode):
+        if isinstance(content, text_type):
             # avoid UnicodeEncodeError from MIMEText()
             content = content.encode('utf-8')
         return content
@@ -145,8 +145,8 @@ class HtmlNotificationModule(Component):
             finally:
                 reactivate(tx)
         except:
-            self.log.warn('Caught exception while substituting message',
-                          exc_info=True)
+            self.log.warning('Caught exception while substituting message',
+                             exc_info=True)
             if ignore_exc:
                 return message
             raise
@@ -164,11 +164,8 @@ class HtmlNotificationModule(Component):
             return list(cursor)
 
     def _create_request(self):
-        languages = filter(None, [self.config.get('trac', 'default_language')])
-        if languages:
-            locale = _parse_locale(languages[0])
-        else:
-            locale = None
+        lang = self.config.get('trac', 'default_language')
+        locale = _parse_locale(lang) if lang else None
         tzname = self.config.get('trac', 'default_timezone')
         tz = get_timezone(tzname) or localtz
         base_url = self.env.abs_href()
@@ -179,8 +176,8 @@ class HtmlNotificationModule(Component):
         environ = {'REQUEST_METHOD': 'POST', 'REMOTE_ADDR': '127.0.0.1',
                    'SERVER_NAME': 'localhost', 'SERVER_PORT': '80',
                    'wsgi.url_scheme': url_scheme, 'trac.base_url': base_url}
-        if languages:
-            environ['HTTP_ACCEPT_LANGUAGE'] = ','.join(languages)
+        if locale:
+            environ['HTTP_ACCEPT_LANGUAGE'] = str(locale).replace('_', '-')
         session = FakeSession()
         session['dateinfo'] = 'absolute'
         req = Request(environ, lambda *args, **kwargs: None)
@@ -198,7 +195,11 @@ class HtmlNotificationModule(Component):
         return req
 
     def _substitute_message(self, chrome, req, message):
-        parsed = email.message_from_string(message)
+        from email import message_from_string
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        parsed = message_from_string(message)
         link = parsed.get('X-Trac-Ticket-URL')
         if not link:
             return message
@@ -264,46 +265,53 @@ class HtmlNotificationModule(Component):
             return chrome.render_template(req, template, data,
                                           {'iterable': False})
         else:
-            return unicode(chrome.render_template(req, template, data,
-                           fragment=True))
+            return text_type(chrome.render_template(req, template, data,
+                             fragment=True))
 
     def _get_styles(self, chrome):
         for provider in chrome.template_providers:
-            for prefix, dir in provider.get_htdocs_dirs():
+            for prefix, dir_ in provider.get_htdocs_dirs():
                 if prefix != 'common':
                     continue
+                comm_re = re.compile(r'/\*[^*]*\*+(?:[^/*][^*]*\*+)*/', re.S)
                 url_re = re.compile(r'\burl\([^\]]*\)')
                 buf = ['#content > hr { display: none }']
                 for name in ('trac.css', 'ticket.css'):
-                    f = open(os.path.join(dir, 'css', name))
+                    filename = os.path.join(dir_, 'css', name)
+                    f = open(filename, 'rb')
                     try:
-                        lines = f.read().splitlines()
+                        content = to_unicode(f.read())
                     finally:
                         f.close()
-                    buf.extend(url_re.sub('none', to_unicode(line))
-                               for line in lines
-                               if not line.startswith('@import'))
+                    content = comm_re.sub('\n', content)
+                    for line in content.splitlines():
+                        line = line.rstrip()
+                        if not line:
+                            continue
+                        if line.startswith(('@import', '@charset')):
+                            continue
+                        buf.append(url_re.sub('none', line))
                 return ('/*<![CDATA[*/\n' +
                         '\n'.join(buf).replace(']]>', ']]]]><![CDATA[>') +
                         '\n/*]]>*/')
         return ''
 
     def _set_charset(self, mime):
-        from email.Charset import Charset, QP, BASE64, SHORTEST
-        mime_encoding = self.config.get('notification', 'mime_encoding').lower()
+        from email.charset import Charset, QP, BASE64, SHORTEST
 
+        encoding = self.config.get('notification', 'mime_encoding').lower()
         charset = Charset()
         charset.input_charset = 'utf-8'
         charset.output_charset = 'utf-8'
         charset.input_codec = 'utf-8'
         charset.output_codec = 'utf-8'
-        if mime_encoding == 'base64':
+        if encoding == 'base64':
             charset.header_encoding = BASE64
             charset.body_encoding = BASE64
-        elif mime_encoding in ('qp', 'quoted-printable'):
+        elif encoding in ('qp', 'quoted-printable'):
             charset.header_encoding = QP
             charset.body_encoding = QP
-        elif mime_encoding == 'none':
+        elif encoding == 'none':
             charset.header_encoding = SHORTEST
             charset.body_encoding = None
 
