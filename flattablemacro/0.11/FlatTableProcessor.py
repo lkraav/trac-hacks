@@ -24,6 +24,12 @@ from trac.util.html import Markup, html as tag
 from trac.wiki import format_to_oneliner
 from trac.wiki.macros import WikiMacroBase
 
+# Python 3 compatibility hack
+try:
+    unicode('')
+except NameError:
+    unicode = str
+
 author = "Ashish Kulkarni"
 version = "1.0 ($Rev$)"
 license = "BSD"
@@ -98,7 +104,7 @@ class FlatTableProcessor(WikiMacroBase):
 
         def has_keys(dict, keys):
             for key in keys:
-                if dict.has_key(key):
+                if key in dict:
                     return True
             return False
 
@@ -125,7 +131,7 @@ class FlatTableProcessor(WikiMacroBase):
                     continue
                 tcol = tag.td()
                 for key in keys:
-                    if row.has_key(key):
+                    if key in row:
                         tcol(to_html(row[key]))
                 trow(tcol)
             tbody(trow)
