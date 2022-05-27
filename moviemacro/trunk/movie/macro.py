@@ -6,7 +6,10 @@
 """
 import mimetypes
 from posixpath import join as pathjoin
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from pkg_resources import resource_filename
 from trac.core import TracError
@@ -20,13 +23,13 @@ from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 from trac.wiki.api import parse_args
 from trac.wiki.macros import WikiMacroBase
 
-from model import MovieMacroConfig
-from utils import parse_imagemacro_style
-from utils import set_default_parameters
-from utils import string_keys
-from utils import xform_query
-from utils import xform_style
-from video_sites import get_embed_video_site_player
+from movie.model import MovieMacroConfig
+from movie.utils import parse_imagemacro_style
+from movie.utils import set_default_parameters
+from movie.utils import string_keys
+from movie.utils import xform_query
+from movie.utils import xform_style
+from movie.video_sites import get_embed_video_site_player
 
 
 EMBED_PATH_FLOWPLAYER = {
@@ -61,8 +64,39 @@ _EMBED_FLOWPLAYER_DEFAULT_PARAMETERS = {
 
 
 class MovieMacro(WikiMacroBase):
-    """ Embed online movies from YouTube, GoogleVideo and MetaCafe, and local
-        movies via FlowPlayer.
+    """ Embed online movies from 
+        YouTube, 
+        Vimeo, 
+        Dailymotion, 
+        Brighteon, 
+        Frankspeech, 
+        Rumble 
+        and 
+        Bitchute, 
+        and local movies via FlowPlayer.
+
+        The movie link or URL is the first and only required parameter.
+        Simply use the browser URL for most online movie links. 
+        For Frankspeech use the link found inside the HTML provided by the '''Embed''' button.
+        For Rumble use the the ''Embed IFRAME URL'' provided by the '''EMBED''' button.
+
+        Use the following link forms for local files:
+         * from an attachment on a ticket or wiki page (''simplest''): `sample.webm`
+         * from an attachment on a ticket (''simple''): `ticket:123:sample.mp4`
+         * from an attachment on a wiki page (''simple''): `wiki:test/sub/sample.mp4`
+         * from the project's htdocs: `htdocs://site/filename.flv`
+         * from a plugin's htdocs: `htdocs://plugin/dir/filename.flv`
+         * from an attachment on ticket `#123`: `ticket://123/filename.flv`
+         * from an attachment on a wiki page: `wiki://WikiWord/filename.flv`
+         * from the SVN repository revision `[1024]` (`HEAD` can also as the revision): `source://1024/trunk/docs/filename.flv`
+
+        An optional, named parameter is `style`, e.g. `style=width:320px; height:240px;`.
+
+        '''Note:''' For local files, Flowplayer tries to resolve to an appropriate size, 
+        ignoring width/height settings. This is because Flowplayer settings have `adaptiveRatio=true` 
+        by default in MovieMacro. It is preferred to allow the player to adjust the size automatically, 
+        rather than select a particular size, in almost every case. If that behavior is not desired, 
+        pass `adaptiveRatio=false` as a query string and use the `style` parameter.
     """
     implements(IRequestFilter, ITemplateProvider)
 

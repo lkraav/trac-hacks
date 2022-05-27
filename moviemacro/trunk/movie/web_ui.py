@@ -6,6 +6,11 @@ from trac.core import Component, implements
 from trac.mimeview.api import IHTMLPreviewRenderer
 from trac.wiki.formatter import format_to_html
 
+# Python 3 compatibility hack
+try:
+    unicode('')
+except NameError:
+    unicode = str
 
 PREVIEW_PATH = r'/.*?/raw-attachment/(?P<realm>.*?)/(?P<path>.*)$'
 

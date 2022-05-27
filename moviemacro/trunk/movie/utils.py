@@ -101,7 +101,11 @@ def parse_imagemacro_style(url, path_info):
     (u'wiki', u'start', u'file.ext')
     """
     _path, netloc = '', ''
-    _path_info = filter(None, path_info.split('/'))
+    _path_info = list(filter(None, path_info.split('/')))
+    if len(_path_info) < 1:
+        # Provide an escape hatch here.
+        # This condition happens when e-mailing with HTTP format message.
+        return '', '', ''
     scheme = _path_info[0]
     if len(_path_info) > 1:
         netloc = _path_info[1]

@@ -13,7 +13,7 @@ except:
 
 setup(
     name='TracMovieMacro',
-    version='0.3',
+    version='0.4',
     description='Safely embed various movies into wiki pages',
     long_description=long_description,
     packages=['movie'],
