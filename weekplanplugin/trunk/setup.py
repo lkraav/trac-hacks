@@ -19,5 +19,5 @@ setup(
             'weekplan.ical_provider = weekplan.ical_provider[ical]', 
         ]
     },
-    extras_requires={'ical': 'icalendar'},
+    extras_require={'ical': ['icalendar', 'recurring-ical-events']},
 )

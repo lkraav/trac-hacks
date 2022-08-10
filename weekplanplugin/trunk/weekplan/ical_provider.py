@@ -2,6 +2,7 @@ import urllib
 import datetime
 
 from icalendar import Calendar
+import recurring_ical_events
 
 from trac.config import ConfigSection
 from trac.core import Component, implements
@@ -35,7 +36,12 @@ class ICalWeekPlanEventProvider(Component):
             f = urllib.urlopen(ical_url)
             content = f.read()
             calendar = Calendar.from_ical(content)
-            return calendar.walk()
+            entries = calendar.walk()
+            if range is not None:
+                r0, r1 = range
+                recurring_events = recurring_ical_events.of(calendar).between(r0, r1)
+                entries.extend(recurring_events)
+            return entries
 
         def is_relevant(entry):
             if entry.name != "VEVENT":
@@ -69,7 +75,13 @@ class ICalWeekPlanEventProvider(Component):
                 title += ' ' + str(description)
             if isinstance(start.dt, datetime.datetime):
                 title = user_time(req, format_time, start.dt) + ' ' + title
-            return WeekPlanEvent(str(entry_id), plan, title, start.dt, end.dt)
+            start = start.dt
+            end = end.dt
+            if isinstance(start, datetime.date):
+                start = datetime.datetime.combine(start, datetime.time(12, 0))
+            if isinstance(end, datetime.date):
+                end = datetime.datetime.combine(end, datetime.time(12, 0))
+            return WeekPlanEvent(str(entry_id), plan, title, start, end)
 
         events = []
         for plan_suffix, ical_url in self.ical_section.options():
