@@ -2,6 +2,7 @@
 
 import inspect
 import re
+import tempfile
 import types
 from datetime import datetime
 from itertools import chain, groupby
@@ -45,6 +46,30 @@ def _tkt_id_conditions(column, tkt_ids):
     if tkt_ids:
         condition.append('%s IN (%s)' % (column, ','.join(map(str, tkt_ids))))
     return ' OR '.join(condition)
+
+
+if hasattr(tempfile, 'SpooledTemporaryFile'):
+    _mktemp = lambda: tempfile.SpooledTemporaryFile()
+else:
+    _mktemp = lambda: tempfile.TemporaryFile()
+
+
+if hasattr(Chrome, 'use_chunked_encoding'):
+    def _book_to_content(book):
+        out = _mktemp()
+        try:
+            book.dump(out)
+            out.seek(0, 0)
+            while True:
+                chunk = out.read(4096)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            out.close()
+else:
+    def _book_to_content(book):
+        return book.dumps()
 
 
 class BulkFetchTicket(Ticket):
@@ -210,7 +235,7 @@ class ExcelTicketModule(Component):
             self._create_sheet_query(req, context, data, book)
         if sheet_history:
             self._create_sheet_history(req, context, data, book)
-        return book.dumps(), book.mimetype
+        return _book_to_content(book), book.mimetype
 
     def _fill_custom_fields(self, tickets, fields, custom_fields, db):
         if not tickets or not custom_fields:
@@ -461,10 +486,11 @@ class ExcelReportModule(Component):
 
         writer.set_col_widths()
 
-        content = book.dumps()
+        content = _book_to_content(book)
         req.send_response(200)
         req.send_header('Content-Type', book.mimetype)
-        req.send_header('Content-Length', len(content))
+        if isinstance(content, bytes):
+            req.send_header('Content-Length', len(content))
         req.send_header('Content-Disposition',
                         'filename=report_%s.%s' % (req.args['id'], format))
         req.end_headers()
