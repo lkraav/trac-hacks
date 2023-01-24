@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from pkg_resources import parse_version
 import io
+import sys
 import unittest
 
 from trac import __version__ as VERSION
@@ -15,6 +16,10 @@ from trac.web.api import RequestDone
 
 from tracexceldownload.api import openpyxl, xlwt
 from tracexceldownload.ticket import ExcelTicketModule, ExcelReportModule
+
+if sys.version_info[0] != 2:
+    unichr = chr
+    xrange = range
 
 
 _has_time_fields = parse_version(VERSION) >= parse_version('1.2')
@@ -42,7 +47,7 @@ class AbstractExcelTicketTestCase(unittest.TestCase):
         if _has_time_fields:
             self.env.config.set('ticket-custom', 'col_time', 'time')
             self.env.config.set('ticket-custom', 'col_time.format', 'datetime')
-        with self.env.db_transaction as db:
+        with self.env.db_transaction:
             for idx in xrange(20):
                 idx += 1
                 ticket = Ticket(self.env)
@@ -68,6 +73,8 @@ class AbstractExcelTicketTestCase(unittest.TestCase):
         ticket = Ticket(self.env, 11)
         content, mimetype = mod.convert_content(req, self._mimetype, ticket,
                                                 'excel-history')
+        self.assertNotIsInstance(content, bytes)
+        content = b''.join(content)
         self.assertEqual(self._magic_number, content[:8])
         self.assertEqual(self._mimetype, mimetype)
         book = self._read_workbook(content)
@@ -80,6 +87,8 @@ class AbstractExcelTicketTestCase(unittest.TestCase):
         query = Query.from_string(self.env, 'status=!closed&order=id&max=9')
         content, mimetype = mod.convert_content(req, self._mimetype, query,
                                                 'excel')
+        self.assertNotIsInstance(content, bytes)
+        content = b''.join(content)
         self.assertEqual(self._magic_number, content[:8])
         self.assertEqual(self._mimetype, mimetype)
         book = self._read_workbook(content)
@@ -96,6 +105,8 @@ class AbstractExcelTicketTestCase(unittest.TestCase):
 
         content, mimetype = mod.convert_content(req, self._mimetype, query,
                                                 'excel-history')
+        self.assertNotIsInstance(content, bytes)
+        content = b''.join(content)
         self.assertEqual(self._magic_number, content[:8])
         self.assertEqual(self._mimetype, mimetype)
         book = self._read_workbook(content)

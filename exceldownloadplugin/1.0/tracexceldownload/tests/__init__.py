@@ -8,6 +8,7 @@ def _find_openpyxl_shutdown():
         import openpyxl
     except ImportError:
         return
+    del openpyxl
 
     try:
         from openpyxl.writer.write_only import _openpyxl_shutdown
@@ -34,17 +35,20 @@ def _find_openpyxl_shutdown():
 _openpyxl_shutdown = _find_openpyxl_shutdown()
 if _openpyxl_shutdown:
     import atexit
-    for idx, entry in enumerate(atexit._exithandlers):
-        if entry[0] == _openpyxl_shutdown:
-            del atexit._exithandlers[idx]
-            break
-    del idx, entry
-    del atexit
+    if hasattr(atexit, 'unregister'):
+        atexit.unregister(_openpyxl_shutdown)
+    else:
+        for idx, entry in enumerate(atexit._exithandlers):
+            if entry[0] == _openpyxl_shutdown:
+                del atexit._exithandlers[idx]
+                break
+        del idx, entry
+        del atexit
 del _find_openpyxl_shutdown, _openpyxl_shutdown
 
 
 def suite():
-    from tracexceldownload.tests import ticket
+    from . import ticket
     suite = unittest.TestSuite()
     suite.addTest(ticket.suite())
     return suite

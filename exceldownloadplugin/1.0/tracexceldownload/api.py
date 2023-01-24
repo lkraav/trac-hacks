@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import inspect
 import re
 import sys
-from cStringIO import StringIO
 from datetime import datetime
-from decimal import Decimal
 from unicodedata import east_asian_width
 try:
     import openpyxl
@@ -18,7 +15,9 @@ except ImportError:
 
 from trac.core import Component, TracError
 from trac.util.text import to_unicode
-from tracexceldownload.translation import ChoiceOption, N_, ngettext
+from .compat import (BytesIO, getargspec, iteritems, itervalues, number_types,
+                     string_types, unichr)
+from .translation import ChoiceOption, N_, ngettext
 
 
 __all__ = ('get_excel_format', 'get_excel_mimetype', 'get_workbook_writer')
@@ -120,7 +119,7 @@ class AbstractWorkbookWriter(object):
         raise NotImplementedError
 
     def dumps(self):
-        out = StringIO()
+        out = BytesIO()
         self.dump(out)
         return out.getvalue()
 
@@ -202,7 +201,7 @@ class OpenpyxlWorkbookWriter(AbstractWorkbookWriter):
             raise TracError('Require openpyxl library')
         book = self._create_book()
         AbstractWorkbookWriter.__init__(self, env, req, book)
-        for style in self.styles.itervalues():
+        for style in itervalues(self.styles):
             book.add_named_style(style)
 
     def create_sheet(self, title):
@@ -297,7 +296,7 @@ class OpenpyxlWorkbookWriter(AbstractWorkbookWriter):
             raise NotImplementedError
     else:
         _workbook_kwargs = {}
-        _workbook_argspec = inspect.getargspec(openpyxl.Workbook.__init__)
+        _workbook_argspec = getargspec(openpyxl.Workbook.__init__)
         _workbook_kwargs['write_only'
                          if 'write_only' in _workbook_argspec[0]
                          else 'optimized_write'] = True
@@ -337,13 +336,13 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
                     width = len('YYYY-MM-DD HH:MM:SS')
                 width /= 1.2
                 line = 1
-            elif isinstance(value, (int, long, float, Decimal)):
+            elif isinstance(value, number_types):
                 width = len('%g' % value) / 1.2
                 line = 1
             elif value is True or value is False:
                 width = 5 / 1.2
                 line = 1
-            elif isinstance(value, basestring):
+            elif isinstance(value, string_types):
                 value = self._normalize_text(value)
 
             if width is None or line is None:
@@ -370,7 +369,9 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
         from openpyxl.utils.cell import get_column_letter
         from openpyxl.cell import Cell
 
-        for idx, width in sorted(self._col_widths.iteritems()):
+        col_widths = self._col_widths
+        for idx in sorted(col_widths):
+            width = col_widths[idx]
             letter = get_column_letter(idx + 1)
             self.sheet.column_dimensions[letter].width = 1 + min(width, 50)
         for row in self._rows:
@@ -379,7 +380,7 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
                 if val:
                     value = val.value
                     cell = Cell(self.sheet, column='A', row=1)
-                    if isinstance(value, basestring):
+                    if isinstance(value, string_types):
                         # It is need to set "=..." value as a string but
                         # set_explicit_value() is deprecated since openpyxl
                         # 2.6. Instead, set directly properties of Cell
@@ -550,7 +551,7 @@ class XlwtWorksheetWriter(AbstractWorksheetWriter):
                 _set_col_width(idx, width)
                 row.set_cell_date(idx, value, _get_style(style))
                 continue
-            if isinstance(value, (int, long, float, Decimal)):
+            if isinstance(value, number_types):
                 _set_col_width(idx, len('%g' % value))
                 row.set_cell_number(idx, value, _get_style(style))
                 continue
@@ -558,7 +559,7 @@ class XlwtWorksheetWriter(AbstractWorksheetWriter):
                 _set_col_width(idx, 1)
                 row.set_cell_number(idx, int(value), _get_style(style))
                 continue
-            if isinstance(value, basestring):
+            if isinstance(value, string_types):
                 value = self._normalize_text(value)
             if width is None or line is None:
                 metrics = get_metrics(value)
@@ -574,7 +575,7 @@ class XlwtWorksheetWriter(AbstractWorksheetWriter):
                 max_height = style.font.height
             row.write(idx, value, style)
             self._cells_count += 1
-        row.height = min(max_line, 10) * max(max_height * 255 / 180, 255)
+        row.height = min(max_line, 10) * max(max_height * 255 // 180, 255)
         row.height_mismatch = True
         self.move_row()
 
@@ -584,7 +585,7 @@ class XlwtWorksheetWriter(AbstractWorksheetWriter):
             self._cells_count = 0
 
     def _get_style(self, style):
-        if isinstance(style, basestring):
+        if isinstance(style, string_types):
             if style not in self.styles:
                 if style.endswith(':change'):
                     style = '*:change'
@@ -594,5 +595,5 @@ class XlwtWorksheetWriter(AbstractWorksheetWriter):
         return style
 
     def set_col_widths(self):
-        for idx, width in self._col_widths.iteritems():
+        for idx, width in iteritems(self._col_widths):
             self.sheet.col(idx).width = (1 + min(width, 50)) * 256

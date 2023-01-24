@@ -17,8 +17,8 @@ if domain_functions:
     from trac.config import ChoiceOption
 
     def domain_options(domain, *options):
-        import inspect
-        if 'doc_domain' in inspect.getargspec(Option.__init__)[0]:
+        from .compat import getargspec
+        if 'doc_domain' in getargspec(Option.__init__)[0]:
             def _option_with_tx(Option, doc_domain):  # Trac 1.0+
                 def fn(*args, **kwargs):
                     kwargs['doc_domain'] = doc_domain

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import inspect
 import re
+import sys
 import tempfile
 import types
 from datetime import datetime
@@ -26,9 +26,9 @@ except ImportError:
     _epoc = datetime(1970, 1, 1, tzinfo=utc)
     from_utimestamp = lambda ts: _epoc + timedelta(seconds=ts or 0)
 
-from tracexceldownload.api import (get_excel_format, get_excel_mimetype,
-                                   get_workbook_writer)
-from tracexceldownload.translation import _, dgettext, dngettext
+from .api import get_excel_format, get_excel_mimetype, get_workbook_writer
+from .compat import getargspec, iteritems, long, string_types
+from .translation import _, dgettext, dngettext
 
 
 def _tkt_id_conditions(column, tkt_ids):
@@ -133,7 +133,7 @@ class BulkFetchTicket(Ticket):
 
         return dict((id, cls(env, id, values=values, changelog=changelog,
                              fields=fields, time_fields=time_fields))
-                    for id, (values, changelog) in tickets.iteritems())
+                    for id, (values, changelog) in iteritems(tickets))
 
     def __init__(self, env, tkt_id=None, db=None, version=None, values=None,
                  changelog=None, fields=None, time_fields=None):
@@ -212,17 +212,7 @@ class ExcelTicketModule(Component):
         query.cols = cols
 
         # prevent "SELECT COUNT(*)" query
-        saved_count_prop = query._count
-        try:
-            query._count = types.MethodType(lambda self, sql, args, db=None: 0,
-                                            query, query.__class__)
-            if 'db' in inspect.getargspec(query.execute)[0]:
-                tickets = query.execute(req, db)
-            else:
-                tickets = query.execute(req)
-            query.num_items = len(tickets)
-        finally:
-            query._count = saved_count_prop
+        tickets = self._execute_query(db, req, query)
 
         # add custom fields to avoid error to join many tables
         self._fill_custom_fields(tickets, query.fields, custom_fields, db)
@@ -236,6 +226,23 @@ class ExcelTicketModule(Component):
         if sheet_history:
             self._create_sheet_history(req, context, data, book)
         return _book_to_content(book), book.mimetype
+
+    def _execute_query(self, db, req, query):
+        try:
+            query_count = lambda self, sql, args, db=None: 0
+            if sys.version_info[0] == 2:
+                query._count = types.MethodType(query_count, query,
+                                                query.__class__)
+            else:
+                query._count = types.MethodType(query_count, query)
+            if 'db' in getargspec(query.execute)[0]:
+                tickets = query.execute(req, db)
+            else:
+                tickets = query.execute(req)
+            query.num_items = len(tickets)
+            return tickets
+        finally:
+            del query._count
 
     def _fill_custom_fields(self, tickets, fields, custom_fields, db):
         if not tickets or not custom_fields:
@@ -357,7 +364,7 @@ class ExcelTicketModule(Component):
             for change in reversed(changes):
                 change['values'] = values
                 values = values.copy()
-                for name, field in change['fields'].iteritems():
+                for name, field in iteritems(change['fields']):
                     if name in values:
                         values[name] = field['old']
             changes[0:0] = [{'date': ticket['time'], 'fields': {},
@@ -515,15 +522,15 @@ class ExcelReportModule(Component):
             return value, col, width, line
 
         if col == 'time':
-            if isinstance(value, basestring) and value.isdigit():
+            if isinstance(value, string_types) and value.isdigit():
                 value = from_utimestamp(long(value))
                 return value, '[time]', None, None
         elif col in ('date', 'created', 'modified'):
-            if isinstance(value, basestring) and value.isdigit():
+            if isinstance(value, string_types) and value.isdigit():
                 value = from_utimestamp(long(value))
                 return value, '[date]', None, None
         elif col == 'datetime':
-            if isinstance(value, basestring) and value.isdigit():
+            if isinstance(value, string_types) and value.isdigit():
                 value = from_utimestamp(long(value))
                 return value, '[datetime]', None, None
 
