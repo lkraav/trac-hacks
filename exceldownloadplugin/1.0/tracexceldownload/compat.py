@@ -5,11 +5,16 @@ import inspect
 import sys
 
 
-__all__ = ('number_types', 'string_types', 'long', 'unichr', 'iteritems',
-           'BytesIO', 'getargspec')
+__all__ = ('unicode', 'bytes', 'number_types', 'string_types', 'long',
+           'unichr', 'iteritems', 'BytesIO', 'getargspec')
 
 
 if sys.version_info[0] == 2:
+    unicode = unicode
+    try:
+        bytes = bytes
+    except NameError:
+        bytes = str
     number_types = (int, long, float, Decimal)
     string_types = basestring
     long = long
@@ -17,6 +22,8 @@ if sys.version_info[0] == 2:
     itervalues = lambda d: d.itervalues()
     iteritems = lambda d: d.iteritems()
 else:
+    unicode = str
+    bytes = bytes
     number_types = (int, float, Decimal)
     string_types = str
     long = int

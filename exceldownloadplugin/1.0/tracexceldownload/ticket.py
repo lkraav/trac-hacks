@@ -27,7 +27,7 @@ except ImportError:
     from_utimestamp = lambda ts: _epoc + timedelta(seconds=ts or 0)
 
 from .api import get_excel_format, get_excel_mimetype, get_workbook_writer
-from .compat import getargspec, iteritems, long, string_types
+from .compat import bytes, getargspec, iteritems, long, string_types
 from .translation import _, dgettext, dngettext
 
 
@@ -56,8 +56,7 @@ else:
 
 if hasattr(Chrome, 'use_chunked_encoding'):
     def _book_to_content(book):
-        out = _mktemp()
-        try:
+        with _mktemp() as out:
             book.dump(out)
             out.seek(0, 0)
             while True:
@@ -65,8 +64,6 @@ if hasattr(Chrome, 'use_chunked_encoding'):
                 if not chunk:
                     break
                 yield chunk
-        finally:
-            out.close()
 else:
     def _book_to_content(book):
         return book.dumps()

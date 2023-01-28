@@ -15,8 +15,8 @@ except ImportError:
 
 from trac.core import Component, TracError
 from trac.util.text import to_unicode
-from .compat import (BytesIO, getargspec, iteritems, itervalues, number_types,
-                     string_types, unichr)
+from .compat import (BytesIO, bytes, getargspec, iteritems, itervalues,
+                     number_types, string_types, unichr)
 from .translation import ChoiceOption, N_, ngettext
 
 
@@ -129,7 +129,7 @@ class AbstractWorkbookWriter(object):
     def get_metrics(self, value):
         if not value:
             return 0, 1
-        if isinstance(value, str):
+        if isinstance(value, bytes):
             value = to_unicode(value)
         if value not in self._metrics_cache:
             lines = value.splitlines()
@@ -181,7 +181,7 @@ class AbstractWorksheetWriter(object):
     _invalid_chars_re = _make_invalid_chars_re()
 
     def _normalize_text(self, value):
-        if isinstance(value, str):
+        if isinstance(value, bytes):
             value = to_unicode(value)
         value = self._invalid_chars_re.sub(u'\ufffd', value)
         value = '\n'.join(line.rstrip() for line in value.splitlines())
