@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import sys
 import tempfile
 import types
 from datetime import datetime
@@ -15,19 +14,13 @@ from trac.ticket.model import Ticket
 from trac.ticket.query import Query
 from trac.ticket.web_ui import TicketModule
 from trac.util import Ranges
+from trac.util.datefmt import from_utimestamp
 from trac.util.text import empty, unicode_urlencode
 from trac.web.api import IRequestFilter, RequestDone
 from trac.web.chrome import Chrome, add_link, web_context
-try:
-    from trac.util.datefmt import from_utimestamp
-except ImportError:
-    from datetime import timedelta
-    from trac.util.datefmt import utc
-    _epoc = datetime(1970, 1, 1, tzinfo=utc)
-    from_utimestamp = lambda ts: _epoc + timedelta(seconds=ts or 0)
 
 from .api import get_excel_format, get_excel_mimetype, get_workbook_writer
-from .compat import bytes, getargspec, iteritems, long, string_types
+from .compat import PY2, bytes, getargspec, iteritems, long, string_types
 from .translation import _, dgettext, dngettext
 
 
@@ -227,7 +220,7 @@ class ExcelTicketModule(Component):
     def _execute_query(self, db, req, query):
         try:
             query_count = lambda self, sql, args, db=None: 0
-            if sys.version_info[0] == 2:
+            if PY2:
                 query._count = types.MethodType(query_count, query,
                                                 query.__class__)
             else:

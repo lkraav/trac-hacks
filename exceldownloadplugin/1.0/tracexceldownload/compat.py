@@ -5,11 +5,13 @@ import inspect
 import sys
 
 
-__all__ = ('unicode', 'bytes', 'number_types', 'string_types', 'long',
+__all__ = ('PY2', 'unicode', 'bytes', 'number_types', 'string_types', 'long',
            'unichr', 'iteritems', 'BytesIO', 'getargspec')
 
 
-if sys.version_info[0] == 2:
+PY2 = sys.version_info[0] == 2
+
+if PY2:
     unicode = unicode
     try:
         bytes = bytes
