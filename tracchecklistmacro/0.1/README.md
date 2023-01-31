@@ -9,7 +9,7 @@ This prevents people from forgetting something (e.g. tag a new version), and
 allows for ongoing process improvements by updating the checklist whenever gaps
 in the existing process are discovered.
 
-This plugin was developed and is maintained by https://sydereal.space
+This plugin was developed and is maintained by [Outlyer](https://outlyer.space)
 
 
 ## Install
@@ -82,7 +82,4 @@ checklist in your ticket.
 
 ## Revision Log
 
-0.1.1 - Initial upload to PyPI / TracHacks
-0.1.2 - fixed URL's in setup.py to point to TrackHacks page
-0.1.3 - fixed install bugs (no db table creation)
-0.1.4 - removed build artifacts from SVN source (#1345)
+* 0.1 - Initial release to PyPI (build) & TracHacks (source)
