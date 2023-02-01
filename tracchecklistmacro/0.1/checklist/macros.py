@@ -20,6 +20,7 @@ from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import format_to_html
 from trac.util.html import unescape
+from trac.util.html import Markup, Element, Fragment, tag
 
 # database schema version / updates (stored in "system" table)
 PLUGIN_NAME = 'TracChecklist'
@@ -67,13 +68,14 @@ class ChecklistMacro(WikiMacroBase):
         status    = ? (JSON encoded checkbox status)
         '''
         query  = ("SELECT status FROM checklist WHERE " +
-                  "realm     = '"+ str(formatter.resource.realm) +"' AND " +
-                  "resource  = '"+ str(formatter.resource.id   ) +"' AND " +
-                  "checklist = '"+ str(content                 ) +"' ")
+                  "realm = %s AND resource  = %s AND checklist = %s ")
+        param  = [formatter.resource.realm,
+                  formatter.resource.id,
+                  content]
 
         with self.env.db_query as db:
             cursor = db.cursor()
-            cursor.execute(query)
+            cursor.execute(query, param)
             row = cursor.fetchone()
 
             if not row:
@@ -136,13 +138,12 @@ class ChecklistMacro(WikiMacroBase):
         resource   = str(formatter.resource.id   )
         checklist  = str(content                 )
 
-        foot  = "<input type='hidden' name='__backpath__' value='" + backpath   + "'>\n"
-        foot += "<input type='hidden' name='__FORM_TOKEN' value='" + form_token + "'>\n"
-        foot += "<input type='hidden' name='realm'        value='" + realm      + "'>\n"
-        foot += "<input type='hidden' name='resource'     value='" + resource   + "'>\n"
-        foot += "<input type='hidden' name='checklist'    value='" + checklist  + "'>\n"
-        foot += "<br>"
-        foot += "<input class='button' type='submit' value='Save Checklist'> \n"
+        foot  = Markup(Element('input', type='hidden', name='__backpath__', value=backpath         ))
+        foot += Markup(Element('input', type='hidden', name='__FORM_TOKEN', value=form_token       ))
+        foot += Markup(Element('input', type='hidden', name='realm'       , value=realm            ))
+        foot += Markup(Element('input', type='hidden', name='resource'    , value=resource         ))
+        foot += Markup(Element('input', type='hidden', name='checklist'   , value=checklist        ))
+        foot += Markup(Element('input', type='submit', class_='button'    , value='Save Checklist' ))
         foot += "</form>"
 
         # add stylesheet definitions to the page
@@ -187,11 +188,11 @@ class ChecklistUpdate(Component):
             status    = json.dumps(steps)
 
             # save to db
-            query   = ("REPLACE INTO checklist (realm,resource,checklist,status) " +
-                       "VALUES ('" + realm + "','" + resource + "','" + checklist +
-                       "','" + status + "')")
+            query = ("REPLACE INTO checklist (realm,resource,checklist,status) " +
+                     "VALUES (%s, %s, %s, %s)")
+            param = [realm, resource, checklist, status]
 
-            self.env.db_transaction(query)
+            self.env.db_transaction(query, param)
             buffer = "OK"
 
             if backpath is not None:
@@ -261,15 +262,16 @@ class ChecklistInsert(Component):
 
             # list of available checklist templates (pages) under root wiki page
             templates = []
-            root = Option('checklist', 'template_root', default='TracChecklist',
-                        doc="wiki page root for checklist templates")
-            root      = self.config.get('checklist', 'template_root')
-            query     = ("SELECT name FROM wiki WHERE version = 1 AND " +
-                         "name LIKE '%"+ root +"%' ")
+            root  = Option('checklist', 'template_root', default='TracChecklist',
+                            doc="wiki page root for checklist templates")
+            root  = self.config.get('checklist', 'template_root')
+            query = "SELECT name FROM wiki WHERE version = 1 AND name LIKE %s"
+            param = ['%'+root+'%']
 
             with self.env.db_query as db:
                 cursor = db.cursor()
-                cursor.execute(query)
+                cursor.execute(query, param)
+                self.log.debug(cursor._executed)
                 for row in cursor.fetchall():
                     if row[0] != root:
                         templates.append(row[0].replace(root+'/',''))
