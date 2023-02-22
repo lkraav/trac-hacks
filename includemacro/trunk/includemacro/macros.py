@@ -41,7 +41,7 @@ from trac.wiki.model import WikiPage
 try:
     basestring
 except NameError:
-    basetring = str
+    basestring = str
 
 
 class IncludeMacro(WikiMacroBase):
