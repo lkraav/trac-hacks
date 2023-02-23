@@ -5,11 +5,15 @@ import unittest
 from trac.core import TracError
 from trac.test import EnvironmentStub, Mock, MockPerm
 from trac.config import Option
-from trac.util.compat import any, all
 from trac.web.api import RequestDone
 from trac.web.href import Href
 
-from iniadmin.iniadmin import IniAdminPlugin
+from ..iniadmin import IniAdminPlugin
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 
 class IniAdminTestCase(unittest.TestCase):

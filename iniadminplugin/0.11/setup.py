@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2006-2008 Alec Thomas
 # Copyright (C) 2010-2011 Ryan Ollos
-# Copyright (C) 2012-2019 Jun Omae
+# Copyright (C) 2012-2023 Jun Omae
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -15,7 +15,7 @@ from setuptools import setup
 def main():
     setup(
         name='TracIniAdmin',
-        version='0.5.1',
+        version='0.6',
         packages=['iniadmin'],
         author='Alec Thomas',
         maintainer='Jun Omae',

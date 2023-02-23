@@ -2,22 +2,23 @@
 #
 # Copyright (C) 2006-2008 Alec Thomas
 # Copyright (C) 2010-2011 Ryan Ollos
-# Copyright (C) 2012-2014 Jun Omae
+# Copyright (C) 2012-2023 Jun Omae
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
+__all__ = ['IniAdminPlugin']
 
-from pkg_resources import parse_version, resource_filename
 import inspect
+import pkg_resources
 import re
+import sys
 
 from trac import __version__ as VERSION
 from trac.core import Component, implements, TracError
 from trac.admin.api import IAdminPanelProvider
 from trac.config import Option, ListOption
-from trac.util.compat import set, sorted, any
 from trac.util.text import to_unicode
 from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet
 try:
@@ -26,21 +27,29 @@ except ImportError:
     dgettext = lambda domain, string: string
 
 
-_parsed_version = parse_version(VERSION)
+PY2 = sys.version_info[0] == 2
+if PY2:
+    string_types = basestring
+    iteritems = lambda d: d.iteritems()
+else:
+    unicode = str
+    string_types = str
+    iteritems = lambda d: d.items()
 
-if _parsed_version >= parse_version('1.4'):
+
+_parsed_version = pkg_resources.parse_version(VERSION)
+
+if _parsed_version >= pkg_resources.parse_version('1.4'):
     _use_jinja2 = True
-elif _parsed_version >= parse_version('1.3'):
+elif _parsed_version >= pkg_resources.parse_version('1.3'):
     _use_jinja2 = hasattr(Chrome, 'jenv')
 else:
     _use_jinja2 = False
 
-if _use_jinja2:
-    _template_dir = resource_filename(__name__, 'templates/jinja2')
-else:
-    _template_dir = resource_filename(__name__, 'templates/genshi')
+_template_dir = pkg_resources.resource_filename(
+    __name__, 'templates/jinja2' if _use_jinja2 else 'templates/genshi')
 
-_htdoc_dir = resource_filename(__name__, 'htdocs')
+_htdoc_dir = pkg_resources.resource_filename(__name__, 'htdocs')
 
 
 class IniAdminPlugin(Component):
@@ -60,6 +69,7 @@ class IniAdminPlugin(Component):
         """)
 
     # IAdminPageProvider methods
+
     def get_admin_panels(self, req):
         if req.perm.has_permission('TRAC_ADMIN'):
             excludes_match = self._patterns_match(self.excludes)
@@ -75,7 +85,7 @@ class IniAdminPlugin(Component):
 
         options = sorted(
             [option for (section, name), option
-                    in Option.registry.iteritems()
+                    in iteritems(Option.registry)
                     if section == page and \
                        not excludes_match('%s:%s' % (section, name))],
             key=lambda opt: opt.name)
@@ -83,7 +93,7 @@ class IniAdminPlugin(Component):
         # Apply changes
         if req.method == 'POST':
             modified = False
-            for name, value in req.args.iteritems():
+            for name, value in iteritems(req.args):
                 if any(name == opt.name for opt in options):
                     if self.config.get(page, name) != value:
                         self.config.set(page, name, value)
@@ -104,7 +114,7 @@ class IniAdminPlugin(Component):
             type = option.__class__.__name__.lower()[:-6] or 'text'
             if type == 'bool':
                 value = self.config.getbool(page, option.name)
-            elif type == 'list' and not isinstance(value,basestring):
+            elif type == 'list' and not isinstance(value, string_types):
                 value = unicode(option.sep).join(list(value))
             option_data = {'name': option.name, 'default': option.default,
                            'doc': doc, 'value': value, 'type': type}
@@ -125,6 +135,7 @@ class IniAdminPlugin(Component):
         return 'iniadmin.html', data
 
     # ITemplateProvider methods
+
     def get_templates_dirs(self):
         return [_template_dir]
 

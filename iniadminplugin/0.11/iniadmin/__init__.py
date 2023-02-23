@@ -1,2 +1,2 @@
 # iniadmin module
-from iniadmin import *
+from .iniadmin import *
