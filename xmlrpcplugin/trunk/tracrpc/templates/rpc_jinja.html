@@ -13,7 +13,7 @@
     # endblock
   </head>
   <body>
-  # block content
+    # block content
     <div id="content" class="wiki">
       <div class="wikipage searchable">
         <div id="wikipage" class="trac-content borderless">
@@ -39,31 +39,28 @@
               <ul>
                 # for ct, _ct_group in protocol[2]|groupby(1):
                 <li>
-                  <tt>{'Content-Type': '${ct}'}</tt> header with request to:
+                  <tt>Content-Type: ${ct}</tt> header with request to:
                   # with
                   #    set ct_group = _ct_group|list
-                    <ul>
-                      # for h, _ in ct_group:
-                      <li>
-                        <a href="${req.abs_href(h)}">${req.abs_href(h)}</a>
-                        for anonymous access
-                      </li>
-                      # endfor
-                      # for h, _ in ct_group:
-                      <li>
-                        <a href="${req.abs_href.login(h)}">${req.abs_href.login(h)}</a>
-                        for authenticated access
-                      </li>
-                      # endfor
-                    </ul>
+                  <ul>
+                    # for h, _ in ct_group:
+                    <li>
+                      <a href="${req.abs_href(h)}">${req.abs_href(h)}</a>
+                      for anonymous access
+                    </li>
+                    # endfor
+                    # for h, _ in ct_group:
+                    <li>
+                      <a href="${req.abs_href.login(h)}">${req.abs_href.login(h)}</a>
+                      for authenticated access
+                    </li>
+                    # endfor
+                  </ul>
                   # endwith
                 </li>
                 # endfor
               </ul>
-            <div>
-              ## ${wiki_to_html(context, expand_docs(protocol[1], locals()['__data__']))}
-              ${wiki_to_html(context, expand_docs(protocol[1]))}
-            </div>
+              <div>${wiki_to_html(context, protocol[1])}</div>
             </dd>
           </dl>
           # endfor
@@ -104,6 +101,7 @@
         </div>
       </div>
     </div>
-  # endblock content
+    ${ super() }
+    # endblock content
   </body>
 </html>

@@ -32,7 +32,7 @@
             <p>For ${protocol[0]} protocol, use any one of:</p>
             <ul>
               <li py:for="ct, _ct_group in groupby(protocol[2], lambda (_, x) : x)">
-                <tt>{'Content-Type': '$ct'}</tt> header with request to:
+                <tt>Content-Type: $ct</tt> header with request to:
                 <py:with vars="ct_group = list(_ct_group)">
                   <ul>
                     <li py:for="h, _ in ct_group">
@@ -47,9 +47,7 @@
                 </py:with>
               </li>
             </ul>
-          <div>
-            ${wiki_to_html(context, expand_docs(protocol[1], locals()['__data__']))}
-          </div>
+            <div>${wiki_to_html(context, protocol[1])}</div>
           </dd>
         </dl>
 

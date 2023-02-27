@@ -6,8 +6,8 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
-from types import GeneratorType
-from pkg_resources import resource_filename
+import pkg_resources
+import types
 
 from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import PermissionError
@@ -20,8 +20,9 @@ from trac.web.chrome import ITemplateProvider, INavigationContributor, \
                             add_stylesheet, add_script, Chrome, web_context
 from trac.wiki.formatter import format_to_oneliner
 
+from . import __version__
 from .api import (XMLRPCSystem, IRPCProtocol, ProtocolException,
-                  ServiceException)
+                  ServiceException, api_version)
 from .util import accepts_mimetype
 
 try:
@@ -122,49 +123,25 @@ class RPCWeb(Component):
         data = {
             'rpc': {
                 'functions': namespaces,
-                'protocols': [p.rpc_info() + (list(p.rpc_match()),)
-                              for p in self.protocols],
-                'version': __import__('tracrpc', ['__version__']).__version__,
+                'protocols': [self._rpc_protocol(req, protocol)
+                              for protocol in self.protocols],
+                'version': __version__,
             },
         }
         if hasattr(Chrome, 'jenv'):
-            data['expand_docs'] = self._expand_docs_jinja
             return 'rpc_jinja.html', data
         else:
-            data['expand_docs'] = self._expand_docs_genshi
             return 'rpc.html', data, None
 
-    def _expand_docs_jinja(self, context, docs):
-        try:
-            template = jinja2template(docs, text=True,
-                                      line_statement_prefix=None,
-                                      line_comment_prefix=None)
-            return template.render(context)
-        except jinja2.TemplateError as e:
-            self.log.error("Template error rendering protocol documentation%s",
-                           exception_to_unicode(e, traceback=True))
-            return '**Error**: {{{%s}}}' % exception_to_unicode(e)
-        except Exception as e:
-            self.log.error("Runtime error rendering protocol documentation%s",
-                           exception_to_unicode(e, traceback=True))
-            return "Error rendering protocol documentation. " \
-                   "Contact your '''Trac''' administrator for details"
-    if jinja2:
-        _expand_docs_jinja = jinja2.contextfunction(_expand_docs_jinja)
-
-    def _expand_docs_genshi(self, docs, ctx):
-        try :
-            tmpl = genshi.template.text.NewTextTemplate(docs)
-            return tmpl.generate(**dict(ctx.items())).render()
-        except genshi.template.TemplateError as e:
-            self.log.error("Template error rendering protocol documentation%s",
-                           exception_to_unicode(e, traceback=True))
-            return '**Error**: {{{%s}}}' % exception_to_unicode(e)
-        except Exception as e:
-            self.log.error("Runtime error rendering protocol documentation%s",
-                           exception_to_unicode(e, traceback=True))
-            return "Error rendering protocol documentation. " \
-                   "Contact your '''Trac''' administrator for details"
+    def _rpc_protocol(self, req, protocol):
+        label, desc = protocol.rpc_info()
+        desc %= {
+            'url_anon': req.abs_href('rpc'),
+            'url_auth': req.abs_href('login', 'rpc') \
+                        .replace('//', '//%s:your_password@' % req.authname),
+            'version': list(api_version),
+        }
+        return label, desc, list(protocol.rpc_match())
 
     def _rpc_process(self, req, protocol, content_type):
         """Process incoming RPC request and finalize response."""
@@ -191,7 +168,7 @@ class RPCWeb(Component):
                            req.authname, method_name)
             try :
                 result = (XMLRPCSystem(self.env).get_method(method_name)(req, args))[0]
-                if isinstance(result, GeneratorType):
+                if isinstance(result, types.GeneratorType):
                     result = list(result)
             except (TracError, PermissionError, ResourceNotFound):
                 raise
@@ -230,10 +207,10 @@ class RPCWeb(Component):
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        yield ('tracrpc', resource_filename(__name__, 'htdocs'))
+        yield ('tracrpc', pkg_resources.resource_filename(__name__, 'htdocs'))
 
     def get_templates_dirs(self):
-        yield resource_filename(__name__, 'templates')
+        yield pkg_resources.resource_filename(__name__, 'templates')
 
     # INavigationContributor methods
 

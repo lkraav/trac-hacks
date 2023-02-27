@@ -10,6 +10,11 @@ import pkg_resources
 
 pkg_resources.require('Trac>=1.0')
 
+__author__ = ['Alec Thomas <alec@swapoff.org>',
+              'Odd Simon Simonsen <simon-code@bvnetwork.no>']
+__license__ = 'BSD'
+__version__ = pkg_resources.get_distribution('TracXMLRPC').version
+
 from tracrpc.api import *
 from tracrpc.json_rpc import *
 from tracrpc.xml_rpc import *
@@ -17,12 +22,3 @@ from tracrpc.web_ui import *
 from tracrpc.ticket import *
 from tracrpc.wiki import *
 from tracrpc.search import *
-
-__author__ = ['Alec Thomas <alec@swapoff.org>',
-              'Odd Simon Simonsen <simon-code@bvnetwork.no>']
-__license__ = 'BSD'
-
-try:
-    __version__ = pkg_resources.get_distribution('TracXMLRPC').version
-except (ImportError, pkg_resources.DistributionNotFound):
-    pass

@@ -109,10 +109,10 @@ class JsonRpcProtocol(Component):
     Example `POST` request using `curl` with `Content-Type` header
     and body:
 
-    {{{
+    {{{#!shell
     user: ~ > cat body.json
     {"params": ["WikiStart"], "method": "wiki.getPage", "id": 123}
-    user: ~ > curl -H "Content-Type: application/json" --data @body.json ${req.abs_href.rpc()}
+    user: ~ > curl -H "Content-Type: application/json" --data @body.json %(url_anon)s
     {"id": 123, "error": null, "result": "= Welcome to....
     }}}
 

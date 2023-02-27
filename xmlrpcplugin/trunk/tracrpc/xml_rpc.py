@@ -67,7 +67,7 @@ class XmlRpcProtocol(Component):
     popular programming languages.
     Example call using `curl`:
 
-    {{{
+    {{{#!shell
     user: ~ > cat body.xml
     <?xml version="1.0"?>
     <methodCall>
@@ -77,7 +77,7 @@ class XmlRpcProtocol(Component):
     </params>
     </methodCall>
 
-    user: ~ > curl -H "Content-Type: application/xml" --data @body.xml ${req.abs_href.rpc()}
+    user: ~ > curl -H "Content-Type: application/xml" --data @body.xml %(url_anon)s
     <?xml version='1.0'?>
     <methodResponse>
     <params>
@@ -87,11 +87,15 @@ class XmlRpcProtocol(Component):
 
     The following snippet illustrates how to perform authenticated calls in Python.
 
-    {{{
-    >>> from xmlrpclib import ServerProxy
-    >>> p = ServerProxy('${req.abs_href.login('rpc').replace('://', '://%s:your_password@' % authname)}')
+    {{{#!pycon
+    >>> try:
+    ...     from xmlrpc import client as cli
+    ... except ImportError:
+    ...     import xmlrpclib as cli
+    ...
+    >>> p = cli.ServerProxy(%(url_auth)r)
     >>> p.system.getAPIVersion()
-    [${', '.join(rpc.version.split('.'))}]
+    %(version)r
     }}}
     """
 

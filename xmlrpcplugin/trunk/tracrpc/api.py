@@ -14,11 +14,14 @@ from trac.core import (Component, ExtensionPoint, Interface, TracError,
                        implements)
 from trac.perm import IPermissionRequestor
 
+from . import __version__
 from .util import basestring, unicode, xmlrpclib
 
-__all__ = ['expose_rpc', 'IRPCProtocol', 'IXMLRPCHandler', 'AbstractRPCHandler',
-            'Method', 'XMLRPCSystem', 'Binary', 'RPCError', 'MethodNotFound',
-            'ProtocolException', 'ServiceException']
+__all__ = [
+    'IRPCProtocol', 'IXMLRPCHandler', 'AbstractRPCHandler', 'Method',
+    'XMLRPCSystem', 'Binary', 'RPCError', 'MethodNotFound',
+    'ProtocolException', 'ServiceException', 'api_version', 'expose_rpc',
+]
 
 class Binary(xmlrpclib.Binary):
     """ RPC Binary type. Currently == xmlrpclib.Binary. """
@@ -62,6 +65,14 @@ class ServiceException(_CompositeRpcError):
 RPC_TYPES = {int: 'int', bool: 'boolean', str: 'string', float: 'double',
              datetime: 'DateTime', Binary: 'Binary',
              list: 'array', dict: 'struct', None: 'int'}
+
+
+def _build_api_version():
+    match = re.match(r'([0-9]+)\.([0-9]+)\.([0-9]+)', __version__)
+    return tuple(int(value) for value in match.groups())
+
+
+api_version = _build_api_version()
 
 
 def expose_rpc(permission, return_type, *arg_types):
@@ -273,8 +284,7 @@ class XMLRPCSystem(Component):
         # version is shown in Installed Plugins on the /about page, so
         # it doesn't need to also be shown in System Information.
         try:
-            self.env.systeminfo.append(('RPC',
-                __import__('tracrpc', ['__version__']).__version__))
+            self.env.systeminfo.append(('RPC', __version__))
         except AttributeError:
             pass
 
@@ -353,6 +363,4 @@ class XMLRPCSystem(Component):
         version number, third is the minor. Changes to the major version
         indicate API breaking changes, while minor version changes are simple
         additions, bug fixes, etc. """
-        import tracrpc
-        match = re.match(r'([0-9]+)\.([0-9]+)\.([0-9]+)', tracrpc.__version__)
-        return map(int, match.groups())
+        return api_version
