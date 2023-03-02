@@ -4,134 +4,304 @@ License: BSD
 
 (c) 2009-2013 ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
+__all__ = ()
 
-import unittest
+import base64
+import contextlib
 import os
+import socket
+import subprocess
+import sys
 import time
-try:
-    from urllib.request import Request
-except ImportError:
+import unittest
+
+if sys.version_info[0] == 2:
     from urllib2 import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm,
                          HTTPError, Request, build_opener, urlopen)
+    from urllib import urlencode
     from urlparse import urlparse, urlsplit
 else:
     from urllib.error import HTTPError
-    from urllib.parse import urlparse, urlsplit
+    from urllib.parse import urlencode, urlparse, urlsplit
     from urllib.request import (HTTPBasicAuthHandler,
-                                HTTPPasswordMgrWithDefaultRealm, build_opener,
-                                urlopen)
+                                HTTPPasswordMgrWithDefaultRealm, Request,
+                                build_opener, urlopen)
 
-from ..util import PY24
+from trac.env import Environment
+from trac.test import rmtree
+from trac.util import create_file
+from trac.util.compat import close_fds
+from trac.util.text import to_utf8
 
-try:
-    from trac.tests.functional.svntestenv import SvnFunctionalTestEnvironment
 
-    if not hasattr(SvnFunctionalTestEnvironment, 'init'):
-        raise Exception("\nTrac version is out of date. " \
-            "Tests require minimum Trac 0.11.5dev r8303 to run.")
+def _get_topdir():
+    path = os.path.dirname(os.path.abspath(__file__))
+    suffix = '/tracrpc/tests'.replace('/', os.sep)
+    if not path.endswith(suffix):
+        raise RuntimeError("%r doesn't end with %r" % (path, suffix))
+    return path[:-len(suffix)]
 
-    class RpcTestEnvironment(SvnFunctionalTestEnvironment):
 
-        def init(self):
-            self.trac_src = os.path.realpath(os.path.join( 
-                    __import__('trac', []).__file__, '..' , '..'))
-            print("\nFound Trac source: %s" % self.trac_src)
-            SvnFunctionalTestEnvironment.init(self)
-            self.url = "%s:%s" % (self.url, self.port)
+def _get_testdir():
+    dir_ = os.environ.get('TMP') or _get_topdir()
+    if not os.path.isabs(dir_):
+        raise RuntimeError('Non absolute directory: %s' % repr(dir_))
+    return os.path.join(dir_, 'rpctestenv')
 
-        def post_create(self, env):
-            print("Enabling RPC plugin and permissions...")
-            env.config.set('components', 'tracrpc.*', 'enabled')
-            env.config.save()
-            self.getLogger = lambda : env.log
-            self._tracadmin('permission', 'add', 'anonymous', 'XML_RPC')
-            print("Created test environment: %s" % self.dirname)
-            parts = urlsplit(self.url)
-            # Regular URIs
-            self.url_anon = '%s://%s/rpc' % (parts[0], parts[1])
-            self.url_auth = '%s://%s/login/rpc' % (parts[0], parts[1])
-            # URIs with user:pass as part of URL
-            self.url_user = '%s://user:user@%s/login/xmlrpc' % \
-                                (parts[0], parts[1])
-            self.url_admin = '%s://admin:admin@%s/login/xmlrpc' % \
-                                (parts[0], parts[1])
-            SvnFunctionalTestEnvironment.post_create(self, env)
-            print("Starting web server: %s" % self.url)
-            self.restart()
 
-        def _tracadmin(self, *args, **kwargs):
-            do_wait = kwargs.pop('wait', False)
-            SvnFunctionalTestEnvironment._tracadmin(self, *args, **kwargs)
-            if do_wait: # Delay to ensure command executes and caches resets
-                time.sleep(5)
+class RpcTestEnvironment(object):
 
-    rpc_testenv = RpcTestEnvironment(os.path.realpath(os.path.join(
-                os.path.realpath(__file__), '..', '..', '..', 'rpctestenv')),
-                '8765', 'http://127.0.0.1')
+    _testdir = _get_testdir()
+    _plugins_dir = os.path.join(_testdir, 'plugins')
+    _devnull = None
+    _log = None
+    _port = None
+    _envpath = None
+    _htpasswd = None
+    _env = None
+    _tracd = None
+    url = None
+    url_anon = None
+    url_auth = None
+    url_user = None
+    url_admin = None
 
-    import atexit
-    atexit.register(rpc_testenv.stop)
+    def __init__(self):
+        if os.path.isdir(self._testdir):
+            rmtree(self._testdir)
+        os.mkdir(self._testdir)
+        os.mkdir(self._plugins_dir)
 
-    def test_suite():
-        suite = unittest.TestSuite()
-        import tracrpc.tests.api
-        suite.addTest(tracrpc.tests.api.test_suite())
-        import tracrpc.tests.xml_rpc
-        suite.addTest(tracrpc.tests.xml_rpc.test_suite())
-        import tracrpc.tests.json_rpc
-        suite.addTest(tracrpc.tests.json_rpc.test_suite())
-        import tracrpc.tests.ticket
-        suite.addTest(tracrpc.tests.ticket.test_suite())
-        import tracrpc.tests.wiki
-        suite.addTest(tracrpc.tests.wiki.test_suite())
-        import tracrpc.tests.web_ui
-        suite.addTest(tracrpc.tests.web_ui.test_suite())
-        import tracrpc.tests.search
-        suite.addTest(tracrpc.tests.search.test_suite())
-        return suite
+    @property
+    def tracdir(self):
+        return self._envpath
 
-except Exception as e:
-    import sys, traceback
-    traceback.print_exc(file=sys.stdout)
-    print("Trac test infrastructure not available.")
-    print("Install Trac as 'python setup.py develop' (run Trac from source).\n")
-    test_suite = unittest.TestSuite() # return empty suite
-    
-    TracRpcTestCase = unittest.TestCase
-else :
-    __unittest = 1          # Do not show this module in tracebacks
-    class TracRpcTestCase(unittest.TestCase):
-        def setUp(self):
-            log = rpc_testenv.get_trac_environment().log
-            log.info('=' * 70)
-            log.info('(TEST) Starting %s.%s',
-                        self.__class__.__name__,
-                        PY24 and getattr(self, '_TestCase__testMethodName') \
-                            or getattr(self, '_testMethodName', ''))
-            log.info('=' * 70)
+    def init(self):
+        self._devnull = os.open(os.devnull, os.O_RDWR)
+        self._log = os.open(os.path.join(self._testdir, 'tracd.log'),
+                            os.O_WRONLY | os.O_CREAT | os.O_APPEND)
+        self._port = get_ephemeral_port()
+        self.check_call([sys.executable, 'setup.py', 'develop', '-mxd',
+                         self._plugins_dir])
+        self._envpath = os.path.join(self._testdir, 'trac')
+        self.url = 'http://127.0.0.1:%d/%s' % \
+                   (self._port, os.path.basename(self._envpath))
+        self._htpasswd = os.path.join(self._testdir, 'htpasswd.txt')
+        create_file(self._htpasswd,
+                    'admin:$apr1$CJoMFGDO$W5ERyxnTl6qAUa9BbE0QV1\n'
+                    'user:$apr1$ZQuTwNFe$ReYgDiL/gduTvjO29qdYx0\n')
+        inherit = os.path.join(self._testdir, 'inherit.ini')
+        with open(inherit, 'w') as f:
+            f.write('[inherit]\n'
+                    'plugins_dir = %s\n'
+                    '[components]\n'
+                    'tracrpc.* = enabled\n'
+                    '[logging]\n'
+                    'log_type = file\n'
+                    'log_level = INFO\n'
+                    '[trac]\n'
+                    'base_url = %s\n' %
+                    (self._plugins_dir, self.url))
+        args = [sys.executable, '-m', 'trac.admin.console', self._envpath]
+        with self.popen(args, stdin=subprocess.PIPE) as proc:
+            proc.stdin.write(
+                b'initenv --inherit=%s project sqlite:db/trac.db\n'
+                b'permission add admin TRAC_ADMIN\n'
+                b'permission add anonymous XML_RPC\n'
+                % to_utf8(inherit))
+        self.url_anon = '%s/rpc' % self.url
+        self.url_auth = '%s/login/rpc' % self.url
+        self.url_user = '%s/login/xmlrpc' % \
+                        self.url.replace('://', '://user:user@')
+        self.url_admin = '%s/login/xmlrpc' % \
+                         self.url.replace('://', '://admin:admin@')
+        self.start()
 
-        def failUnlessRaises(self, excClass, callableObj, *args, **kwargs):
-            """Enhanced assertions to detect exceptions."""
+    def cleanup(self):
+        self.stop()
+        if self._env:
+            self._env.shutdown()
+            self._env = None
+        if self._devnull is not None:
+            os.close(self._devnull)
+            self._devnull = None
+        if self._log is not None:
+            os.close(self._log)
+            self._log = None
+
+    def start(self):
+        if self._tracd and self._tracd.returncode is None:
+            raise RuntimeError('tracd is running')
+        args = [
+            sys.executable, '-m', 'trac.web.standalone',
+            '--port=%d' % self._port,
+            '--basic-auth=*,%s,realm' % self._htpasswd, self._envpath,
+        ]
+        self._tracd = self.popen(args, stdout=self._log, stderr=self._log)
+        start = time.time()
+        while time.time() - start < 10:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
-                callableObj(*args, **kwargs)
-            except excClass as e:
-                return e
-            except self.failureException :
-                raise
-            except Exception as e :
-                if hasattr(excClass, '__name__'): excName = excClass.__name__
-                else: excName = str(excClass)
-
-                if hasattr(e, '__name__'): excMsg = e.__name__
-                else: excMsg = str(e)
-
-                raise self.failureException("\n\nExpected %s\n\nGot %s : %s" % (
-                                        excName, e.__class__.__name__, excMsg))
+                s.connect(('127.0.0.1', self._port))
+            except socket.error:
+                time.sleep(0.125)
             else:
-                excName = excClass.__name__ \
-                          if hasattr(excClass,'__name__') else \
-                          str(excClass)
-                raise self.failureException("Expected %s\n\nNothing raised" %
-                                            excName)
+                break
+            finally:
+                s.close()
+        else:
+            raise RuntimeError('Timed out waiting for tracd to start')
 
-        assertRaises = failUnlessRaises
+    def stop(self):
+        if self._tracd:
+            try:
+                self._tracd.terminate()
+            except EnvironmentError:
+                pass
+            self._tracd.wait()
+            self._tracd = None
+
+    def restart(self):
+        self.stop()
+        self.start()
+
+    def popen(self, *args, **kwargs):
+        kwargs.setdefault('stdin', self._devnull)
+        kwargs.setdefault('stdout', self._devnull)
+        kwargs.setdefault('stderr', self._devnull)
+        kwargs.setdefault('close_fds', close_fds)
+        return Popen(*args, **kwargs)
+
+    def check_call(self, *args, **kwargs):
+        kwargs.setdefault('stdin', self._devnull)
+        kwargs.setdefault('stdout', subprocess.PIPE)
+        kwargs.setdefault('stderr', subprocess.PIPE)
+        with self.popen(*args, **kwargs) as proc:
+            stdout, stderr = proc.communicate()
+            if proc.returncode != 0:
+                raise RuntimeError('Exited with %d (stdout %r, stderr %r)' %
+                                   (proc.returncode, stdout, stderr))
+
+    def get_trac_environment(self):
+        if not self._env:
+            self._env = Environment(self._envpath)
+        return self._env
+
+    def _tracadmin(self, *args):
+        self.check_call((sys.executable, '-m', 'trac.admin.console',
+                         self._envpath) + args)
+
+
+if hasattr(subprocess.Popen, '__enter__'):
+    Popen = subprocess.Popen
+else:
+    class Popen(subprocess.Popen):
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            try:
+                if self.stdin:
+                    self.stdin.close()
+            finally:
+                self.wait()
+            for f in (self.stdout, self.stderr):
+                if f:
+                    f.close()
+
+
+def get_ephemeral_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('127.0.0.1', 0))
+        s.listen(1)
+        return s.getsockname()[1]
+    finally:
+        s.close()
+
+
+_rpc_testenv = None
+
+
+def _new_testenv():
+    global _rpc_testenv
+    if not _rpc_testenv:
+        _rpc_testenv = RpcTestEnvironment()
+        _rpc_testenv.init()
+
+
+def _del_testenv():
+    global _rpc_testenv
+    if _rpc_testenv:
+        _rpc_testenv.cleanup()
+        _rpc_testenv = None
+
+
+class TracRpcTestCase(unittest.TestCase):
+
+    @property
+    def _testenv(self):
+        return _rpc_testenv
+
+    @contextlib.contextmanager
+    def _plugin(self, source, filename):
+        filename = os.path.join(_rpc_testenv.tracdir, 'plugins', filename)
+        create_file(filename, source)
+        try:
+            _rpc_testenv.restart()
+            yield
+        finally:
+            os.unlink(filename)
+            _rpc_testenv.restart()
+
+    def _grant_perm(self, username, *actions):
+        _rpc_testenv._tracadmin('permission', 'add', username, *actions)
+        _rpc_testenv.restart()
+
+    def _revoke_perm(self, username, *actions):
+        _rpc_testenv._tracadmin('permission', 'remove', username, *actions)
+        _rpc_testenv.restart()
+
+
+class TracRpcTestSuite(unittest.TestSuite):
+
+    def run(self, result):
+        if _rpc_testenv:
+            created = False
+        else:
+            _new_testenv()
+            created = True
+        try:
+            return super(TracRpcTestSuite, self).run(result)
+        finally:
+            if created:
+                _del_testenv()
+
+
+def b64encode(s):
+    if not isinstance(s, bytes):
+        s = s.encode('utf-8')
+    rv = base64.b64encode(s)
+    if isinstance(rv, bytes):
+        rv = rv.decode('ascii')
+    return rv
+
+
+def form_urlencoded(data):
+    return to_utf8(urlencode(data))
+
+
+def makeSuite(testCaseClass, suiteClass=unittest.TestSuite):
+    loader = unittest.TestLoader()
+    loader.suiteClass = suiteClass
+    return loader.loadTestsFromTestCase(testCaseClass)
+
+
+def test_suite():
+    suite = TracRpcTestSuite()
+    from . import api, xml_rpc, json_rpc, ticket, wiki, web_ui, search
+    for mod in (api, xml_rpc, json_rpc, ticket, wiki, web_ui, search):
+        suite.addTest(mod.test_suite())
+    return suite

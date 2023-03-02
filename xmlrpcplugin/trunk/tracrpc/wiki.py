@@ -6,7 +6,6 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
-import inspect
 import io
 import os
 from datetime import datetime
@@ -21,12 +20,14 @@ from trac.wiki.api import WikiSystem, IWikiPageManipulator
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import format_to_html
 
-from .api import IXMLRPCHandler, Binary
+from .api import IXMLRPCHandler, Binary, unicode
+from .util import getargspec
+
 
 __all__ = ['WikiRPC']
 
 
-if 'remote_addr' in inspect.getargspec(WikiPage.save)[0]:
+if 'remote_addr' in getargspec(WikiPage.save)[0]:
     def _page_save(page, author, comment, remote_addr=None, t=None):
         page.save(author, comment, remote_addr=remote_addr, t=t)
 else:
@@ -128,8 +129,8 @@ class WikiRPC(Component):
         for manipulator in self.manipulators:
             manipulator.prepare_wiki_page(req, page, fields)
         context = web_context(req, page.resource, absurls=True)
-        html = format_to_html(self.env, context, fields['text'])
-        return '<html><body>%s</body></html>' % html.encode('utf-8')
+        html = unicode(format_to_html(self.env, context, fields['text']))
+        return '<html><body>%s</body></html>' % html
 
     def getAllPages(self, req):
         """ Returns a list of all pages. The result is an array of utf8 pagenames. """
@@ -144,9 +145,9 @@ class WikiRPC(Component):
         page = WikiPage(self.env, pagename, version)
         req.perm(page.resource).require('WIKI_VIEW')
         if page.exists:
-            last_update = page.get_history().next()
-            return self._page_info(page.name, last_update[1],
-                                   last_update[2], page.version, page.comment)
+            for item in page.get_history():
+                return self._page_info(page.name, item[1], item[2],
+                                       page.version, page.comment)
 
     def putPage(self, req, pagename, content, attributes):
         """ writes the content of the page. """

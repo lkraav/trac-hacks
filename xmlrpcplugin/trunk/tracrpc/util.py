@@ -6,6 +6,7 @@ License: BSD
 (c) 2009-2013 ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
+import inspect
 import sys
 
 
@@ -33,9 +34,14 @@ else:
     from xmlrpc import client as xmlrpclib
 
 
+getargspec = inspect.getfullargspec \
+             if hasattr(inspect, 'getfullargspec') else \
+             inspect.getargspec
+
+
 def accepts_mimetype(req, mimetype):
     if isinstance(mimetype, basestring):
-      mimetype = (mimetype,)
+        mimetype = (mimetype,)
     accept = req.get_header('Accept')
     if accept is None :
         # Don't make judgements if no MIME type expected and method is GET

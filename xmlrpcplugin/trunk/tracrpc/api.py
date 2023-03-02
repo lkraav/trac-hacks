@@ -15,7 +15,8 @@ from trac.core import (Component, ExtensionPoint, Interface, TracError,
 from trac.perm import IPermissionRequestor
 
 from . import __version__
-from .util import basestring, unicode, xmlrpclib
+from .util import basestring, getargspec, unicode, xmlrpclib
+
 
 __all__ = [
     'IRPCProtocol', 'IXMLRPCHandler', 'AbstractRPCHandler', 'Method',
@@ -234,7 +235,7 @@ class Method(object):
         """ Return the signature of this method. """
         if hasattr(self, '_signature'):
             return self._signature
-        fullargspec = inspect.getargspec(self.callable)
+        fullargspec = getargspec(self.callable)
         argspec = fullargspec[0]
         assert argspec[0:2] == ['self', 'req'] or argspec[0] == 'req', \
             'Invalid argspec %s for %s' % (argspec, self.name)

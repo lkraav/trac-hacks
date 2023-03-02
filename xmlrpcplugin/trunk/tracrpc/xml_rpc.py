@@ -58,7 +58,7 @@ def to_xmlrpc_datetime(dt):
 def from_xmlrpc_datetime(data):
     """Return datetime (in utc) from XMLRPC datetime string (is always utc)"""
     t = list(time.strptime(data.value, "%Y%m%dT%H:%M:%S")[0:6])
-    return apply(datetime.datetime, t, {'tzinfo': utc})
+    return datetime.datetime(*t, tzinfo=utc)
 
 
 class XmlRpcProtocol(Component):

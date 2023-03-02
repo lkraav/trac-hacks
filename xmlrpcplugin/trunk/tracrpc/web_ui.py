@@ -30,18 +30,11 @@ try:
 except ImportError:  # Trac 1.3.1+
     from trac.web.api import HTTPInternalServerError
 
-if hasattr(Chrome, 'jenv'):
-    from trac.util.text import jinja2template
-    import jinja2
-    genshi = None
-else:
-    jinja2template = None
-    jinja2 = None
-    import genshi
-    import genshi.template
-    import genshi.template.text
 
 __all__ = ['RPCWeb']
+
+_use_jinja2 = hasattr(Chrome, 'jenv')
+
 
 class RPCWeb(Component):
     """ Handle RPC calls from HTTP clients, as well as presenting a list of
@@ -57,13 +50,15 @@ class RPCWeb(Component):
     def match_request(self, req):
         """ Look for available protocols serving at requested path and
             content-type. """
-        content_type = req.get_header('Content-Type') or 'text/html'
+        content_type = req.get_header('Content-Type')
+        if content_type:
+            content_type = content_type.split(';', 1)[0].strip().lower()
         must_handle_request = req.path_info in ('/rpc', '/login/rpc')
         for protocol in self.protocols:
             for p_path, p_type in protocol.rpc_match():
                 if req.path_info in ['/%s' % p_path, '/login/%s' % p_path]:
                     must_handle_request = True
-                    if content_type.startswith(p_type):
+                    if content_type == p_type:
                         req.args['protocol'] = protocol
                         return True
         # No protocol call, need to handle for docs or error if handled path
@@ -71,14 +66,13 @@ class RPCWeb(Component):
 
     def process_request(self, req):
         protocol = req.args.get('protocol', None)
-        content_type = req.get_header('Content-Type') or 'text/html'
+        content_type = req.get_header('Content-Type') or ''
         if protocol:
             # Perform the method call
-            self.log.debug("RPC incoming request of content type '%s' "
-                           "dispatched to %s", content_type, repr(protocol))
+            self.log.debug("RPC incoming request of content type %r "
+                           "dispatched to %r", content_type, protocol)
             self._rpc_process(req, protocol, content_type)
-        elif accepts_mimetype(req, 'text/html') \
-                    or content_type.startswith('text/html'):
+        elif accepts_mimetype(req, 'text/html'):
             return self._dump_docs(req)
         else:
             # Attempt at API call gone wrong. Raise a plain-text 415 error
@@ -128,7 +122,7 @@ class RPCWeb(Component):
                 'version': __version__,
             },
         }
-        if hasattr(Chrome, 'jenv'):
+        if _use_jinja2:
             return 'rpc_jinja.html', data
         else:
             return 'rpc.html', data, None

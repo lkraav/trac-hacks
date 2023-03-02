@@ -7,67 +7,58 @@ License: BSD
 
 import unittest
 
-import os
-import shutil
-import datetime
-import time
-
 from ..util import xmlrpclib
-from . import rpc_testenv, TracRpcTestCase
+from . import TracRpcTestCase, TracRpcTestSuite, makeSuite
+
 
 class RpcSearchTestCase(TracRpcTestCase):
 
     def setUp(self):
         TracRpcTestCase.setUp(self)
-        self.anon = xmlrpclib.ServerProxy(rpc_testenv.url_anon)
-        self.user = xmlrpclib.ServerProxy(rpc_testenv.url_user)
-        self.admin = xmlrpclib.ServerProxy(rpc_testenv.url_admin)
+        self.anon = xmlrpclib.ServerProxy(self._testenv.url_anon)
+        self.user = xmlrpclib.ServerProxy(self._testenv.url_user)
+        self.admin = xmlrpclib.ServerProxy(self._testenv.url_admin)
 
     def tearDown(self):
+        for proxy in (self.anon, self.user, self.admin):
+            proxy('close')()
         TracRpcTestCase.tearDown(self)
 
     def test_fragment_in_search(self):
         t1 = self.admin.ticket.create("ticket10786", "",
                         {'type': 'enhancement', 'owner': 'A'})
         results = self.user.search.performSearch("ticket10786")
-        self.assertEquals(1, len(results))
-        self.assertEquals('<span class="new">#%d</span>: enhancement: '
-                          'ticket10786 (new)' % t1,
-                          results[0][1])
-        self.assertEquals(0, self.admin.ticket.delete(t1))
+        self.assertEqual(1, len(results))
+        self.assertEqual('<span class="new">#%d</span>: enhancement: '
+                         'ticket10786 (new)' % t1, results[0][1])
+        self.assertEqual(0, self.admin.ticket.delete(t1))
 
     def test_search_none_result(self):
         # Some plugins may return None instead of empty iterator
         # https://trac-hacks.org/ticket/12950
 
         # Add custom plugin to provoke error
-        plugin = os.path.join(rpc_testenv.tracdir, 'plugins',
-                              'NoneSearchPlugin.py')
-        open(plugin, 'w').write(
-        "from trac.core import *\n"
-        "from trac.search.api import ISearchSource\n"
-        "class NoneSearch(Component):\n"
-        "    implements(ISearchSource)\n"
-        "    def get_search_filters(self, req):\n"
-        "        yield ('test', 'Test')\n"
-        "    def get_search_results(self, req, terms, filters):\n"
-        "        self.log.debug('Search plugin returning None')\n"
-        "        return None")
-        rpc_testenv.restart()
-
-        # Test
-        results = self.user.search.performSearch("nothing_should_be_found")
-        self.assertEquals([], results)
-
-        # Remove plugin and restart
-        os.unlink(plugin)
-        rpc_testenv.restart()
+        source = r"""# -*- coding: utf-8 -*-
+from trac.core import *
+from trac.search.api import ISearchSource
+class NoneSearch(Component):
+    implements(ISearchSource)
+    def get_search_filters(self, req):
+        yield ('test', 'Test')
+    def get_search_results(self, req, terms, filters):
+        self.log.debug('Search plugin returning None')
+        return None
+"""
+        with self._plugin(source, 'NoneSearchPlugin.py'):
+            results = self.user.search.performSearch("nothing_should_be_found")
+            self.assertEqual([], results)
 
 
 def test_suite():
-    test_suite = unittest.TestSuite()
-    test_suite.addTest(unittest.makeSuite(RpcSearchTestCase))
-    return test_suite
+    suite = TracRpcTestSuite()
+    suite.addTest(makeSuite(RpcSearchTestCase))
+    return suite
+
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

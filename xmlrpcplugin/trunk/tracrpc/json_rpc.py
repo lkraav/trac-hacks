@@ -5,6 +5,7 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
+import base64
 import datetime
 import json
 import re
@@ -24,9 +25,11 @@ from trac.util.text import empty, exception_to_unicode, to_unicode
 from trac.web.api import RequestDone
 
 from .api import IRPCProtocol, Binary, MethodNotFound, ProtocolException
-from .util import basestring, prepare_docs, unicode, izip
+from .util import basestring, iteritems, prepare_docs, unicode, izip
+
 
 __all__ = ['JsonRpcProtocol']
+
 
 class TracRpcJSONEncoder(json.JSONEncoder):
     """ Extending the JSON encoder to support some additional types:
@@ -40,19 +43,21 @@ class TracRpcJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             # http://www.ietf.org/rfc/rfc3339.txt
-            return {'__jsonclass__': ["datetime",
-                            obj.strftime('%Y-%m-%dT%H:%M:%S')]}
-        elif isinstance(obj, Binary):
-            return {'__jsonclass__': ["binary",
-                            obj.data.encode("base64")]}
-        elif obj is empty:
+            value = obj.strftime('%Y-%m-%dT%H:%M:%S')
+            return {'__jsonclass__': ["datetime", value]}
+        if isinstance(obj, Binary):
+            encoded = base64.b64encode(obj.data)
+            if not isinstance(encoded, str):
+                encoded = unicode(encoded, 'ascii')
+            return {'__jsonclass__': ["binary", encoded]}
+        if obj is empty:
             return ''
-        elif isinstance(obj, (Fragment, Markup)):
+        if isinstance(obj, (Fragment, Markup)):
             return unicode(obj)
-        elif babel and isinstance(obj, babel.support.LazyProxy):
+        if babel and isinstance(obj, babel.support.LazyProxy):
             return unicode(obj)
-        else:
-            return json.JSONEncoder(self, obj)
+        return super(TracRpcJSONEncoder, self).default(obj)
+
 
 class TracRpcJSONDecoder(json.JSONDecoder):
     """ Extending the JSON decoder to support some additional types:
@@ -64,45 +69,47 @@ class TracRpcJSONDecoder(json.JSONDecoder):
 
     def _normalize(self, obj):
         """ Helper to traverse JSON decoded object for custom types. """
+        normalize = self._normalize
         if isinstance(obj, tuple):
-            return tuple(self._normalize(item) for item in obj)
-        elif isinstance(obj, list):
-            return [self._normalize(item) for item in obj]
-        elif isinstance(obj, dict):
-            if list(obj) == ['__jsonclass__']:
-                kind, val = obj['__jsonclass__']
-                if kind == 'datetime':
-                    dt = self.dt.match(val)
-                    if not dt:
-                        raise Exception(
-                                "Invalid datetime string (%s)" % val)
-                    dt = tuple([int(i) for i in dt.groups() if i])
-                    kw_args = {'tzinfo': utc}
-                    return datetime.datetime(*dt, **kw_args)
-                elif kind == 'binary':
-                    try:
-                        bin = val.decode("base64")
-                        return Binary(bin)
-                    except:
-                        raise Exception("Invalid base64 string")
-                else:
-                    raise Exception("Unknown __jsonclass__: %s" % kind)
-            else:
-                return dict(self._normalize(obj.items()))
-        elif isinstance(obj, basestring):
-            return to_unicode(obj)
-        else:
+            return tuple(normalize(item) for item in obj)
+        if isinstance(obj, list):
+            return [normalize(item) for item in obj]
+        if isinstance(obj, unicode):
             return obj
+        if isinstance(obj, bytes):
+            return to_unicode(obj)
+        if isinstance(obj, dict):
+            if len(obj) != 1 or tuple(obj) != ('__jsonclass__',):
+                return dict(normalize(item) for item in iteritems(obj))
+            kind, val = obj['__jsonclass__']
+            if kind == 'datetime':
+                dt = self.dt.match(val)
+                if not dt:
+                    raise Exception("Invalid datetime string (%s)" % val)
+                dt = tuple([int(i) for i in dt.groups() if i])
+                kw_args = {'tzinfo': utc}
+                return datetime.datetime(*dt, **kw_args)
+            if kind == 'binary':
+                try:
+                    data = base64.b64decode(val)
+                except:
+                    raise Exception("Invalid base64 string")
+                else:
+                    return Binary(data)
+            raise Exception("Unknown __jsonclass__: %s" % kind)
+        return obj
 
     def decode(self, obj, *args, **kwargs):
-        obj = json.JSONDecoder.decode(self, obj, *args, **kwargs)
+        obj = super(TracRpcJSONDecoder, self).decode(obj, *args, **kwargs)
         return self._normalize(obj)
+
 
 class JsonProtocolException(ProtocolException):
     """Impossible to handle JSON-RPC request."""
     def __init__(self, details, code=-32603, title=None, show_traceback=False):
         ProtocolException.__init__(self, details, title, show_traceback)
         self.code = code
+
 
 class JsonRpcProtocol(Component):
     r"""
@@ -141,15 +148,18 @@ class JsonRpcProtocol(Component):
     def parse_rpc_request(self, req, content_type):
         """ Parse JSON-RPC requests"""
         try:
-            data = _json_load(req)
+            data = json_load(req)
         except Exception as e:
             self.log.warning("RPC(json) decode error: %s",
                              exception_to_unicode(e))
-            raise JsonProtocolException(e, -32700)
+            if sys.version_info[0] == 2:
+                message = to_unicode(e)
+            else:
+                message = 'No JSON object could be decoded (%s)' % e
+            raise JsonProtocolException(message, -32700)
         if not isinstance(data, dict):
             self.log.warning("RPC(json) decode error (not a dict)")
-            raise JsonProtocolException('JSON object is not a dict',
-                                        -32700)
+            raise JsonProtocolException('JSON object is not a dict', -32700)
 
         try:
             self.log.info("RPC(json) JSON-RPC request ID : %s.", data.get('id'))
@@ -241,6 +251,7 @@ class JsonRpcProtocol(Component):
                 'code': c,
                 'message': to_unicode(e)}}
 
+
 class RequestReader(object):
 
     req = None
@@ -267,11 +278,12 @@ class RequestReader(object):
             self.remaining -= len(data)
         return data
 
+
 if sys.version_info[:2] != (3, 5):
-    def _json_load(req):
+    def json_load(req):
         return json.load(RequestReader(req), cls=TracRpcJSONDecoder)
 else:
     import codecs
-    def _json_load(req):
+    def json_load(req):
         reader = codecs.getreader('utf-8')(RequestReader(req))
         return json.load(reader, cls=TracRpcJSONDecoder)
