@@ -15,11 +15,11 @@ import sys
 import unittest
 
 from trac.test import EnvironmentStub, MockRequest
-from trac.util.datefmt import utc
+from trac.util.datefmt import FixedOffset, timezone, utc
 from trac.util.text import to_utf8
 
 from ..util import unicode
-from ..json_rpc import json_load
+from ..json_rpc import TracRpcJSONDecoder, TracRpcJSONEncoder, json_load
 from . import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm, Request,
                TracRpcTestCase, TracRpcTestSuite, b64encode, build_opener,
                urlopen, makeSuite)
@@ -78,6 +78,110 @@ class JsonTestCase(TracRpcTestCase):
                          params[2])
         self.assertEqual(image, params[3])
         self.assertEqual(4, len(params))
+
+    def test_parse_datetime(self):
+        def test(expected, value):
+            actual = TracRpcJSONDecoder._parse_datetime(value)
+            self.assertEqual(expected, actual)
+            self.assertEqual(expected.tzinfo.utcoffset(None),
+                             actual.tzinfo.utcoffset(None))
+
+        gmt09 = FixedOffset(540, 'GMT +9:00')
+        gmt0845 = FixedOffset(525, 'GMT +8:45')
+
+        test(datetime(2023, 3, 6, 0, 0, 0, 0, utc), '2023-03-06')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc), '2023-03-06T08:41:32Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 700000, utc),
+                      '2023-03-06T08:41:32.7Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 730000, utc),
+                      '2023-03-06T08:41:32.73Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06T08:41:32.737Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737368, utc),
+                      '2023-03-06T08:41:32.737368Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc), '2023-03-06t08:41:32z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06t08:41:32.737z')
+        test(datetime(2023, 3, 6, 17, 41, 32, 0, gmt09),
+                      '2023-03-06T17:41:32+09:00')
+        test(datetime(2023, 3, 6, 17, 41, 32, 737000, gmt09),
+                      '2023-03-06T17:41:32.737+09:00')
+        test(datetime(2023, 3, 6, 17, 41, 32, 737368, gmt09),
+                      '2023-03-06T17:41:32.737368+09:00')
+        test(datetime(2023, 3, 6, 17, 41, 32, 0, gmt09),
+                      '2023-03-06 17:41:32+09:00')
+        test(datetime(2023, 3, 6, 17, 41, 32, 700000, gmt09),
+                      '2023-03-06 17:41:32.7+09:00')
+        test(datetime(2023, 3, 6, 17, 41, 32, 730000, gmt09),
+                      '2023-03-06 17:41:32.73+09:00')
+        test(datetime(2023, 3, 6, 17, 41, 32, 737000, gmt09),
+                      '2023-03-06 17:41:32.737+09:00')
+        test(datetime(2023, 3, 6, 17, 41, 32, 737368, gmt09),
+                      '2023-03-06 17:41:32.737368+09:00')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc),
+                      '2023-03-06 08:41:32Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc),
+                      '2023-03-06_08:41:32Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc),
+                      '2023-03-06 08:41:32z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc),
+                      '2023-03-06_08:41:32z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 700000, utc),
+                      '2023-03-06 08:41:32.7Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 730000, utc),
+                      '2023-03-06 08:41:32.73Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06 08:41:32.737Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06_08:41:32.737Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737368, utc),
+                      '2023-03-06 08:41:32.737368Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737368, utc),
+                      '2023-03-06_08:41:32.737368Z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06 08:41:32.737z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06_08:41:32.737z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737368, utc),
+                      '2023-03-06 08:41:32.737368z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737368, utc),
+                      '2023-03-06_08:41:32.737368z')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc),
+                      '2023-03-06 08:41:32-00:00')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06 08:41:32.737-00:00')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc),
+                      '2023-03-06T08:41:32-00:00')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06T08:41:32.737-00:00')
+        test(datetime(2023, 3, 6, 17, 26, 32, 0, gmt0845),
+                      '2023-03-06T17:26:32+08:45')
+        test(datetime(2023, 3, 6, 8, 41, 32, 0, utc),
+                      '2023-03-06T08:41:32+00:00')
+        test(datetime(2023, 3, 6, 8, 41, 32, 737000, utc),
+                      '2023-03-06T08:41:32.737+00:00')
+
+    def test_dump_datetime(self):
+        def test(expected, value):
+            actual = json.dumps(value, cls=TracRpcJSONEncoder)
+            self.assertEqual(expected, actual)
+
+        test('{"__jsonclass__": ["datetime", "2023-03-06T00:00:00"]}',
+             datetime(2023, 3, 6, 0, 0, 0, 0, utc))
+        test('{"__jsonclass__": ["datetime", "2023-03-06T20:21:00"]}',
+             datetime(2023, 3, 6, 20, 21, 0, 0, utc))
+        test('{"__jsonclass__": ["datetime", "2023-03-06T20:21:42"]}',
+             datetime(2023, 3, 6, 20, 21, 42, 0, utc))
+        test('{"__jsonclass__": ["datetime", "2023-03-06T20:21:42.900000"]}',
+             datetime(2023, 3, 6, 20, 21, 42, 900000, utc))
+        test('{"__jsonclass__": ["datetime", "2023-03-06T20:21:42.975000"]}',
+             datetime(2023, 3, 6, 20, 21, 42, 975000, utc))
+        test('{"__jsonclass__": ["datetime", "2023-03-06T20:21:42.975321"]}',
+             datetime(2023, 3, 6, 20, 21, 42, 975321, utc))
+        test('{"__jsonclass__": ["datetime", "2023-03-06T18:21:42.975321"]}',
+             datetime(2023, 3, 6, 20, 21, 42, 975321, timezone('GMT +2:00')))
+        test('{"__jsonclass__": ["datetime", "2023-03-07T00:21:42.975321"]}',
+             datetime(2023, 3, 6, 20, 21, 42, 975321, timezone('GMT -4:00')))
 
     def test_call(self):
         result = self._anon_req(

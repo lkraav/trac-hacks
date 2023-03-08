@@ -19,13 +19,13 @@ except ImportError:
 from trac.core import Component, implements
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
-from trac.util.datefmt import utc
+from trac.util.datefmt import FixedOffset, utc
 from trac.util.html import Fragment, Markup
 from trac.util.text import empty, exception_to_unicode, to_unicode
 from trac.web.api import RequestDone
 
 from .api import IRPCProtocol, Binary, MethodNotFound, ProtocolException
-from .util import basestring, iteritems, prepare_docs, unicode, izip
+from .util import iteritems, prepare_docs, unicode, izip
 
 
 __all__ = ['JsonRpcProtocol']
@@ -43,7 +43,13 @@ class TracRpcJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             # http://www.ietf.org/rfc/rfc3339.txt
+            if obj.tzinfo is None:
+                obj = obj.replace(tzinfo=utc)
+            elif obj.tzinfo is not utc:
+                obj = obj.astimezone(utc)
             value = obj.strftime('%Y-%m-%dT%H:%M:%S')
+            if obj.microsecond != 0:
+                value += '.%06d' % obj.microsecond
             return {'__jsonclass__': ["datetime", value]}
         if isinstance(obj, Binary):
             encoded = base64.b64encode(obj.data)
@@ -64,8 +70,58 @@ class TracRpcJSONDecoder(json.JSONDecoder):
     1. {'__jsonclass__': ["datetime", "<rfc3339str>"]} => datetime.datetime
     2. {'__jsonclass__': ["binary", "<base64str>"]} => tracrpc.api.Binary """
 
-    dt = re.compile(
-        '^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,}))?')
+    _datetime_re = re.compile(r"""
+        \A
+        ([0-9]{4})-([0-9]{2})-([0-9]{2})
+        (?:
+            [Tt_ ]
+            ([0-9]{2}):([0-9]{2}):([0-9]{2})
+            (?:\.([0-9]{1,}))?
+            ([Zz]|[-+][0-9]{2}:[0-5][0-9])?
+        )?
+        \Z
+        """, re.VERBOSE)
+
+    @classmethod
+    def _parse_datetime(cls, val):
+        match = cls._datetime_re.match(val)
+        if not match:
+            raise Exception("Invalid datetime string (%s)" % val)
+
+        def convert(idx, arg):
+            if idx < 3:
+                return int(arg)
+            if idx < 6:
+                return int(arg) if arg else 0
+            if idx == 6:
+                return int((arg + '00000')[:6]) if arg else 0
+            if idx == 7:
+                if arg in (None, 'Z', 'z'):
+                    return utc
+                hour = int(arg[1:3])
+                minute = int(arg[4:6])
+                offset = hour * 60 + minute
+                if offset == 0:
+                    return utc
+                if arg.startswith('-'):
+                    offset = -offset
+                name = '%s%d:%02d' % (arg[:1], hour, minute)
+                return FixedOffset(offset, name)
+
+        args = [convert(idx, arg) for idx, arg in enumerate(match.groups())]
+        try:
+            return datetime.datetime(*args)
+        except:
+            raise Exception("Invalid datetime string (%s)" % val)
+
+    @classmethod
+    def _parse_binary(cls, val):
+        try:
+            data = base64.b64decode(val)
+        except:
+            raise Exception("Invalid base64 string")
+        else:
+            return Binary(data)
 
     def _normalize(self, obj):
         """ Helper to traverse JSON decoded object for custom types. """
@@ -83,19 +139,9 @@ class TracRpcJSONDecoder(json.JSONDecoder):
                 return dict(normalize(item) for item in iteritems(obj))
             kind, val = obj['__jsonclass__']
             if kind == 'datetime':
-                dt = self.dt.match(val)
-                if not dt:
-                    raise Exception("Invalid datetime string (%s)" % val)
-                dt = tuple([int(i) for i in dt.groups() if i])
-                kw_args = {'tzinfo': utc}
-                return datetime.datetime(*dt, **kw_args)
+                return self._parse_datetime(val)
             if kind == 'binary':
-                try:
-                    data = base64.b64decode(val)
-                except:
-                    raise Exception("Invalid base64 string")
-                else:
-                    return Binary(data)
+                return self._parse_binary(val)
             raise Exception("Unknown __jsonclass__: %s" % kind)
         return obj
 
