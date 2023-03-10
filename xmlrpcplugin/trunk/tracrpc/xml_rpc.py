@@ -67,7 +67,7 @@ class XmlRpcProtocol(Component):
     popular programming languages.
     Example call using `curl`:
 
-    {{{#!shell
+    {{{
     user: ~ > cat body.xml
     <?xml version="1.0"?>
     <methodCall>
@@ -87,7 +87,7 @@ class XmlRpcProtocol(Component):
 
     The following snippet illustrates how to perform authenticated calls in Python.
 
-    {{{#!pycon
+    {{{
     >>> try:
     ...     from xmlrpc import client as cli
     ... except ImportError:
