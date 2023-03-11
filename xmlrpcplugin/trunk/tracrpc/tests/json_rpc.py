@@ -14,15 +14,14 @@ import pkg_resources
 import sys
 import unittest
 
-from trac.test import EnvironmentStub, MockRequest
+from trac.test import EnvironmentStub
 from trac.util.datefmt import FixedOffset, timezone, utc
-from trac.util.text import to_utf8
 
-from ..util import unicode
+from ..util import to_b, unicode
 from ..json_rpc import TracRpcJSONDecoder, TracRpcJSONEncoder, json_load
-from . import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm, Request,
-               TracRpcTestCase, TracRpcTestSuite, b64encode, build_opener,
-               urlopen, makeSuite)
+from . import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm,
+               MockRequest, Request, TracRpcTestCase, TracRpcTestSuite,
+               b64encode, build_opener, urlopen, makeSuite)
 
 
 class JsonTestCase(TracRpcTestCase):
@@ -53,7 +52,7 @@ class JsonTestCase(TracRpcTestCase):
 
     def test_jsonclass(self):
         image = pkg_resources.resource_string('trac', 'htdocs/feed.png')
-        data = to_utf8(json.dumps({
+        data = to_b(json.dumps({
             'id': 42,
             'method': 'system.getAPIVersion',
             'params': [
@@ -345,7 +344,7 @@ def json_data(data):
         return data
     if isinstance(data, unicode):
         return data.encode('utf-8')
-    return to_utf8(json.dumps(data))
+    return to_b(json.dumps(data))
 
 
 def _raw_json_load(fp):

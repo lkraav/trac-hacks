@@ -13,17 +13,17 @@ from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.html import tag
-from trac.util.text import exception_to_unicode, to_unicode, to_utf8
+from trac.util.text import exception_to_unicode, to_unicode
 from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
-                            add_stylesheet, add_script, Chrome, web_context
+                            add_stylesheet, add_script, Chrome
 from trac.wiki.formatter import format_to_oneliner
 
 from . import __version__
 from .api import (XMLRPCSystem, IRPCProtocol, ProtocolException,
                   ServiceException, api_version)
-from .util import accepts_mimetype
+from .util import accepts_mimetype, to_b, web_context
 
 try:
     from trac.web.api import HTTPInternalError as HTTPInternalServerError
@@ -81,8 +81,7 @@ class RPCWeb(Component):
             self.log.error(body)
             # Close connection without reading request body
             req.send_header('Connection', 'close')
-            req.send(to_utf8(body), 'text/plain',
-                     HTTPUnsupportedMediaType.code)
+            req.send(to_b(body), 'text/plain', HTTPUnsupportedMediaType.code)
 
     # Internal methods
 
@@ -196,7 +195,7 @@ class RPCWeb(Component):
         method_name = req.rpc and req.rpc.get('method') or '(undefined)'
         body = "Unhandled protocol error calling '%s': %s" % (
                                         method_name, to_unicode(e))
-        req.send(to_utf8(body), 'text/plain', HTTPInternalServerError.code)
+        req.send(to_b(body), 'text/plain', HTTPInternalServerError.code)
 
     # ITemplateProvider methods
 

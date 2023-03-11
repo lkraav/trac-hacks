@@ -86,8 +86,8 @@ class DummyProvider(Component):
         # Make a new plugin and restart server
         source = r"""# -*- coding: utf-8 -*-
 from trac.core import *
-from trac.util.text import to_utf8
 from tracrpc.api import *
+from tracrpc.util import to_b
 class DummyProvider(Component):
     implements(IRPCProtocol)
     def rpc_info(self):
@@ -98,7 +98,7 @@ class DummyProvider(Component):
         return {'method' : 'system.getAPIVersion'}
     def send_rpc_error(self, req, e):
         data = e.message if isinstance(e, RPCError) else b'Test failure'
-        req.send(to_utf8(data), 'text/plain', 500)
+        req.send(to_b(data), 'text/plain', 500)
     def send_rpc_result(self, req, result):
         raise RPCError('No good.')
 """

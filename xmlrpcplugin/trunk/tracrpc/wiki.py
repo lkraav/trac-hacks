@@ -15,13 +15,12 @@ from trac.core import Component, ExtensionPoint, TracError, implements
 from trac.resource import Resource, ResourceNotFound
 from trac.util.datefmt import from_utimestamp, to_utimestamp
 from trac.util.text import to_unicode
-from trac.web.chrome import web_context
 from trac.wiki.api import WikiSystem, IWikiPageManipulator
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import format_to_html
 
 from .api import IXMLRPCHandler, Binary, unicode
-from .util import getargspec
+from .util import getargspec, web_context
 
 
 __all__ = ['WikiRPC']

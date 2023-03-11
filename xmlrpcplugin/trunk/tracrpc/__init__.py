@@ -8,7 +8,7 @@ License: BSD
 
 import pkg_resources
 
-pkg_resources.require('Trac>=1.0')
+pkg_resources.require('Trac>=0.12')
 
 __author__ = ['Alec Thomas <alec@swapoff.org>',
               'Odd Simon Simonsen <simon-code@bvnetwork.no>']

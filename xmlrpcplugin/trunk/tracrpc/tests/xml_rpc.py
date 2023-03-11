@@ -10,9 +10,8 @@ import unittest
 from datetime import datetime
 
 from trac.util.datefmt import to_datetime, utc
-from trac.util.text import to_unicode
 
-from ..util import unicode, xmlrpclib
+from ..util import xmlrpclib
 from ..xml_rpc import (to_xmlrpc_datetime, from_xmlrpc_datetime,
                        _illegal_unichrs, REPLACEMENT_CHAR)
 from . import (Request, TracRpcTestCase, TracRpcTestSuite, b64encode, urlopen,

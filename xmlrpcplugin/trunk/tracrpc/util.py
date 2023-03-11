@@ -39,6 +39,14 @@ getargspec = inspect.getfullargspec \
              inspect.getargspec
 
 
+try:
+    from trac.web.chrome import web_context
+except ImportError:
+    from trac.mimeview.api import Context
+    web_context = Context.from_request
+    del Context
+
+
 def accepts_mimetype(req, mimetype):
     if isinstance(mimetype, basestring):
         mimetype = (mimetype,)
@@ -54,3 +62,11 @@ def accepts_mimetype(req, mimetype):
 def prepare_docs(text, indent=4):
     r"""Remove leading whitespace"""
     return text and ''.join(l[indent:] for l in text.splitlines(True)) or ''
+
+
+def to_b(value):
+    if isinstance(value, unicode):
+        return value.encode('utf-8')
+    if isinstance(value, bytes):
+        return value
+    raise TypeError(str(type(value)))

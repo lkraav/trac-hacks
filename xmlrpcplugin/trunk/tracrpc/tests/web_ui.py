@@ -8,8 +8,9 @@ License: BSD
 import sys
 import unittest
 
-from trac.util.text import exception_to_unicode, to_utf8
+from trac.util.text import exception_to_unicode
 
+from ..util import to_b
 from . import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm,
                HTTPError, Request, TracRpcTestCase, TracRpcTestSuite,
                build_opener, form_urlencoded, makeSuite)
@@ -101,8 +102,8 @@ class DocumentationTestCase(TracRpcTestCase):
         if not content_type and sys.version_info[0] == 2 and \
                 req.get_method() == 'GET':
             content_type = 'text/plain'
-        expected = to_utf8("No protocol matching Content-Type '%s' at path "
-                           "'%s'." % (content_type, '/login/rpc'))
+        expected = to_b("No protocol matching Content-Type '%s' at path "
+                        "'/login/rpc'." % content_type)
         try:
             resp = opener.open(req)
         except HTTPError as e:

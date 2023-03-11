@@ -28,10 +28,42 @@ else:
                                 build_opener, urlopen)
 
 from trac.env import Environment
-from trac.test import rmtree
 from trac.util import create_file
 from trac.util.compat import close_fds
-from trac.util.text import to_utf8
+
+try:
+    from trac.test import MockRequest
+except ImportError:
+    def MockRequest(env):
+        import io
+        from trac.test import MockPerm
+        from trac.util.datefmt import utc
+        from trac.web.api import Request as TracRequest
+        from trac.web.main import FakeSession
+        out = io.BytesIO()
+        environ = {'wsgi.url_scheme': 'http', 'wsgi.input': io.BytesIO(b''),
+                   'REQUEST_METHOD': 'GET', 'SERVER_NAME': 'example.org',
+                   'SERVER_PORT': 80, 'SCRIPT_NAME': '/trac',
+                   'trac.base_url': 'http://example.org/trac'}
+        start_response = lambda status, headers: out.write
+        req = TracRequest(environ, start_response)
+        req.callbacks.update({
+            'authname': lambda req: 'anonymous',
+            'perm': lambda req: MockPerm(),
+            'session': lambda req: FakeSession(),
+            'chrome': lambda req: {},
+            'tz': lambda req: utc,
+            'locale': lambda req: None,
+            'form_token': lambda req: 'A' * 20,
+        })
+        return req
+
+try:
+    from trac.test import rmtree
+except ImportError:
+    from shutil import rmtree
+
+from ..util import to_b
 
 
 def _get_topdir():
@@ -108,7 +140,7 @@ class RpcTestEnvironment(object):
                 b'initenv --inherit=%s project sqlite:db/trac.db\n'
                 b'permission add admin TRAC_ADMIN\n'
                 b'permission add anonymous XML_RPC\n'
-                % to_utf8(inherit))
+                % to_b(inherit))
         self.url_anon = '%s/rpc' % self.url
         self.url_auth = '%s/login/rpc' % self.url
         self.url_user = '%s/login/xmlrpc' % \
@@ -290,7 +322,7 @@ def b64encode(s):
 
 
 def form_urlencoded(data):
-    return to_utf8(urlencode(data))
+    return to_b(urlencode(data))
 
 
 def makeSuite(testCaseClass, suiteClass=unittest.TestSuite):

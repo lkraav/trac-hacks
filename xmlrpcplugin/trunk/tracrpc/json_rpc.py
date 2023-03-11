@@ -22,7 +22,7 @@ from trac.resource import ResourceNotFound
 from trac.util.datefmt import FixedOffset, utc
 from trac.util.html import Fragment, Markup
 from trac.util.text import empty, exception_to_unicode, to_unicode
-from trac.web.api import RequestDone
+from trac.web.api import HTTPBadRequest, RequestDone
 
 from .api import IRPCProtocol, Binary, MethodNotFound, ProtocolException
 from .util import iteritems, prepare_docs, unicode, izip
