@@ -11,21 +11,16 @@ import unittest
 from trac.util.text import exception_to_unicode
 
 from ..util import to_b
-from . import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm,
-               HTTPError, Request, TracRpcTestCase, TracRpcTestSuite,
-               build_opener, form_urlencoded, makeSuite)
+from . import (HTTPError, Request, TracRpcTestCase, TracRpcTestSuite,
+               form_urlencoded, makeSuite)
 
 
 class DocumentationTestCase(TracRpcTestCase):
 
     def setUp(self):
         TracRpcTestCase.setUp(self)
-        password_mgr = HTTPPasswordMgrWithDefaultRealm()
-        handler = HTTPBasicAuthHandler(password_mgr)
-        password_mgr.add_password(realm=None,
-                      uri=self._testenv.url_auth,
-                      user='user', passwd='user')
-        self.opener_user = build_opener(handler)
+        self.opener_user = self._opener_auth(self._testenv.url_auth, 'user',
+                                             'user')
 
     def tearDown(self):
         TracRpcTestCase.tearDown(self)

@@ -159,6 +159,21 @@ class UniChr(Component):
             self.assertEqual(u'\U0001D4C1',
                              self.user.test_unichr.unichr(0x1D4C1))
 
+    def test_large_file(self):
+        pagename = 'SandBox/LargeXmlrpc'
+        filename = 'large.dat'
+        rv = self.admin.wiki.putPage(pagename, 'attachment:' + filename, {})
+        self.assertEqual(True, rv)
+
+        content = bytes(bytearray(range(256))) * 4 * 1024 * 4  # 4 MB
+        rv = self.admin.wiki.putAttachmentEx(pagename, filename, 'Large file',
+                                             xmlrpclib.Binary(content))
+        self.assertEqual(filename, rv)
+
+        rv = self.admin.wiki.getAttachment('%s/%s' % (pagename, filename))
+        self.assertIsInstance(rv, xmlrpclib.Binary)
+        self.assertEqual(content, rv.data)
+
 
 def test_suite():
     suite = TracRpcTestSuite()

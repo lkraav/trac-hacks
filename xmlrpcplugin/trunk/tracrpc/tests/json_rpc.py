@@ -19,9 +19,8 @@ from trac.util.datefmt import FixedOffset, timezone, utc
 
 from ..util import to_b, unicode
 from ..json_rpc import TracRpcJSONDecoder, TracRpcJSONEncoder, json_load
-from . import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm,
-               MockRequest, Request, TracRpcTestCase, TracRpcTestSuite,
-               b64encode, build_opener, urlopen, makeSuite)
+from . import (MockRequest, Request, TracRpcTestCase, TracRpcTestSuite,
+               b64encode, urlopen, makeSuite)
 
 
 class JsonTestCase(TracRpcTestCase):
@@ -33,15 +32,11 @@ class JsonTestCase(TracRpcTestCase):
         return _raw_json_load(resp)
 
     def _auth_req(self, data, user='user'):
-        password_mgr = HTTPPasswordMgrWithDefaultRealm()
-        handler = HTTPBasicAuthHandler(password_mgr)
-        password_mgr.add_password(realm=None,
-                      uri=self._testenv.url_auth,
-                      user=user,
-                      passwd=user)
-        req = Request(self._testenv.url_auth, data=json_data(data),
+        url = self._testenv.url_auth
+        req = Request(url, data=json_data(data),
                       headers={'Content-Type': 'application/json'})
-        resp = build_opener(handler).open(req)
+        opener = self._opener_auth(url, user, user)
+        resp = opener.open(req)
         return _raw_json_load(resp)
 
     def setUp(self):
@@ -239,6 +234,32 @@ class JsonTestCase(TracRpcTestCase):
         self.assertTrue(result['result'])
         image_out = base64.b64decode(result['result']['__jsonclass__'][1])
         self.assertEqual(image_in, image_out)
+
+    def test_large_file(self):
+        pagename = 'SandBox/LargeJsonrpc'
+        filename = 'large.dat'
+        payload = {'method': 'wiki.putPage',
+                   'params': [pagename, 'attachment:' + filename, {}]}
+        rv = self._auth_req(payload, user='admin')
+        self.assertEqual({'error': None, 'id': None, 'result': True}, rv)
+
+        content = bytes(bytearray(range(256))) * 4 * 1024 * 4  # 4 MB
+        payload = {'method': 'wiki.putAttachmentEx',
+                   'params': [pagename, filename, 'Large file',
+                   {'__jsonclass__': ['binary', b64encode(content)]}]}
+        rv = self._auth_req(payload, user='admin')
+        self.assertEqual({'error': None, 'id': None, 'result': filename}, rv)
+
+        payload = {'method': 'wiki.getAttachment',
+                   'params': ['%s/%s' % (pagename, filename)]}
+        rv = self._auth_req(payload, user='admin')
+        self.assertEqual(None, rv['error'])
+        result = rv['result']
+        self.assertIsInstance(result, dict)
+        self.assertEqual(['__jsonclass__'], sorted(result))
+        self.assertEqual('binary', result['__jsonclass__'][0])
+        self.assertEqual(content, base64.b64decode(result['__jsonclass__'][1]))
+        self.assertIsInstance(result['__jsonclass__'], list)
 
     def test_fragment(self):
         data = {'method': 'ticket.create',

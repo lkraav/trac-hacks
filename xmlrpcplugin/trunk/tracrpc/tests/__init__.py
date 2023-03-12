@@ -16,15 +16,15 @@ import time
 import unittest
 
 if sys.version_info[0] == 2:
-    from urllib2 import (HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm,
-                         HTTPError, Request, build_opener, urlopen)
+    from urllib2 import BaseHandler, HTTPError, Request, build_opener, urlopen
     from urllib import urlencode
     from urlparse import urlparse, urlsplit
+    HTTPBasicAuthHandler = HTTPPasswordMgrWithPriorAuth = None
 else:
     from urllib.error import HTTPError
     from urllib.parse import urlencode, urlparse, urlsplit
     from urllib.request import (HTTPBasicAuthHandler,
-                                HTTPPasswordMgrWithDefaultRealm, Request,
+                                HTTPPasswordMgrWithPriorAuth, Request,
                                 build_opener, urlopen)
 
 from trac.env import Environment
@@ -79,6 +79,33 @@ def _get_testdir():
     if not os.path.isabs(dir_):
         raise RuntimeError('Non absolute directory: %s' % repr(dir_))
     return os.path.join(dir_, 'rpctestenv')
+
+
+if HTTPPasswordMgrWithPriorAuth:
+    def _build_opener_auth(url, user, password):
+        manager = HTTPPasswordMgrWithPriorAuth()
+        manager.add_password(None, url, user, password, is_authenticated=True)
+        handler = HTTPBasicAuthHandler(manager)
+        return build_opener(handler)
+else:
+    class HTTPBasicAuthPriorHandler(BaseHandler):
+
+        def __init__(self, url, user, password):
+            self.url = url
+            self.user = user
+            self.password = password
+
+        def http_request(self, request):
+            if not request.has_header('Authorization') and \
+                    self.url == request.get_full_url():
+                cred = '%s:%s' % (self.user, self.password)
+                encoded = b64encode(to_b(cred))
+                request.add_header('Authorization', 'Basic ' + encoded)
+            return request
+
+    def _build_opener_auth(url, user, password):
+        handler = HTTPBasicAuthPriorHandler(url, user, password)
+        return build_opener(handler)
 
 
 class RpcTestEnvironment(object):
@@ -276,6 +303,9 @@ class TracRpcTestCase(unittest.TestCase):
     @property
     def _testenv(self):
         return _rpc_testenv
+
+    def _opener_auth(self, url, user, password):
+        return _build_opener_auth(url, user, password)
 
     @contextlib.contextmanager
     def _plugin(self, source, filename):
