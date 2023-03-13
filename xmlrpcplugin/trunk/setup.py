@@ -6,18 +6,7 @@ License: BSD
 (c) 2009      ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
-import sys
-
 from setuptools import setup, find_packages
-
-test_deps = []
-if sys.version_info[0] == 2:
-    test_deps.append('twill')
-
-try:
-    import crypt
-except ImportError:
-    test_deps.append('fcrypt')
 
 setup(
     name='TracXMLRPC',
@@ -31,7 +20,6 @@ setup(
     description='RPC interface to Trac',
     zip_safe=True,
     test_suite='tracrpc.tests.test_suite',
-    tests_require=test_deps,
     packages=find_packages(exclude=['*.tests']),
     package_data={
         'tracrpc': ['templates/*.html', 'htdocs/*.js', 'htdocs/*.css']
