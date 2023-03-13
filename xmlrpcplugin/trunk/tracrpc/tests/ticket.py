@@ -290,7 +290,6 @@ class TicketPolicy(Component):
             self.assertIn("Ticket 3344 does not exist.", str(e))
 
     def test_update_basic(self):
-        import time
         # Basic update check, no 'action' or 'time_changed'
         tid = self.admin.ticket.create('test_update_basic1', 'ieidnsj', {
                         'owner': 'osimons'})
@@ -298,7 +297,7 @@ class TicketPolicy(Component):
         self.admin.ticket.update(tid, "comment1", {'component': 'component2'})
         self.assertEqual(2, len(self.admin.ticket.changeLog(tid)))
         # new-style with 'action'
-        time.sleep(1) # avoid "columns ticket, time, field are not unique"
+        time.sleep(1)  # avoid "columns ticket, time, field are not unique"
         self.admin.ticket.update(tid, "comment2", {'component': 'component1',
                                                    'action': 'leave'})
         self.assertEqual(4, len(self.admin.ticket.changeLog(tid)))

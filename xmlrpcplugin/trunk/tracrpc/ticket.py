@@ -469,7 +469,7 @@ def ticketModelFactory(cls, cls_attributes):
             i.name = name
             for k, v in iteritems(attributes):
                 setattr(i, k, v)
-            i.insert();
+            i.insert()
         create.__doc__ = """ Create a new ticket %s with the given attributes. """ % cls.__name__.lower()
 
         def update(self, req, name, attributes):

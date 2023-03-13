@@ -51,10 +51,10 @@ def accepts_mimetype(req, mimetype):
     if isinstance(mimetype, basestring):
         mimetype = (mimetype,)
     accept = req.get_header('Accept')
-    if accept is None :
+    if accept is None:
         # Don't make judgements if no MIME type expected and method is GET
         return req.method == 'GET'
-    else :
+    else:
         accept = accept.split(',')
         return any(x.strip().startswith(y) for x in accept for y in mimetype)
 

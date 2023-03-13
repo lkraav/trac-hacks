@@ -151,15 +151,15 @@ class RPCWeb(Component):
             # Important ! Check after parsing RPC request to add
             #             protocol-specific fields in response
             #             (e.g. JSON-RPC response `id`)
-            req.perm.require('XML_RPC') # Need at least XML_RPC
+            req.perm.require('XML_RPC')  # Need at least XML_RPC
 
             method_name = rpcreq.get('method')
-            if method_name is None :
+            if method_name is None:
                 raise ProtocolException('Missing method name')
             args = rpcreq.get('params') or []
             self.log.debug("RPC(%s) call by '%s' %s", proto_id,
                            req.authname, method_name)
-            try :
+            try:
                 result = (XMLRPCSystem(self.env).get_method(method_name)(req, args))[0]
                 if isinstance(result, types.GeneratorType):
                     result = list(result)
@@ -171,22 +171,22 @@ class RPCWeb(Component):
                                method_name, args, req.authname,
                                exception_to_unicode(e, traceback=True))
                 raise ServiceException(e)
-            else :
+            else:
                 protocol.send_rpc_result(req, result)
-        except RequestDone :
+        except RequestDone:
             raise
         except (TracError, PermissionError, ResourceNotFound) as e:
             if type(e) is not ServiceException:
                 self.log.warning("RPC(%s) [%s] %s", proto_id, req.remote_addr,
                                  exception_to_unicode(e))
-            try :
+            try:
                 protocol.send_rpc_error(req, e)
-            except RequestDone :
+            except RequestDone:
                 raise
-            except Exception as e :
+            except Exception as e:
                 self.log.exception("RPC(%s) Unhandled protocol error", proto_id)
                 self._send_unknown_error(req, e)
-        except Exception as e :
+        except Exception as e:
             self.log.exception("RPC(%s) Unhandled protocol error", proto_id)
             self._send_unknown_error(req, e)
 

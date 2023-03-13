@@ -7,6 +7,7 @@ License: BSD
 
 import unittest
 
+from ..xml_rpc import XmlRpcProtocol
 from . import (HTTPError, Request, TracRpcTestCase, TracRpcTestSuite, urlopen,
                makeSuite)
 
@@ -34,7 +35,6 @@ class ProtocolProviderTestCase(TracRpcTestCase):
 
     def test_rpc_info(self):
         # Just try getting the docs for XML-RPC to test, it should always exist
-        from ..xml_rpc import XmlRpcProtocol
         xmlrpc = XmlRpcProtocol(self._testenv.get_trac_environment())
         name, docs = xmlrpc.rpc_info()
         self.assertEqual(name, 'XML-RPC')

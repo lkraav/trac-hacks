@@ -122,7 +122,7 @@ class XmlRpcProtocol(Component):
         except Exception as e:
             self.log.debug("RPC(xml) parse error: %s", to_unicode(e))
             raise ProtocolException(xmlrpclib.Fault(-32700, to_unicode(e)))
-        else :
+        else:
             self.log.debug("RPC(xml) call by '%s', method '%s' with args: %s",
                            req.authname, method, repr(args))
             args = self._normalize_xml_input(args)

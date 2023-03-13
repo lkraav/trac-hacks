@@ -241,7 +241,7 @@ class JsonRpcProtocol(Component):
             else:
                 response = self._json_result(result, r_id)
             self.log.debug("RPC(json) result: %r", response)
-            try: # JSON encoding
+            try:  # JSON encoding
                 response = json.dumps(response, cls=TracRpcJSONEncoder)
             except Exception as e:
                 self.log.warning("RPC(json) dumps error: %s",

@@ -31,6 +31,8 @@ from trac.env import Environment
 from trac.util import create_file
 from trac.util.compat import close_fds
 
+from ..util import to_b
+
 try:
     from trac.test import MockRequest
 except ImportError:
@@ -62,8 +64,6 @@ try:
     from trac.test import rmtree
 except ImportError:
     from shutil import rmtree
-
-from ..util import to_b
 
 
 def _get_topdir():
