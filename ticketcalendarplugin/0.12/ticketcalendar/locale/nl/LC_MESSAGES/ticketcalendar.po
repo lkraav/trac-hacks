@@ -1,19 +1,18 @@
-# Japanese translations for TicketCalendarPlugin.
-# Copyright (C) 2013 ORGANIZATION
-# This file is distributed under the same license as the TicketCalendar
-# project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2013.
+# Dutch translations for TicketCalendarPlugin.
+# Copyright (C) 2019 ORGANIZATION
+# This file is distributed under the same license as the
+# TicketCalendarPlugin project.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: TicketCalendar 0.1\n"
+"Project-Id-Version: TicketCalendarPlugin 0.12.0.2\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2019-04-15 19:15+0900\n"
-"PO-Revision-Date: 2013-05-02 13:49+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: ja\n"
-"Language-Team: ja <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0\n"
+"Language: nl\n"
+"Language-Team: nl <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,52 +20,52 @@ msgstr ""
 
 #: ticketcalendar/web_ui.py:373
 msgid "Today"
-msgstr "今日"
+msgstr "Vandaag"
 
 #: ticketcalendar/web_ui.py:382
 #, python-format
 msgid "%d more tickets..."
-msgstr "他%d件"
+msgstr "%d meer tickets..."
 
 #: ticketcalendar/web_ui.py:406
 msgid "Current month"
-msgstr "今月"
+msgstr "Huidige maand"
 
 #: ticketcalendar/templates/ticketcalendar_list.html:7
 #: ticketcalendar/web_ui.py:421
 msgid "Macro"
-msgstr "マクロ"
+msgstr "Macro"
 
 #: ticketcalendar/web_ui.py:428
 #, python-format
 msgid "%(month_name)s, %(year)s"
-msgstr "%(year)s年%(month_name)s"
+msgstr "%(month_name)s, %(year)s"
 
 #: ticketcalendar/web_ui.py:444
 #, python-format
 msgid "New ticket with \"%(date)s\" as the start date"
-msgstr "開始日を \"%(date)s\" にしてチケット作成"
+msgstr "Nieuw ticket met \"%(date)s\" als de startdatum"
 
 #: ticketcalendar/web_ui.py:450
 #, python-format
 msgid "New ticket with \"%(date)s\" as the due date"
-msgstr "期日を \"%(date)s\" にしてチケット作成"
+msgstr "Nieuw ticket met \"%(date)s\" als de einddatum"
 
 #: ticketcalendar/web_ui.py:454
 msgid "Create new ticket"
-msgstr "チケット作成"
+msgstr "Maak nieuw ticket"
 
 #: ticketcalendar/web_ui.py:591
 msgid "The background color for milestones"
-msgstr "マイルストーンの背景色を指定します"
+msgstr "De achtergrond voor mijlpalen"
 
 #: ticketcalendar/web_ui.py:595
 msgid ""
 "The icon name in jquery-ui for milestones. See "
 "https://api.jqueryui.com/theming/icons/."
 msgstr ""
-"マイルストーンで表示する jquery-ui "
-"のアイコン名を指定します。https://api.jqueryui.com/theming/icons/ を参照してください。"
+"De pictogramnaam in jQuery-ui voor mijlpalen. Zie "
+"https://api.jqueryui.com/theming/icons/."
 
 #: ticketcalendar/web_ui.py:601
 msgid ""
@@ -74,8 +73,10 @@ msgid ""
 "priorities. It can be specified explicitly pairs of priority name and "
 "background color. e.g. `blocker:#fa6653, critical:#ffad46, ...`."
 msgstr ""
-"チケットの優先度に使う背景色をカンマ区切りで指定します。優先度と背景色を明示的に指定することもできます。例: `blocker:#fa6653, "
-"critical:#ffad46, ...`"
+"Door komma's gescheiden lijst met achtergrondkleuren die moeten worden "
+"gebruikt voor de ticketprioriteiten. Het kan expliciet worden "
+"gespecificeerd als paren van prioriteitsnaam en achtergrondkleur. bijv. "
+"`blocker:#fa6653, critical:#ffad46, ...`."
 
 #: ticketcalendar/web_ui.py:610
 msgid ""
@@ -85,11 +86,12 @@ msgid ""
 "It can be specified explicitly pairs of ticket type and icon name.\n"
 "e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."
 msgstr ""
-"チケット分類に使う jquery-ui のアイコン名をカンマ区切りで指定します。\n"
-"https://api.jqueryui.com/theming/icons/ を参照してください。\n"
-"\n"
-"チケット分類とアイコン名を明示的に指定することができます。\n"
-"例: `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`"
+"Door komma's gescheiden lijst met pictogramnamen in jQuery-ui om te "
+"gebruiken voor tickettypen.\n"
+"Zie https://api.jqueryui.com/theming/icons/.\n"
+"\\NHet kan expliciet worden gespecificeerd als paren van tickettype en "
+"pictogramnaam.\n"
+"bijv. `defect:ui-icon-contact, taak:ui-icon-lightbulb, ...`."
 
 #: ticketcalendar/web_ui.py:619
 msgid ""
@@ -97,28 +99,29 @@ msgid ""
 "user's locale. Otherwise, use the specified number (0 is Monday as the "
 "first day of the week)."
 msgstr ""
-"カレンダーにおける週の最初の曜日を指定します。-1 "
-"の場合、ユーザのロケールに対応する曜日を使用します。それ以外の場合、指定した値を使用します。(0 が月曜日になります)"
+"De eerste dag van de week in de kalender. Indien -1, gebruik dan de "
+"eerste weekdag in de landinstelling van de gebruiker. Gebruik anders het "
+"opgegeven nummer (0 is maandag als de eerste dag van de week)."
 
 #: ticketcalendar/web_ui.py:625
 msgid "The field name for start date of ticket"
-msgstr "チケット開始日になるフィールド名を指定します"
+msgstr "De veldnaam voor startdatum van ticket"
 
 #: ticketcalendar/web_ui.py:629
 msgid "The format for start date of ticket"
-msgstr "チケット開始日の書式を指定します。"
+msgstr "Het formaat voor startdatum van ticket"
 
 #: ticketcalendar/web_ui.py:633
 msgid "The field name for due date of ticket"
-msgstr "チケット期日になるフィールド名を指定します"
+msgstr "De veldnaam voor de vervaldatum van het ticket"
 
 #: ticketcalendar/web_ui.py:637
 msgid "The format for due date of ticket"
-msgstr "チケット期日の書式を指定します。"
+msgstr "Het formaat voor de vervaldatum van het ticket"
 
 #: ticketcalendar/web_ui.py:703
 msgid "Ticket Calendar"
-msgstr "チケットカレンダー"
+msgstr "Ticket kalender"
 
 #: ticketcalendar/web_ui.py:712
 msgid ""
@@ -143,77 +146,77 @@ msgid ""
 "list\n"
 "   view. The default is today and 7 days.\n"
 msgstr ""
-"チケットとマイルストーンをカレンダーまたはリスト表示します。\n"
-"\n"
-"使い方:\n"
-"{{{\n"
-"[[TicketCalendar(type=box,query=status!=closed,month=2013-05)]]\n"
-"[[TicketCalendar(type=list,query=status!=closed,duration=2013-05-16/P7D)]]"
-"\n"
-"}}}\n"
-"\n"
-" * `type` パラメータはチケットとマイルストーンをどのように表示するかを決めます。\n"
-"   - `box`: カレンダー表示 (デフォルト)\n"
-"   - `list`: リスト表示\n"
-" * `query` パラメータは表示するチケットのクエリとして使われます。\n"
-" * `month` パラメータはカレンダー表示のみで使え、`YYYY-MM` 指定します。デフォルトは当月となります。\n"
-" * `duration` パラメータは `YYYY-MM-DD/PnD` "
-"で指定し、リスト表示のみで使えます。デフォルトは当日で7日分になります。\n"
+"Geef tickets en mijlpalen weer in agenda- of lijstweergave.\n"
+"\\NGebruik:\n"
+"{{{\\N[[TicketCalendar(type=box,query=status!=gesloten,maand=2013-05)]]\n"
+"[[TicketCalendar(type=lijst,query=status!=gesloten,duur=2013-05-16/P7D)]]\\N}}}\\N\\N"
+" * De `type` parameter bepaalt hoe de tickets en mijlpalen zijn "
+"gepresenteerd:\n"
+" - `box`: weergave in kalenderweergave (standaard)\n"
+" - `lijst`: weergeven in lijstweergave\n"
+" * De parameter `query` wordt gebruikt om de weer te geven tickets op te "
+"vragen.\n"
+" * De parameter `maand` kan alleen worden gespecificeerd als `JJJJ-MM` in"
+" agendaweergave,\n"
+" De standaard is huidige maand.\n"
+" * De parameter `duur` kan worden opgegeven als `JJJJ-MM-DD/PnD` in enige"
+" lijst\n"
+" bekijken. De standaard is vandaag en 7 dagen.\n"
 
 #: ticketcalendar/web_ui.py:824
 msgid "Ticket Calendar (Calendar view)"
-msgstr "チケットカレンダー (カレンダー表示)"
+msgstr "Ticket Kalender (Kalenderweergave)"
 
 #: ticketcalendar/web_ui.py:829 ticketcalendar/web_ui.py:854
 msgid "Calendar view"
-msgstr "カレンダー表示"
+msgstr "Kalenderweergave"
 
 #: ticketcalendar/web_ui.py:830 ticketcalendar/web_ui.py:856
 msgid "List view"
-msgstr "リスト表示"
+msgstr "Lijstweergave"
 
 #: ticketcalendar/web_ui.py:846
 msgid "Ticket Calendar (List view)"
-msgstr "チケットカレンダー (リスト表示)"
+msgstr "Ticketkalender (Lijstweergave)"
 
 #: ticketcalendar/templates/ticketcalendar_list.html:15
 msgid "View tickets in last week"
-msgstr "先週のチケットを見る"
+msgstr "Bekijk tickets vorige week"
 
 #: ticketcalendar/templates/ticketcalendar_list.html:25
 msgid "No tickets and no milestones"
-msgstr "チケットなし、マイルストーンなし"
+msgstr "Geen tickets en geen mijlpalen"
 
 #: ticketcalendar/templates/ticketcalendar_list.html:31
 msgid "View tickets in next week"
-msgstr "翌週のチケットを見る"
+msgstr "Bekijk tickets volgende week"
 
 #: ticketcalendar/templates/ticketcalendar_query_form.html:9
 msgid "Sort"
-msgstr "ソート"
+msgstr "Start"
 
 #: ticketcalendar/templates/ticketcalendar_query_form.html:10
 msgid "Query filters"
-msgstr "クエリフィルタ"
+msgstr "Queryfilters"
 
 #: ticketcalendar/templates/ticketcalendar_query_form.html:26
 msgid "Asc"
-msgstr "昇順"
+msgstr "Oplopend"
 
 #: ticketcalendar/templates/ticketcalendar_query_form.html:32
 msgid "Desc"
-msgstr "降順"
+msgstr "Aflopend"
 
 #: ticketcalendar/templates/ticketcalendar_query_form.html:43
 msgid "Update"
-msgstr "更新"
+msgstr "Update"
 
 #: ticketcalendar/templates/ticketcalendar_ticket_detail.html:9
 #, python-format
 msgid "Ticket #%(id)s"
-msgstr "チケット #%(id)s"
+msgstr "Ticket #%(id)s"
 
 #: ticketcalendar/templates/ticketcalendar_ticket_detail.html:16
 msgid "Edit this ticket"
-msgstr "チケット更新"
+msgstr "Bewerk dit ticket"
 
