@@ -80,6 +80,6 @@ box when in edit mode to select & insert a template. The preview will show the
 checklist in your ticket.
 
 
-## Revision Log
+## Revision Logls
 
 * 0.1 - Initial release to PyPI (build) & TracHacks (source)

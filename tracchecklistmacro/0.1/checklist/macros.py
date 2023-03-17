@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
-#
-# Macro that pulls a checklist template from a wiki page, and renders it as
-# a checklist in a ticket description.
-#
-import json, time
+"""
+Macro that pulls a checklist template from a wiki page, and renders it as
+a checklist instance in a ticket description box.
+
+Implements the following trac extensions points (see
+https://trac.edgewall.org/wiki/TracDev/PluginDevelopment/ExtensionPoints/):
+
+ * IRequestHandler - Allows plugins to process HTTP requests
+ * ITemplateProvider - Registers templates/static resurces used by plugin
+
+"""
+
+# pylint: disable=no-member
+
+import re
+import time
+import json
 import pkg_resources
 from pkg_resources import resource_filename
 
@@ -19,142 +31,159 @@ from trac.web.api  import IRequestHandler, IRequestFilter
 from trac.wiki.macros import WikiMacroBase
 from trac.wiki.model import WikiPage
 from trac.wiki.formatter import format_to_html
-from trac.util.html import unescape
-from trac.util.html import Markup, Element, Fragment, tag
+from trac.util.html import Markup, tag
 
 # database schema version / updates (stored in "system" table)
 PLUGIN_NAME = 'TracChecklist'
 PLUGIN_VERSION = 1
 
 class ChecklistMacro(WikiMacroBase):
-    """Loads checklist template from wiki page, display it in ticket description.
+    """Insert checklist instance sourced from wiki page template."""
+    _description = "Insert checklist instance sourced from wiki page template."
 
-    Implements the following trac extensions points:
+    # trac.ini option for wiki page below which all templates are found
+    _root = Option('checklist', 'template_root',
+                   default='TracChecklist',
+                   doc="root wiki page for checklist templates")
 
-        ITemplateProvider - registers templates used by this plugin
-
-    https://trac.edgewall.org/wiki/TracDev/PluginDevelopment/ExtensionPoints/
-    """
-    _description = "Inserts a checklist sourced from a wiki page template."
     implements(ITemplateProvider)
 
     def get_htdocs_dirs(self):
+        """directories where static files are located"""
         return [('checklist', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
+        """directories where html templates are located."""
         return [resource_filename(__name__, 'htdocs')]
 
+    def insert_checkboxes(self, html, status):
+        """Convert [x] placeholders to html checkboxes
+
+        Steps start with [x] and end with \\ in wiki markdown,
+        which converts to <br /> after html formatting:
+            [x] something to do ... <br />
+
+        Args:
+            html    (STR): checklist template wiki page converted to html
+            status (DICT): step is checked if included in this dictionary
+
+        Returns:
+            html (STR): checklist instance with html checkboxes
+        """
+
+        # find all steps
+        cbox = r"(?=\[x])(.*?)(?<=<br \/>)"
+        steps = re.findall(cbox, html)
+
+        # insert checkbox tags
+        cbox_idx = 0
+        for step in steps:
+            cbox_idx = cbox_idx+1
+            cbox_name = 'step_%d' % cbox_idx
+            cbox_label = step[4:]
+            cbox_status = ""
+            if cbox_name in status.keys():
+                cbox_status = "checked"
+
+            cbox_html = Markup((
+                u'<label class="container">'
+                u'<input type="checkbox" name="{}" value="done" {} />{}'
+                u'<span class="checkmark"></span>'
+                u'</label>').format(cbox_name, cbox_status, cbox_label))
+
+            html = html.replace(step, cbox_html)
+
+        return html
+
     def expand_macro(self, formatter, name, content):
-        """Expand the macro into the desired checklist.
+        """Expand the macro into the requested checklist instance.
 
         self.env    : https://trac.edgewall.org/browser/trunk/trac/env.py
         self.config : https://trac.edgewall.org/browser/trunk/trac/config.py
 
-        formatter.resource : id of the ticket calling the macro
-        formatter.href     : url info (base, path_safe, etc.)
-        formatter.wiki     : https://trac.edgewall.org/browser/trunk/trac/wiki/api.py
-        formatter.context  : metadata on the called page with the macro in it
-        formatter.req      : web request that called the page with the macro
+        formatter.resource.realm : wiki, ticket, etc.
+        formatter.resource.id    : id of the ticket calling the macro
+        formatter.href           : url info (base, path_safe, etc.)
+        formatter.wiki           : https://trac.edgewall.org/browser/trunk/trac/wiki/api.py
+        formatter.context        : metadata on the called page with the macro in it
+        formatter.req            : web request that called the page with the macro
 
-        name        : the name of the macro being called (Checklist)
-        content     : the page name string, provided as the argument
+        name     : name of the macro being called (Checklist)
+        content  : name of checklist template (wiki page) from macro argument
         """
 
-        # get current checklist state from db
-        '''
-        realm     : wiki, ticket, etc.
-        resource  : id of page calling the macro
-        checklist : name of checklist called by macro
-        status    = ? (JSON encoded checkbox status)
-        '''
-        query  = ("SELECT status FROM checklist WHERE " +
-                  "realm = %s AND resource  = %s AND checklist = %s ")
-        param  = [formatter.resource.realm,
-                  formatter.resource.id,
-                  content]
+        # get checklist instance states (JSON encoded checkbox status)
+        cbox_status = {}
+        with self.env.db_query as db_query:
 
-        with self.env.db_query as db:
-            cursor = db.cursor()
+            query = ("SELECT status FROM checklist WHERE " +
+                     "realm = %s AND resource  = %s AND checklist = %s ")
+            param = [formatter.resource.realm,
+                     formatter.resource.id,
+                     content]
+
+            cursor = db_query.cursor()
             cursor.execute(query, param)
             row = cursor.fetchone()
+            if row:
+                cbox_status = json.loads(row[0])
 
-            if not row:
-                check_dict = {}
-            else:
-                check_dict = json.loads(row[0])
+        # get checklist template (wiki page)
+        cname = str(self._root) + '/' + content
+        cname = cname.replace('//', '/')
+        page = WikiPage(self.env, cname)
+        if not page.exists:
+            err_msg = ("CHECKLIST ERROR: \n template '" +
+                       cname + "' does not exist.")
+            return err_msg
 
-        # get the template wiki page (create if needed)
-        root = Option('checklist', 'template_root', default='TracChecklist',
-                    doc="wiki page root for checklist templates")
-
-        root = self.config.get('checklist', 'template_root')
-        name = str(root) + '/' + content
-        name = name.replace('//','/')
-        page = WikiPage(self.env, name)
-
-        if page.exists == False:
-            return("CHECKLIST ERROR: \n template '" + name + "' does not exist.")
-
-        # strip wiki page header & convert to html
-        wiki = page.text[page.text.find('----')+4:]
+        # strip header (if exists), convert to html, insert checkboxes
+        # header is separated with horizontal line: ----
+        wiki = page.text
+        line = re.search("(?<!-)----(?!-)", wiki)
+        if line:
+            wiki = wiki[line.end()+1:]
         html = format_to_html(self.env, formatter.context, wiki)
+        html = self.insert_checkboxes(html, cbox_status)
 
-        # parse template for steps
-        # steps start with [x] and end with \\, which converts to <br />
-        check_index = 0
-        check_start = html.find('[x]')
+        # create the checklist form
+        #dest = formatter.req.href('/checklist/update')
+        #form = "<form class='checklist' method='post' action='"+dest+"'> \n"
+        form = tag.form(
+            action=formatter.req.href('/checklist/update'),
+            class_='checklist',
+            method='post'
+            )
 
-        while check_start > -1:
-            check_end   = html.find('<br />',check_start)+6
-            check_step  = 'step_' + str(check_index)
-            check_label = html[check_start+3:check_end]
+        # checklist header (template info)
+        href = formatter.req.href("/wiki/" + cname)
+        head = tag.div(
+            "TracChecklist: ", tag.a(cname, href=href),
+            class_='source'
+            )
 
-            check_box   = ("<label class='container'>" + check_label +
-                           "<input type='checkbox' " +
-                           "name='step_" + str(check_index) + "' " +
-                           "value='done' ")
-
-            if check_step in check_dict:
-                check_box += "checked"
-
-            check_box += "><span class='checkmark'></span></label>"
-            html = html[0:check_start] + check_box + html[check_end:]
-
-            check_index +=1
-            check_start = html.find('[x]')
-
-        # template header info + form
-        dest  = formatter.req.href('/checklist/update')
-        head  = "<form class='checklist' method='post' action='"+dest+"'> \n"
-        head += "   <div class='source'>                                  \n"
-        head += ("       TracChecklist: <a href='" + formatter.req.href("/wiki/" + name) +
-                 "'>" + name + "</a>\n")
-        head += "   </div>"
-
-        # template footer / form
-        backpath   = formatter.req.href(formatter.req.path_info)
+        # checklist footer / form
+        backpath = formatter.req.href(formatter.req.path_info)
         form_token = formatter.req.form_token
-        realm      = str(formatter.resource.realm)
-        resource   = str(formatter.resource.id   )
-        checklist  = str(content                 )
-
-        foot  = Markup(Element('input', type='hidden', name='__backpath__', value=backpath         ))
-        foot += Markup(Element('input', type='hidden', name='__FORM_TOKEN', value=form_token       ))
-        foot += Markup(Element('input', type='hidden', name='realm'       , value=realm            ))
-        foot += Markup(Element('input', type='hidden', name='resource'    , value=resource         ))
-        foot += Markup(Element('input', type='hidden', name='checklist'   , value=checklist        ))
-        foot += Markup(Element('input', type='submit', class_='button'    , value='Save Checklist' ))
-        foot += "</form>"
+        realm = str(formatter.resource.realm)
+        resource = str(formatter.resource.id)
+        checklist = str(content)
+        foot = tag(
+            tag.input(type='hidden', name='__backpath__', value=backpath),
+            tag.input(type='hidden', name='__FORM_TOKEN', value=form_token),
+            tag.input(type='hidden', name='realm', value=realm),
+            tag.input(type='hidden', name='resource', value=resource),
+            tag.input(type='hidden', name='checklist', value=checklist),
+            tag.input(type='submit', class_='button', value='Save Checklist'),
+        )
 
         # add stylesheet definitions to the page
         # note pattern is 'checklist/filename.ext' (no htdocs dir)
-        add_stylesheet(formatter.req,'checklist/checklist.css')
-
-        # assemble output
-        out = unescape(head + html + foot)
+        add_stylesheet(formatter.req, 'checklist/checklist.css')
 
         # return the final output
-        return out
+        form.append([head, html, foot])
+        return form
 
 
 class ChecklistUpdate(Component):
@@ -167,25 +196,23 @@ class ChecklistUpdate(Component):
     implements(IRequestHandler)
 
     def match_request(self, req):
+        """determines if request was a form update/save"""
         match = req.path_info.endswith('checklist/update')
         return match
 
     def process_request(self, req):
-        """saves updated checklist state to the database.
+        """saves updated checklist state to the database."""
 
-        Args:
-            req (object): web request that called the page with the macro
-        """
         try:
 
             # get form data and new status as JSON string
-            args      = dict(req.args)
-            backpath  = args['__backpath__']
-            realm     = args['realm']
-            resource  = args['resource']
+            args = dict(req.args)
+            backpath = args['__backpath__']
+            realm = args['realm']
+            resource = args['resource']
             checklist = args['checklist']
-            steps     = {k:v for k,v in args.iteritems() if k.startswith('step')}
-            status    = json.dumps(steps)
+            steps = {k:v for k, v in args.iteritems() if k.startswith('step')}
+            status = json.dumps(steps)
 
             # save to db
             query = ("REPLACE INTO checklist (realm,resource,checklist,status) " +
@@ -193,53 +220,47 @@ class ChecklistUpdate(Component):
             param = [realm, resource, checklist, status]
 
             self.env.db_transaction(query, param)
-            buffer = "OK"
+            form_buffer = "OK"
 
             if backpath is not None:
                 req.send_response(302)
                 req.send_header('Content-Type', 'text/plain')
                 req.send_header('Location', backpath)
-                req.send_header('Content-Length', str(len(buffer)))
+                req.send_header('Content-Length', str(len(form_buffer)))
                 req.end_headers()
-                req.write(buffer)
+                req.write(form_buffer)
             else:
                 req.send_response(200)
                 req.send_header('Content-Type', 'text/plain')
-                req.send_header('Content-Length', str(len(buffer)))
+                req.send_header('Content-Length', str(len(form_buffer)))
                 req.end_headers()
-                req.write(buffer)
+                req.write(form_buffer)
 
-        except Exception as e:
+        except Exception as error:
 
-            buffer = "ERROR:" + str(e)
+            form_buffer = "ERROR:" + str(error)
             req.send_response(500)
             req.send_header('Content-type', 'text/plain')
-            req.send_header('Content-Length', str(len(buffer)))
+            req.send_header('Content-Length', str(len(form_buffer)))
             req.end_headers()
-            req.write(buffer)
+            req.write(form_buffer)
 
 
 class ChecklistInsert(Component):
-    """Adds dropdown selector in ticket description edit box to insert a checklist.
-
-    Implements the following trac extensions point:
-
-        ITemplateProvider - registers templates used by this plugin
-        IRequestFilter - alters ticket display (trac.web.api.IRequestFilter)
-
-    https://trac.edgewall.org/wiki/TracDev/PluginDevelopment/ExtensionPoints/
-    https://trac.edgewall.org/wiki/TracDev/PortingFromGenshiToJinja#ReplacingITemplateStreamFilter
-    """
+    """Adds dropdown selector in ticket description edit box to insert a checklist."""
     _description = "Adds dropdown selector in ticket description edit box to insert a checklist."
     implements(ITemplateProvider, IRequestFilter)
 
     def get_htdocs_dirs(self):
+        """directories where static files are located"""
         return [('checklist', resource_filename(__name__, 'htdocs'))]
 
     def get_templates_dirs(self):
+        """directories where html templates are located."""
         return [resource_filename(__name__, 'htdocs')]
 
     def pre_process_request(self, req, handler):
+        """Not used (included to satisfy class requirement)"""
         return handler
 
     def post_process_request(self, req, template, data, metadata):
@@ -262,23 +283,23 @@ class ChecklistInsert(Component):
 
             # list of available checklist templates (pages) under root wiki page
             templates = []
-            root  = Option('checklist', 'template_root', default='TracChecklist',
-                            doc="wiki page root for checklist templates")
-            root  = self.config.get('checklist', 'template_root')
+            root = Option('checklist', 'template_root', default='TracChecklist',
+                          doc="wiki page root for checklist templates")
+            root = self.config.get('checklist', 'template_root')
             query = "SELECT name FROM wiki WHERE version = 1 AND name LIKE %s"
             param = ['%'+root+'%']
 
-            with self.env.db_query as db:
-                cursor = db.cursor()
+            with self.env.db_query as db_query:
+                cursor = db_query.cursor()
                 cursor.execute(query, param)
-                self.log.debug(cursor._executed)
+                #self.log.debug(cursor._executed)
                 for row in cursor.fetchall():
                     if row[0] != root:
-                        templates.append(row[0].replace(root+'/',''))
+                        templates.append(row[0].replace(root+'/', ''))
 
             # add new ticket components (CSS, jquery, template list)
             add_stylesheet(req, 'checklist/menu.css')
-            add_script_data(req, { 'templates': templates } )
+            add_script_data(req, {'templates':templates})
             add_script(req, 'checklist/menu.js')
 
         return (template, data, metadata)
@@ -297,11 +318,17 @@ class ChecklistSetup(Component):
     implements(IEnvironmentSetupParticipant)
 
     def environment_created(self):
-        self.log.debug("creating environment for TracChecklist plugin.")
+        """Create the required table for this environment."""
+        self.log.info("creating environment for TracChecklist plugin.")
         # Same work is done for environment created and upgraded
         self.upgrade_environment()
 
     def environment_needs_upgrade(self):
+        """Determine if environment databse needs to be upgraded.
+
+        Returns:
+            BOOL: true if upgrade is needed
+        """
         dbm = DatabaseManager(self.env)
         ver = dbm.get_database_version(PLUGIN_NAME)
         needs_upgrade = dbm.needs_upgrade(PLUGIN_VERSION, PLUGIN_NAME)
@@ -311,22 +338,27 @@ class ChecklistSetup(Component):
         return needs_upgrade
 
     def upgrade_environment(self):
+        """Upgrade environment database as needed."""
+
         dbm = DatabaseManager(self.env)
         ver = dbm.get_database_version(PLUGIN_NAME)
-        self.log.info("upgrading environment for TracChecklist plugin from v%s to v%s.", ver, PLUGIN_VERSION)
+        self.log.info("upgrading environment for TracChecklist plugin from v%s to v%s.",
+                      ver, PLUGIN_VERSION)
 
         # check if this is first use (table does not exist)
         if ver == 0:
 
             #create the database checklist table
-            SCHEMA = [ Table('checklist', key=('realm','resource','checklist')) [
-                        Column('realm'    , type='text'),
-                        Column('resource' , type='text'),
-                        Column('checklist', type='text'),
-                        Column('status'   , type='text')] ]
+            schema = [
+                Table('checklist', key=('realm', 'resource', 'checklist'))[
+                    Column('realm', type='text'),
+                    Column('resource', type='text'),
+                    Column('checklist', type='text'),
+                    Column('status', type='text')]
+                ]
 
             self.log.info("creating checklist table ...")
-            dbm.create_tables(SCHEMA)
+            dbm.create_tables(schema)
 
             # create the wiki root page from file
             page = str(pkg_resources.resource_string(__name__, 'plugin.wk'))
