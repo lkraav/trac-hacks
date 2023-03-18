@@ -17,7 +17,7 @@ This plugin was developed and is maintained by [Outlyer](https://outlyer.space)
  A plugin can either be deployed globally, or only for a specific environment.
  Global deployment is done by installing the plugin:
 
-    cd /path/to/pluginsource
+    cd /path/to/plugin_source
     python setup.py install
 
 The plugin is also available on PyPI and can be installed globally using pip:
@@ -27,9 +27,9 @@ The plugin is also available on PyPI and can be installed globally using pip:
 To deploy a plugin only to a specific Trac environment, copy the egg file into
 the plugins directory of that environment:
 
-    cd /path/to/pluginsource
+    cd /path/to/plugin_source
     python setup.py bdist_egg
-    cp dist/*.egg /path/to/projenv/plugins
+    cp dist/*.egg /path/to/project_environment/plugins
 
 
 ## Setup
@@ -65,7 +65,7 @@ trac.ini file:
 Create at least one checklist as a sub-page below the "Ticket Template" page
 using the template provided in the "ChecklistTemplates" root page. You can also
 create pages below non-existing parents, which will then be treated as category
-headers. For exmaple:
+headers. For example:
 
     wiki:ChecklistTemplates
     |- CatOne (not a page)
@@ -80,6 +80,6 @@ box when in edit mode to select & insert a template. The preview will show the
 checklist in your ticket.
 
 
-## Revision Logls
+## Revision Log
 
 * 0.1 - Initial release to PyPI (build) & TracHacks (source)

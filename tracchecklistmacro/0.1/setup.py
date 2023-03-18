@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
@@ -7,11 +8,11 @@ with open("VERSION", "r") as fh:
     latest_version = fh.read().strip()
 
 setup(
-    name             = 'TracChecklist',
-    author           = 'Ralph Ewig',
-    author_email     = 'ralph.ewig@outlyer.space',
-    description      = "Include checklists in ticket, sourced from wiki pages",
-    version          = latest_version,
+    name='TracChecklist',
+    author='Ralph Ewig',
+    author_email='ralph.ewig@outlyer.space',
+    description="Include checklists in ticket, sourced from wiki pages",
+    version=latest_version,
 
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -28,13 +29,13 @@ setup(
         'Framework :: Trac',
     ],
 
-    packages= find_packages(exclude=("test", "*.egg-info",)),
-    package_data={ 'checklist': ['htdocs/*', 'plugin.wk']},
+    packages=find_packages(exclude=("test", "*.egg-info",)),
+    package_data={'checklist': ['htdocs/*', 'plugin.wk']},
 
-    entry_points = {
+    entry_points={
         'trac.plugins': [
-                'checklist.plugin = checklist.plugin',
-                'checklist.macros = checklist.macros',
-                ],
+            'checklist.plugin = checklist.plugin',
+            'checklist.macros = checklist.macros',
+            ],
     }
 )
