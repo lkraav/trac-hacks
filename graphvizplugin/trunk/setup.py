@@ -13,7 +13,7 @@ with open('README.rst') as f:
 
 setup (
     name = 'TracGraphviz',
-    version = '1.4.0.2',
+    version = '1.4.0.3',
     author = "Peter Kropf",
     author_email = "pkropf@gmail.com",
     packages = find_packages(),
@@ -21,11 +21,15 @@ setup (
         'graphviz': ['examples/*']
     },
     entry_points={'trac.plugins': 'graphviz = graphviz.graphviz'},
-    install_requires = ['Trac', 'Genshi'],
+    install_requires = ['Trac'],
     keywords = "trac graphviz",
     url = "https://trac-hacks.org/wiki/GraphvizPlugin",
-    description = "Graphviz plugin for Trac 1.4",
+    description = "Graphviz plugin for Trac 1.4 and later",
     long_description = long_description,
     long_description_content_type = 'text/x-rst',
+    classifiers=[
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+    ],
     license = "BSD 3-Clause",
 )

@@ -29,29 +29,56 @@
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import inspect
-import locale
 import os
-import pkg_resources
 import re
-import sha
+import hashlib
 import subprocess
 import sys
 
-from StringIO import StringIO
-
-from genshi.core import  Stream
-from genshi.input import HTMLParser
-
 from trac.config import BoolOption, IntOption, Option
-from trac.core import *
+from trac.core import Component, implements
 from trac.mimeview.api import RenderingContext, IHTMLPreviewRenderer, MIME_MAP
-from trac.util.html import (TracHTMLSanitizer, escape, find_element,
-                            Element, tag, Markup)
-from trac.util.text import to_unicode
+from trac.util.compat import close_fds
+from trac.util.html import Markup, TracHTMLSanitizer, find_element, tag
 from trac.util.translation import _
 from trac.web.api import IRequestHandler
 from trac.wiki.api import IWikiMacroProvider, WikiSystem
-from trac.wiki.formatter import extract_link, WikiProcessor
+from trac.wiki.formatter import extract_link
+
+
+try:
+    unicode = unicode
+except NameError:
+    unicode = str
+
+
+if hasattr(subprocess.Popen, '__enter__'):
+    Popen = subprocess.Popen
+else:
+    class Popen(subprocess.Popen):
+        """From trac/util/compat.py in 1.4-stable"""
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, type, value, traceback):
+            if self.stdout:
+                self.stdout.close()
+            if self.stderr:
+                self.stderr.close()
+            try:
+                if self.stdin:
+                    self.stdin.close()
+            finally:
+                self.wait()
+
+
+try:
+    hashlib.sha1(usedforsecurity=False)
+except TypeError:
+    sha1 = hashlib.sha1
+else:
+    sha1 = lambda string: hashlib.sha1(string, usedforsecurity=False)
 
 
 class Graphviz(Component):
@@ -68,7 +95,7 @@ class Graphviz(Component):
     Vector_Formats = ['svg', 'svgz']
     Formats = Bitmap_Formats + Vector_Formats
     Cmd_Paths = {
-        'linux2':   ['/usr/bin',
+        'linux':    ['/usr/bin',
                      '/usr/local/bin',],
 
         'win32':    ['c:\\Program Files\\Graphviz\\bin',
@@ -86,6 +113,7 @@ class Graphviz(Component):
                      '/usr/local/bin'],
 
         }
+    Cmd_Paths['linux2'] = Cmd_Paths['linux']  # Python 2 on Linux
 
     # Note: the following options named "..._option" are those which need
     #       some additional processing, see `_load_config()` below.
@@ -321,11 +349,9 @@ class Graphviz(Component):
                             "requested format (%(fmt)s) not valid.",
                             fmt=out_format)))
 
-        encoded_cmd = (processor + unicode(self.processor_options)) \
-            .encode(self.encoding)
         encoded_content = content.encode(self.encoding)
-        sha_key  = sha.new(encoded_cmd + encoded_content +
-                           ('S' if self.sanitizer else '')).hexdigest()
+        sha_key = self._build_cache_key(processor, self.processor_options,
+                                        content, 'S' if self.sanitizer else '')
         img_name = '%s.%s.%s' % (sha_key, processor, out_format)
         # cache: hash.<dot>.<png>
         img_path = os.path.join(self.cache_dir, img_name)
@@ -426,7 +452,7 @@ class Graphviz(Component):
             map = f.readlines()
             f.close()
             map = "".join(map).replace('\n', '')
-            return tag(tag.map(Markup(to_unicode(map)),
+            return tag(tag.map(Markup(unicode(map)),
                                id='G' + sha_key, name='G' + sha_key),
                        tag.img(src=img_url, usemap="#G" + sha_key,
                                alt=_("GraphViz image")))
@@ -444,7 +470,6 @@ class Graphviz(Component):
             link = find_element(link, 'href')
             if link:
                 href = link.attrib.get('href')
-                name = link.children
                 description = link.attrib.get('title', '')
             else:
                 href = wiki_text
@@ -467,8 +492,7 @@ class Graphviz(Component):
     def _sanitize_html_labels(self, content):
         def sanitize(match):
             html = match.group(1)
-            stream = Stream(HTMLParser(StringIO(html)))
-            sanitized = (stream | self.sanitizer).render('xhtml', encoding=None)
+            sanitized = self.sanitizer.sanitize(html)
             return "label=<%s>" % sanitized
         return re.sub(r'label=<(.*)>', sanitize, content)
 
@@ -559,19 +583,11 @@ class Graphviz(Component):
         # Note: subprocess.Popen doesn't support unicode options arguments
         # (http://bugs.python.org/issue1759845) so we have to encode them.
         # Anyway, dot expects utf-8 or the encoding specified with -Gcharset.
-        encoded_cmd = []
-        for arg in args:
-            if isinstance(arg, unicode):
-                arg = arg.encode(self.encoding, 'replace')
-            encoded_cmd.append(arg)
-        p = subprocess.Popen(encoded_cmd, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if encoded_input:
-            p.stdin.write(encoded_input)
-        p.stdin.close()
-        out = p.stdout.read()
-        err = p.stderr.read()
-        failure = p.wait() != 0
+        encoded_cmd = self._launch_args(args)
+        with Popen(encoded_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                   stderr=subprocess.PIPE, close_fds=close_fds) as p:
+            out, err = p.communicate(input=encoded_input)
+            failure = p.wait() != 0
         if failure or err or out:
             return (failure, tag.p(tag.br(), _("The command:"),
                          tag.pre(repr(' '.join(encoded_cmd))),
@@ -582,17 +598,36 @@ class Graphviz(Component):
         else:
             return (False, None)
 
+    if sys.version_info[0] != 2:
+        def _launch_args(self, args):
+            return tuple(args)
+    else:
+        def _launch_args(self, args):
+            encoding = sys.getfilesystemencoding()
+            return tuple(arg.encode(encoding, 'replace') for arg in args)
+
     def _error_div(self, msg):
         """Display msg in an error box, using Trac style."""
-        if isinstance(msg, str):
-            msg = to_unicode(msg)
         self.log.error(msg)
-        if isinstance(msg, unicode):
-            msg = tag.pre(escape(msg))
+        msg = tag.pre(msg)
         return tag.div(
                 tag.strong(_("Graphviz macro processor has detected an error. "
                              "Please fix the problem before continuing.")),
                 msg, class_="system-message")
+
+    def _build_cache_key(self, *args):
+        vals = []
+        for arg in args:
+            if isinstance(arg, (list, tuple)):
+                vals.extend(arg)
+            else:
+                vals.append(arg)
+        vals = [val.encode('utf-8') if isinstance(val, unicode) else val
+                for val in vals]
+        key = sha1(b'\0'.join(vals)).hexdigest()
+        if isinstance(key, bytes):
+            key = key.decode('ascii')
+        return key
 
     def _clean_cache(self):
         """
@@ -631,8 +666,7 @@ class Graphviz(Component):
                 size_list.setdefault(entry_list[name][6], []).append(name)
                 size = size + entry_list[name][6]
 
-            atime_keys = atime_list.keys()
-            atime_keys.sort()
+            atime_keys = sorted(atime_list)
 
             #self.log.debug('clean_cache.atime_keys: %s', atime_keys)
             #self.log.debug('clean_cache.count: %d', count)

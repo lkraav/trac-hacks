@@ -17,7 +17,7 @@ def main(trac_env, examples_dir='.'):
             loaded = True
 
     if not loaded:
-        print 'The %(examples_dir)s does not contain any GrapgvizExamples files.' % locals()
+        print('The %(examples_dir)s does not contain any GrapgvizExamples files.' % locals())
 
 
 if __name__ == '__main__':
@@ -27,5 +27,5 @@ if __name__ == '__main__':
     elif argv_len == 3:
         main(sys.argv[1], sys.argv[2])
     else:
-        print 'usage: load_examples.py trac_env_path [examples_directory]'
+        print('usage: load_examples.py trac_env_path [examples_directory]')
         sys.exit(1)
