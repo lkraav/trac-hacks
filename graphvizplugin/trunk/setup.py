@@ -13,7 +13,7 @@ with open('README.rst') as f:
 
 setup (
     name = 'TracGraphviz',
-    version = '1.4.0.3',
+    version = '1.4.0.4',
     author = "Peter Kropf",
     author_email = "pkropf@gmail.com",
     packages = find_packages(),
