@@ -23,6 +23,11 @@ from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
 from trac.util.text import to_unicode, unicode_unquote
 from trac.util.translation import domain_functions, dgettext
 
+if hasattr(inspect, 'getfullargspec'):
+    getargspec = inspect.getfullargspec
+else:
+    getargspec = inspect.getargspec
+
 if sys.version_info[0] == 2:
     text_type = unicode
     binary_type = str
@@ -324,7 +329,7 @@ class TracDragDropModule(Component):
             template = 'tracdragdrop.html'
         return template, data
 
-    if 'db' in inspect.getargspec(Attachment.select)[0]:
+    if 'db' in getargspec(Attachment.select)[0]:
         def _select_attachments(self, realm, path):
             db = self.env.get_read_db()
             return Attachment.select(self.env, realm, path, db=db)
