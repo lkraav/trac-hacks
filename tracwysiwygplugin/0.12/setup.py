@@ -10,6 +10,14 @@ def main():
         'url': 'https://trac-hacks.org/wiki/TracWysiwygPlugin',
         'author': 'Jun Omae',
         'author_email': 'omae@opengroove.com',
+        'classifiers': [
+            'Framework :: Trac',
+            'Programming Language :: Python :: 2.4',
+            'Programming Language :: Python :: 2.5',
+            'Programming Language :: Python :: 2.6',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+        ],
         'packages': find_packages(exclude=['*.tests*']),
         'package_data': {
             'tracwysiwyg' : ['htdocs/*.js', 'htdocs/*.css', 'htdocs/*.png'],
