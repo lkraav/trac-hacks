@@ -1,17 +1,24 @@
 # -*- coding:utf-8 -*-
 
-import ConfigParser
 import errno
 import glob
+import hashlib
 import inspect
+import io
 import os
 import re
 import time
-from cStringIO import StringIO
+import sys
 from pkg_resources import resource_filename, parse_version
 from random import Random
 from subprocess import Popen, PIPE
 from tempfile import mkstemp
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
+
 try:
     import json
 except ImportError:
@@ -20,23 +27,45 @@ except ImportError:
 from trac import __version__
 from trac.core import Component, implements
 from trac.admin import IAdminPanelProvider
-from trac.config import Configuration, Option, BoolOption, ListOption, \
-                        FloatOption, ChoiceOption
+from trac.config import (Configuration, Option, BoolOption, IntOption,
+                         ListOption, FloatOption, ChoiceOption)
 from trac.env import Environment, IEnvironmentSetupParticipant
 from trac.perm import PermissionSystem
-from trac.util.compat import sha1, any
 from trac.util.html import tag
 from trac.util.text import to_unicode, exception_to_unicode
 from trac.util.translation import dgettext, domain_functions, tgettext_noop
-from trac.web.chrome import Chrome, ITemplateProvider, add_stylesheet, \
-                            add_script, add_script_data
+from trac.web.chrome import (Chrome, ITemplateProvider, add_stylesheet,
+                             add_script, add_script_data)
+
+
+try:
+    hashlib.sha1(usedforsecurity=False)
+except TypeError:
+    sha1 = hashlib.sha1
+else:
+    sha1 = lambda *args: hashlib.sha1(*args, usedforsecurity=False)
+
+
+if hasattr(inspect, 'getfullargspec'):
+    getargspec = inspect.getfullargspec
+else:
+    getargspec = inspect.getargspec
+
+
+PY2 = sys.version_info[0] == 2
+if PY2:
+    unicode = unicode
+    iteritems = lambda d: d.iteritems()
+else:
+    unicode = str
+    iteritems = lambda d: d.items()
 
 
 _, gettext, N_, add_domain = domain_functions(
     'tracworkflowadmin', '_', 'gettext', 'N_', 'add_domain')
 
 
-if 'doc_domain' not in inspect.getargspec(Option.__init__)[0]:
+if 'doc_domain' not in getargspec(Option.__init__)[0]:
     def _option_with_tx(Base): # Trac 0.12.x
         class Option(Base):
             def __getattribute__(self, name):
@@ -65,27 +94,26 @@ ChoiceOption = _option_with_tx(ChoiceOption)
 __all__ = ['TracWorkflowAdminModule']
 
 
-_parsed_version = parse_version(__version__)
-
-if _parsed_version >= parse_version('1.4'):
-    _use_jinja2 = True
-elif _parsed_version >= parse_version('1.3'):
-    _use_jinja2 = hasattr(Chrome, 'jenv')
-else:
-    _use_jinja2 = False
-
+_use_jinja2 = hasattr(Chrome, 'jenv')
 if _use_jinja2:
     _template_dir = resource_filename(__name__, 'templates/jinja2')
 else:
     _template_dir = resource_filename(__name__, 'templates/genshi')
-
 _htdoc_dir = resource_filename(__name__, 'htdocs')
+try:
+    _locale_dir = resource_filename(__name__, 'locale')
+except:
+    _locale_dir = None
 
-_default_operations = ['del_owner', 'set_owner', 'set_owner_to_self',
-                       'del_resolution', 'set_resolution', 'leave_status']
-if _parsed_version >= parse_version('1.2'):
-    _default_operations.append('may_set_owner')
-_default_operations = ', '.join(_default_operations)
+
+def _default_operations():
+    operations = ['del_owner', 'set_owner', 'set_owner_to_self',
+                  'del_resolution', 'set_resolution', 'leave_status']
+    if parse_version(__version__) >= parse_version('1.2'):
+        operations.append('may_set_owner')
+    return ', '.join(operations)
+
+_default_operations = _default_operations()
 
 
 def _help(href):
@@ -101,13 +129,49 @@ def _help(href):
     return tgettext_noop(fmt, **kwargs)
 
 
-def _msgjs_locales(dir=None):
-    if dir is None:
-        dir = _htdoc_dir
-        dir = os.path.join(dir, 'scripts', 'messages')
-    if not os.path.isdir(dir):
-        return set()
-    return set(file[0:-3] for file in os.listdir(dir) if file.endswith('.js'))
+def _msgjs_locales(dir_=None):
+    if dir_ is None:
+        dir_ = _htdoc_dir
+        dir_ = os.path.join(dir_, 'scripts', 'messages')
+    if not os.path.isdir(dir_):
+        return frozenset()
+    return frozenset(filename[0:-3] for filename in os.listdir(dir_)
+                                    if filename.endswith('.js'))
+
+_msgjs_locales = _msgjs_locales()
+
+
+if PY2:
+    from cStringIO import StringIO
+
+    def _conf_to_str(conf):
+        tmp = configparser.RawConfigParser()
+        tmp.add_section('ticket-workflow')
+        for name, value in conf.options('ticket-workflow'):
+            name = name.encode('utf-8')
+            value = value.encode('utf-8')
+            tmp.set('ticket-workflow', name, value)
+
+        f = StringIO()
+        tmp.write(f)
+        f.flush()
+        f.seek(0)
+        lines = sorted(line.decode('utf-8')
+                       for line in f if not line.startswith('['))
+        return ''.join(lines)
+else:
+    def _conf_to_str(conf):
+        tmp = configparser.RawConfigParser()
+        tmp.add_section('ticket-workflow')
+        for name, value in conf.options('ticket-workflow'):
+            tmp.set('ticket-workflow', name, value)
+
+        f = io.StringIO()
+        tmp.write(f)
+        f.flush()
+        f.seek(0)
+        lines = sorted(line for line in f if not line.startswith('['))
+        return ''.join(lines)
 
 
 class TracWorkflowAdminModule(Component):
@@ -132,18 +196,17 @@ class TracWorkflowAdminModule(Component):
     default_editor = ChoiceOption(
         'workflow-admin', 'default_editor', ['gui', 'text'],
         doc=N_("Default mode of the workflow editor"))
-    auto_update_interval = Option(
+    auto_update_interval = IntOption(
         'workflow-admin', 'auto_update_interval', '3000',
         doc=N_("An automatic-updating interval for text mode is specified by "
                "a milli second bit. It is not performed when 0 is specified."))
 
-    msgjs_locales = _msgjs_locales()
     _action_name_re = re.compile(r'\A[A-Za-z0-9_-]+\Z')
     _number_re = re.compile(r'\A[0-9]+\Z')
 
     def __init__(self):
-        locale_dir = resource_filename(__name__, 'locale')
-        add_domain(self.env.path, locale_dir)
+        if _locale_dir:
+            add_domain(self.env.path, _locale_dir)
 
     # IEnvironmentSetupParticipant
     def environment_created(self):
@@ -183,8 +246,9 @@ class TracWorkflowAdminModule(Component):
         add_script(req, 'tracworkflowadmin/scripts/jquery.json-2.2.js')
         add_script(req, self._jquery_multiselect)
         add_script(req, 'tracworkflowadmin/scripts/main.js')
-        add_script_data(req, {'auto_update_interval': int(self.auto_update_interval)})
-        if req.locale and str(req.locale) in self.msgjs_locales:
+        add_script_data(req,
+                        {'auto_update_interval': self.auto_update_interval})
+        if req.locale and str(req.locale) in _msgjs_locales:
             add_script(req, 'tracworkflowadmin/scripts/messages/%s.js' % req.locale)
         data = {
             'actions': action,
@@ -217,14 +281,17 @@ class TracWorkflowAdminModule(Component):
     def _conf_to_inner_format(self, conf):
         statuses = []
         for name, value in conf.options('ticket-workflow'):
-            if name.endswith('.operations') and 'leave_status' in [before.strip() for before in value.split(',')]:
-                values = conf.get('ticket-workflow', name[0:-11]).split('->')
-                if values[1].strip() == '*':
-                    for name in values[0].split(','):
-                        st = name.strip()
-                        if st != '*':
-                            statuses.append(st)
-                    break
+            if not name.endswith('.operations'):
+                continue
+            if not any('leave_status' == v.strip() for v in value.split(',')):
+                continue
+            values = conf.get('ticket-workflow', name[0:-11]).split('->')
+            if values[1].strip() == '*':
+                for name in values[0].split(','):
+                    st = name.strip()
+                    if st != '*':
+                        statuses.append(st)
+                break
         actions = {}
 
         count = 1
@@ -250,7 +317,7 @@ class TracWorkflowAdminModule(Component):
                                 statuses.append(tmp)
                 else:
                     regValue['before'] = '*'
-                if not actions.has_key(actionName):
+                if actionName not in actions:
                     actions[actionName] = {'tempName': actionName, 'lineInfo': {}}
                 actions[actionName]['next'] = regValue['next']
                 actions[actionName]['before'] = regValue['before']
@@ -265,7 +332,7 @@ class TracWorkflowAdminModule(Component):
                     regValue = tmp
                 else:
                     regValue = value.strip()
-                if not actions.has_key(actionName):
+                if actionName not in actions:
                     actions[actionName] = {'tempName': actionName, 'lineInfo': {}}
                 actions[actionName][regKey] = regValue
             count = count + 1
@@ -274,39 +341,24 @@ class TracWorkflowAdminModule(Component):
         for key in actions:
             tmp = actions[key]
             tmp['action'] = key
-            if not tmp.has_key('default'):
+            if 'default' not in tmp:
                 tmp['default'] = 0
             elif not self._number_re.match(tmp['default']):
                 tmp['default'] = -1
-            if not tmp.has_key('permissions'):
+            if 'permissions' not in tmp:
                 tmp['permissions'] = ['All Users']
-            if not tmp.has_key('name'):
-                tmp['name'] = ''
-            if tmp.has_key('before') and tmp['before'] == '*':
-                tmp['before'] = {}
-                for st in statuses:
-                    tmp['before'][st] = 1
+            tmp.setdefault('name', '')
+            if tmp.get('before') == '*':
+                tmp['before'] = dict((st, 1) for st in statuses)
             action_elements.append(tmp)
         action_elements.sort(key=lambda v: int(v['default']), reverse=True)
         return (action_elements, statuses)
 
     def _conf_to_str(self, conf):
-        tmp = ConfigParser.ConfigParser()
-        tmp.add_section('ticket-workflow')
-        for name, value in conf.options('ticket-workflow'):
-            tmp.set('ticket-workflow', name.encode('utf-8'), value.encode('utf-8'))
+        return _conf_to_str(conf)
 
-        f = StringIO()
-        tmp.write(f)
-        f.flush()
-        f.seek(0)
-        lines = [line.decode('utf-8') for line in f
-                                      if not line.startswith('[')]
-        lines.sort()
-        return ''.join(lines)
-
-    def _str_to_inner_format(self, str, out):
-        lines = str.splitlines(False)
+    def _str_to_inner_format(self, string, out):
+        lines = string.splitlines(False)
         errors = []
         lineInfo = {}
         firstLineInfo = {}  # dict of (action, lineno)
@@ -364,8 +416,7 @@ class TracWorkflowAdminModule(Component):
         if not firstLineInfo:
             errors.append(_("There is no valid description."))
 
-        actions = sorted(firstLineInfo.iterkeys())
-        for key in actions:
+        for key in sorted(firstLineInfo):
             if key not in lineInfo:
                 errors.append(_(
                     "Line %(num)d: Require \"%(action)s = <status-list> -> "
@@ -376,42 +427,46 @@ class TracWorkflowAdminModule(Component):
             out['textError'] = errors;
             return
 
-        contents = '\n'.join(['[ticket-workflow]'] + lines).encode('utf-8')
+        contents = os.linesep.join(['[ticket-workflow]'] + lines)
+        contents = contents.encode('utf-8')
         tmp_fd, tmp_file = mkstemp('.ini', 'workflow-admin')
         try:
-            tmp_fp = os.fdopen(tmp_fd, 'w')
-            tmp_fd = None
+            tmp_fp = os.fdopen(tmp_fd, 'wb')
+        except:
+            os.close(tmp_fd)
+            raise
+        else:
             try:
                 tmp_fp.write(contents)
             finally:
                 tmp_fp.close()
             tmp_conf = Configuration(tmp_file)
         finally:
-            if tmp_fd is not None:
-                os.close(tmp_fd)
             os.remove(tmp_file)
 
         try:
             out['actions'], out['status'] = self._conf_to_inner_format(tmp_conf)
-        except ConfigParser.Error, e:
+        except configparser.Error as e:
             out['textError'] = [to_unicode(e)]
-            return
-        out['lineInfo'] = lineInfo
-        out['firstLineInfo'] = firstLineInfo
-        out['others'] = others
+        else:
+            out['lineInfo'] = lineInfo
+            out['firstLineInfo'] = firstLineInfo
+            out['others'] = others
 
     def _json_to_inner_format(self, out):
         out['lineInfo'] = {}
         out['firstLineInfo'] = {}
         out['others'] = {}
-        if 'actions' in out:
-            count = 1
-            for act in out['actions']:
-                act['tempName'] = act['action']
-                out['firstLineInfo'][act['action']] = count
-                for subparam in ['', '.default', '.name', '.operations', '.permissions']:
-                    out['lineInfo'][act['action'] + subparam] = count
-                count = count + 1
+        if 'actions' not in out:
+            return
+        count = 1
+        for act in out['actions']:
+            act['tempName'] = act['action']
+            out['firstLineInfo'][act['action']] = count
+            for subparam in ('', '.default', '.name', '.operations',
+                             '.permissions'):
+                out['lineInfo'][act['action'] + subparam] = count
+            count += 1
 
     def _get_permissions(self, req):
         actions = ['All Users']
@@ -442,8 +497,8 @@ class TracWorkflowAdminModule(Component):
         script += "\n"
         count = 0
         for action in params['actions']:
-            next = action['next'].strip()
-            if next == '*':
+            next_ = action['next'].strip()
+            if next_ == '*':
                 continue
             edgeParams = []
             name = action['name'].strip()
@@ -458,10 +513,10 @@ class TracWorkflowAdminModule(Component):
             edgeParams.append('fontcolor="%s"' % dot_escape(color))
             for before in action['before']:
                 edgeParams2 = edgeParams[:]
-                if before in statusRev and next in statusRev:
-                    if statusRev[next] - statusRev[before] == 1:
+                if before in statusRev and next_ in statusRev:
+                    if statusRev[next_] - statusRev[before] == 1:
                         edgeParams2.append('weight=50')
-                    script += " node_%d -> node_%d [" % (statusRev[before], statusRev[next])
+                    script += " node_%d -> node_%d [" % (statusRev[before], statusRev[next_])
                     script += ','.join(edgeParams2)
                     script += '];\n'
             count += 1
@@ -469,19 +524,31 @@ class TracWorkflowAdminModule(Component):
 
         return script.encode('utf-8')
 
-    def _image_path_setup(self, req):
-        dir = os.path.join(self._env_htdocs_dir, 'tracworkflowadmin')
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
-        for file in glob.glob(os.path.join(dir, '*')):
-            try:
-                if os.stat(file).st_mtime + 60 * 60 * 24 < time.time():
-                    os.unlink(file)
-            except:
-                pass
+    @property
+    def _image_dir(self):
+        return os.path.join(self._env_htdocs_dir, 'tracworkflowadmin')
+
+    _old_images_removed = 0
+    _old_images_threshold = 86400  # 1 day
+
+    def _image_path_setup(self):
+        dir_ = self._image_dir
+        if not os.path.isdir(dir_):
+            os.mkdir(dir_)
+
+        threshold = self._old_images_threshold
+        now = time.time()
+        if self._old_images_removed + threshold < now:
+            self._old_images_removed = now
+            for filename in glob.glob(os.path.join(dir_, '*')):
+                try:
+                    if os.stat(filename).st_mtime + threshold < now:
+                        os.unlink(filename)
+                except OSError:
+                    pass
 
     def _image_tmp_path(self, basename):
-        return os.path.join(self._env_htdocs_dir, 'tracworkflowadmin', basename)
+        return os.path.join(self._image_dir, basename)
 
     def _image_tmp_url(self, req, basename, timestamp):
         kwargs = {}
@@ -489,32 +556,39 @@ class TracWorkflowAdminModule(Component):
             kwargs['_'] = str(timestamp)
         return req.href.chrome('site/tracworkflowadmin', basename, **kwargs)
 
+    def _send_json(self, req, data):
+        content = json.dumps(data)
+        if isinstance(content, unicode):
+            content = content.encode('utf-8')
+        req.send(content, 'application/json')
+
     def _update_diagram(self, req, params):
-        _, errors = self._validate_workflow(req, params)
+        options, errors = self._validate_workflow(req, params)
         data = {'result': (1, 0)[len(errors) == 0],     # 0 if cond else 1
                 'errors': errors}
         if len(errors) == 0:
             script = self._create_dot_script(params)
-            self._image_path_setup(req)
-            dir = os.path.join(self._env_htdocs_dir, 'tracworkflowadmin')
+            self._image_path_setup()
+            dir_ = self._image_dir
             basename = '%s.png' % sha1(script).hexdigest()
-            path = os.path.join(dir, basename)
+            path = os.path.join(dir_, basename)
             if not self.diagram_cache or not os.path.isfile(path):
-                self._create_diagram_image(path, dir, script, errors)
+                self._create_diagram_image(path, script, errors)
             timestamp = int(os.path.getmtime(path))
             data['image_url'] = self._image_tmp_url(req, basename, timestamp)
-        req.send(json.dumps(data))
+
+        self._send_json(req, data)
         # NOTREACHED
 
     _random = Random()
 
-    def _create_diagram_image(self, path, dir, script, errors):
+    def _create_diagram_image(self, path, script, errors):
         flags = os.O_CREAT + os.O_WRONLY + os.O_EXCL
         while True:
             tmp = '%s.%08x' % (path, self._random.randint(0, 0xffffffff))
             try:
-                fd = os.open(tmp, flags, 0666)
-            except OSError, e:
+                fd = os.open(tmp, flags, 0o666)
+            except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
                 continue
@@ -524,9 +598,9 @@ class TracWorkflowAdminModule(Component):
             args = [self.dot_path, '-Tpng', '-o', tmp]
             try:
                 proc = Popen(args, stdin=PIPE)
-            except OSError, e:
+            except OSError as e:
                 message = exception_to_unicode(e)
-                self.log.warn('Cannot execute dot: %s: %r', message, args)
+                self.log.warning('Cannot execute dot: %s: %r', message, args)
                 errors.append(_(
                     "The dot command '%(path)s' is not available: %(e)s",
                     path=self.dot_path, e=message))
@@ -593,7 +667,6 @@ class TracWorkflowAdminModule(Component):
         self.config.save()
 
     def _validate_workflow(self, req, params):
-
         if 'textError' in params:
             return {}, params['textError']
 
@@ -609,120 +682,121 @@ class TracWorkflowAdminModule(Component):
         if len(params['status']) == 0:
             errors.append(_("Need at least one status."))
 
-        newOptions = {}
-
-        if len(errors) == 0:
+        if not errors:
             if not any(act['next'] == '*' and \
                            'leave_status' in act.get('operations', ())
                        for act in params['actions']):
                 errors.append(_("The action with operation 'leave_status' and "
                                 "next status '*' is certainly required."))
+        if errors:
+            return {}, errors
 
-        if len(errors) == 0:
-            lineInfo = params['lineInfo']
-            perms = self._get_permissions(req)
-            perms.append('All Users')
-            operations = self.operations
-            actionNames = []
-            for act in params['actions']:
-                lineErrors = []
-                tempName = act.get('tempName')
-                action = act.get('action')
-                if tempName not in lineInfo:
-                    lineErrors.append(_(
-                        "Line %(num)d:  The definition of '%(aname)s' is not found.",
-                        aname=tempName,
-                        num=params['firstLineInfo'][tempName]))
-                elif action == '':
-                    lineErrors.append(_("Line %(num)d: Action cannot be emptied.",
-                                        num=lineInfo[tempName]))
-                elif not self._action_name_re.match(action):
-                    lineErrors.append(_(
-                        "Line %(num)d: Use alphanumeric, dash, and underscore "
-                        "characters in the action name.",
-                        num=lineInfo[tempName]))
-                elif action in actionNames:
-                    lineErrors.append(_(
-                        "Line %(num)d: Action name is duplicated. The name "
-                        "must be unique.",
-                        num=lineInfo[tempName]))
-                elif not 'next' in act:
-                    lineErrors.append(_("Line %(num)d: No next status.",
-                                        num=lineInfo[tempName]))
-                elif not act['next'] in params['status'] and act['next'] != '*':
-                    lineErrors.append(_(
-                        "Line %(num)d: '%(status)s' is invalid next status.",
-                        num=lineInfo[tempName], status=act['next']))
-                elif not act.get('before'):
-                    lineErrors.append(_("Line %(num)d: Statuses is empty.",
-                                        num=lineInfo[tempName]))
+        newOptions = {}
+        lineInfo = params['lineInfo']
+        perms = self._get_permissions(req)
+        perms.append('All Users')
+        operations = self.operations
+        actionNames = []
+        for act in params['actions']:
+            lineErrors = []
+            tempName = act.get('tempName')
+            action = act.get('action')
+            if tempName not in lineInfo:
+                lineErrors.append(_(
+                    "Line %(num)d:  The definition of '%(aname)s' is not found.",
+                    aname=tempName,
+                    num=params['firstLineInfo'][tempName]))
+            elif action == '':
+                lineErrors.append(_("Line %(num)d: Action cannot be emptied.",
+                                    num=lineInfo[tempName]))
+            elif not self._action_name_re.match(action):
+                lineErrors.append(_(
+                    "Line %(num)d: Use alphanumeric, dash, and underscore "
+                    "characters in the action name.",
+                    num=lineInfo[tempName]))
+            elif action in actionNames:
+                lineErrors.append(_(
+                    "Line %(num)d: Action name is duplicated. The name "
+                    "must be unique.",
+                    num=lineInfo[tempName]))
+            elif not 'next' in act:
+                lineErrors.append(_("Line %(num)d: No next status.",
+                                    num=lineInfo[tempName]))
+            elif not act['next'] in params['status'] and act['next'] != '*':
+                lineErrors.append(_(
+                    "Line %(num)d: '%(status)s' is invalid next status.",
+                    num=lineInfo[tempName], status=act['next']))
+            elif not act.get('before'):
+                lineErrors.append(_("Line %(num)d: Statuses is empty.",
+                                    num=lineInfo[tempName]))
+            else:
+                for stat in act['before']:
+                    if not stat in params['status'] and stat != '*':
+                        lineErrors.append(_(
+                            "Line %(num)d: Status '%(status)s' is invalid.",
+                            num=lineInfo[tempName], status=stat))
+
+            lineErrors.extend(_("Line %(num)d: Unknown operator "
+                                "'%(name)s'", name=operation,
+                                num=lineInfo[tempName + '.operations'])
+                              for operation in act.get('operations', ())
+                              if operation not in operations)
+
+            lineErrors.extend(_("Line %(num)d: Unknown permission "
+                                "'%(name)s'", name=perm,
+                                num=lineInfo[tempName + '.permissions'])
+                              for perm in act.get('permissions', ())
+                              if not perm in perms)
+
+            if 'default' in act and act['default'] == -1:
+                lineErrors.append(_(
+                    "Line %(num)d: specify a numerical value to 'default'.",
+                    num=lineInfo[tempName + '.default']))
+
+            if len(lineErrors) == 0:
+                key = action
+                if 'before' in act:
+                    tmp = []
+                    for stat in params['status']:
+                        if stat in act['before']:
+                            tmp.append(stat)
+                    before = ','.join(tmp)
                 else:
-                    for stat in act['before']:
-                        if not stat in params['status'] and stat != '*':
-                            lineErrors.append(_(
-                                "Line %(num)d: Status '%(status)s' is invalid.",
-                                num=lineInfo[tempName], status=stat))
+                    before = '*'
 
-                lineErrors.extend(_("Line %(num)d: Unknown operator "
-                                    "'%(name)s'", name=operation,
-                                    num=lineInfo[tempName + '.operations'])
-                                  for operation in act.get('operations', ())
-                                  if operation not in operations)
+                newOptions[key] = before + ' -> ' + act['next']
+                newOptions[key + '.name'] = act['name']
+                newOptions[key + '.default'] = act['default']
+                if not 'All Users' in act['permissions']:
+                    newOptions[key + '.permissions'] = ','.join(act['permissions'])
+                if act.get('operations'):
+                    newOptions[key + '.operations'] = ','.join(act['operations'])
+                if action in params['others']:
+                    for otherKey, otherValue in iteritems(params['others'][action]):
+                        newOptions[key + '.' + otherKey] = otherValue
+            else:
+                errors.extend(lineErrors)
+            actionNames.append(action)
 
-                lineErrors.extend(_("Line %(num)d: Unknown permission "
-                                    "'%(name)s'", name=perm,
-                                    num=lineInfo[tempName + '.permissions'])
-                                  for perm in act.get('permissions', ())
-                                  if not perm in perms)
+        count = 1
+        for stat in params['status']:
+            if len(stat) == 0:
+                errors.append(_("Status column %(num)d: Status name is empty.",
+                                num=count))
+            elif ';' in stat or '#' in stat:
+                errors.append(_(
+                    "Status column %(num)d: The characters '#' and ';' "
+                    "cannot be used for status name.", num=count))
+            if stat in params['status'][:count - 1]:
+                errors.append(_(
+                    "Status column %(num)d: Status name is duplicated. "
+                    "The name must be unique.", num=count))
+            count += 1
 
-                if 'default' in act and act['default'] == -1:
-                    lineErrors.append(_(
-                        "Line %(num)d: specify a numerical value to 'default'.",
-                        num=lineInfo[tempName + '.default']))
-
-                if len(lineErrors) == 0:
-                    key = action
-                    if 'before' in act:
-                        tmp = []
-                        for stat in params['status']:
-                            if stat in act['before']:
-                                tmp.append(stat)
-                        before = ','.join(tmp)
-                    else:
-                        before = '*'
-
-                    newOptions[key] = before + ' -> ' + act['next']
-                    newOptions[key + '.name'] = act['name']
-                    newOptions[key + '.default'] = act['default']
-                    if not 'All Users' in act['permissions']:
-                        newOptions[key + '.permissions'] = ','.join(act['permissions'])
-                    if act.get('operations'):
-                        newOptions[key + '.operations'] = ','.join(act['operations'])
-                    if action in params['others']:
-                        for otherKey, otherValue in params['others'][action].iteritems():
-                            newOptions[key + '.' + otherKey] = otherValue
-                else:
-                    errors.extend(lineErrors)
-                actionNames.append(action)
-
-            count = 1
-            for stat in params['status']:
-                if len(stat) == 0:
-                    errors.append(_("Status column %(num)d: Status name is empty.",
-                                    num=count))
-                elif ';' in stat or '#' in stat:
-                    errors.append(_(
-                        "Status column %(num)d: The characters '#' and ';' "
-                        "cannot be used for status name.", num=count))
-                if stat in params['status'][:count - 1]:
-                    errors.append(_(
-                        "Status column %(num)d: Status name is duplicated. "
-                        "The name must be unique.", num=count))
-                count += 1
         return newOptions, errors
 
     def _update_workflow(self, req, params):
-        newOptions, errors = self._validate_workflow(req, params)
+        options, errors = self._validate_workflow(req, params)
         out = {}
         if len(errors) != 0:
             out['result'] = 1
@@ -732,18 +806,20 @@ class TracWorkflowAdminModule(Component):
                 for (name, value) in self.config.options('ticket-workflow'):
                     self.config.remove('ticket-workflow', name)
                 out['result'] = 0
-                for key, val in newOptions.iteritems():
+                for key, val in iteritems(options):
                     if key.endswith('.name') and not val:
                         continue
                     self.config.set('ticket-workflow', key, val)
                 self.config.save()
-            except Exception, e:
+            except Exception as e:
                 self.log.error('Exception caught while saving trac.ini%s',
                                exception_to_unicode(e, traceback=True))
                 self.config.parse_if_needed(force=True)
                 out['result'] = 1
                 out['errors'] = [exception_to_unicode(e)]
-        req.send(json.dumps(out)) # not return
+
+        self._send_json(req, out)
+        # NOTREACHED
 
     def _parse_request(self, req):
         params = json.loads(req.args.get('params'))
@@ -753,15 +829,16 @@ class TracWorkflowAdminModule(Component):
             self._str_to_inner_format(params['text'], params)
         else:
             self._json_to_inner_format(params)
-        if params['mode'] == 'update':
-            self._update_workflow(req, params) # not return
-        elif params['mode'] == 'init':
+        mode = params['mode']
+        if mode == 'update':
+            self._update_workflow(req, params)
+            # NOTREACHED
+        if mode == 'update-chart':
+            self._update_diagram(req, params)
+            # NOTREACHED
+        if mode == 'init':
             self._initialize_workflow(req)
-        elif params['mode'] == 'reset':
-            pass
-        elif params['mode'] == 'update-chart':
-            self._update_diagram(req, params) # not return
-        elif params['mode'] == 'change-textmode':
+        elif mode == 'change-textmode':
             req.args['editor_mode'] = 'text'
-        elif params['mode'] == 'change-guimode':
+        elif mode == 'change-guimode':
             req.args['editor_mode'] = 'gui'

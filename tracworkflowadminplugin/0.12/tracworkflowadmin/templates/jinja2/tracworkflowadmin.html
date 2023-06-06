@@ -91,7 +91,7 @@
                 --><img class="ui-icon ui-icon-play"
                         src="${href.chrome('tracworkflowadmin/transparent.gif')}"
                 /></td>
-              <td class="editable col-action"><span>action</span><input type="text" value="action" /><a href="#top">×</a></td>
+              <td class="editable col-action"><span>${dgettext('tracworkflowadmin', 'action')}</span><input type="text" value="action" /><a href="#top">×</a></td>
               <td class="editable col-logname"><span >${dgettext('tracworkflowadmin', 'Action name')}</span><input type="text" value="${dgettext('tracworkflowadmin', 'Action name')}" /><a href="#top">×</a></td>
               <td class="col-operations selectable">
                 <select multiple="multiple">
@@ -200,7 +200,7 @@
         <button id="chart-update-button">${dgettext('tracworkflowadmin', 'Update')}</button>
         <span id="chart-update-status">${dgettext('tracworkflowadmin', 'Updating...')}</span>
       </p>
-      <div id="image-area" style="display:none"><img alt="diagram" /></div>
+      <div id="image-area" style="display:none"><img alt="${dgettext('tracworkflowadmin', 'diagram')}" /></div>
     </fieldset>
     <form id="main-form" method="post" action="${panel_href()}">
       ${jmacros.form_token_input()}

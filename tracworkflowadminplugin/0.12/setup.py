@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 kwargs = dict(
     name = 'TracWorkflowAdmin',
-    version = '0.12.0.6',
+    version = '0.12.0.7',
     packages = find_packages(exclude=['*.tests*']),
     package_data = {
         'tracworkflowadmin': [
@@ -31,6 +31,12 @@ kwargs = dict(
     url = 'https://trac-hacks.org/wiki/TracWorkflowAdminPlugin',
     description = 'Web interface for workflow administration of Trac',
     license = 'BSD',  # the same license as Trac
+    classifiers = [
+        'Framework :: Trac',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
 )
 
 try:
