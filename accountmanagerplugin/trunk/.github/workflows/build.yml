@@ -32,7 +32,7 @@ jobs:
           3.10
           3.11
 
-    - run: python3 -m pip install tox
+    - run: python3 -m pip install tox~=4.4.0 virtualenv~=20.21.0
 
     - run: python3 -m tox run
 
