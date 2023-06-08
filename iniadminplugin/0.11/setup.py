@@ -23,6 +23,11 @@ def main():
         description='Expose all TracIni options using the Trac config option API',
         url='https://trac-hacks.org/wiki/IniAdminPlugin',
         license='BSD',
+        classifiers=[
+            'Framework :: Trac',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+        ],
         entry_points={'trac.plugins': ['iniadmin = iniadmin']},
         package_data={
             'iniadmin': [
