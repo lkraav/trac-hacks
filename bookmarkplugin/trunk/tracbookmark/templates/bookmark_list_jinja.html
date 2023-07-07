@@ -19,7 +19,7 @@
     <div style="margin-bottom: 3em;">
     <ul class="bookmarks">
       # for bookmark in bookmarks:
-        <li><a class="$bookmark.class_" href="$bookmark.href">
+        <li><a class="${bookmark.class_}" href="${bookmark.href}">
           ${bookmark.linkname}</a> ${bookmark.name} (<a href="${bookmark.delete}">${_("Delete")}</a>)</li>
       # endfor
     </ul>
