@@ -9,9 +9,14 @@ from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.text import exception_to_unicode
 from trac.web.api import IRequestHandler, IRequestFilter, RequestDone, \
-                         HTTPForbidden, HTTPNotFound, HTTPInternalError
+                         HTTPForbidden, HTTPNotFound
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, \
                             add_script_data
+
+try:
+    from trac.web.api import HTTPInternalServerError
+except ImportError:
+    from trac.web.api import HTTPInternalError as HTTPInternalServerError
 
 try:
     from trac.util import lazy
@@ -76,7 +81,7 @@ class OverlayViewModule(Component):
             self._send_exception(req, e, 403)
         except (ResourceNotFound, HTTPNotFound), e:
             self._send_exception(req, e, 404)
-        except (TracError, HTTPInternalError), e:
+        except (TracError, HTTPInternalServerError), e:
             self._send_exception(req, e, 500)
 
         req.send('', status=204)
