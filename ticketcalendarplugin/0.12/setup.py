@@ -32,7 +32,7 @@ def main():
 
     setup(
         name='TicketCalendarPlugin',
-        version='0.12.0.3',
+        version='0.12.0.4',
         author='OpenGroove,Inc.',
         author_email='trac@opengroove.com',
         maintainer='Jun Omae',
@@ -44,6 +44,7 @@ def main():
             'Framework :: Trac',
             'Programming Language :: Python :: 2.6',
             'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
         ],
         packages=find_packages(exclude=['*.tests*']),
         zip_safe=True,

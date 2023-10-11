@@ -9,6 +9,7 @@
 
 import pkg_resources
 import re
+import sys
 import time
 from datetime import datetime, date, timedelta
 
@@ -17,7 +18,6 @@ from trac.env import Environment
 from trac.ticket.model import Ticket, Milestone
 from trac.ticket.query import Query, QueryModule
 from trac.ticket.web_ui import TicketModule
-from trac.util.compat import any
 from trac.util.datefmt import parse_date
 from trac.util.html import tag
 from trac.util.text import empty
@@ -29,10 +29,16 @@ from trac.web.chrome import (
 from trac.wiki.api import IWikiMacroProvider, parse_args
 
 try:
+    from trac.util import lazy
+except ImportError:
+    lazy = property
+
+try:
     from trac.web.chrome import web_context
 except ImportError:
     from trac.mimeview.api import Context
     web_context = Context.from_request
+    del Context
 
 from .api import (
     Locale, LOCALE_ALIASES, UnknownLocaleError,
@@ -41,6 +47,16 @@ from .api import (
     get_day_names, get_month_names, format_date, is_weekend, get_today,
 )
 
+
+_PY2 = sys.version_info[0] == 2
+
+if _PY2:
+    _iteritems = lambda d: d.iteritems()
+else:
+    unicode = str
+    xrange = range
+    basestring = str
+    _iteritems = lambda d: d.items()
 
 _has_db_query = hasattr(Environment, 'db_query')
 _use_jinja2 = hasattr(Chrome, 'jenv')
@@ -65,7 +81,7 @@ def _get_month_name(date, loc):
     m = date.month
     return get_month_names('wide', locale=loc)[m]
 
-def _getdate(d, tz):
+def _datepart(d, tz):
     try:
         if d.tzinfo is tz:
             return d.date()
@@ -106,6 +122,32 @@ def _parse_duration_arg(arg, tzinfo):
             return start, period
     return default
 
+def _to_date(self, d, format='%d/%m/%Y'):
+    if isinstance(d, int):
+        return date.fromtimestamp(d).date()
+    elif isinstance(d, basestring):
+        try:
+            tt = _strptime(d, format)
+        except ValueError:
+            return None
+        else:
+            return date(*tt[0:3])
+    else:
+        return None
+
+if _PY2:
+    def _strftime(value, fmt):
+        if isinstance(fmt, unicode):
+            fmt = fmt.encode('utf-8')
+        return value.strftime(fmt)
+    def _strptime(text, fmt):
+        if isinstance(fmt, unicode):
+            fmt = fmt.encode('utf-8')
+        return time.strptime(text, fmt)
+else:
+    _strftime = lambda value, fmt: value.strftime(fmt)
+    _strptime = lambda text, fmt: time.strptime(text, fmt)
+
 
 if ' data_n=' in unicode(tag.span(data_n='*')):
 
@@ -121,7 +163,7 @@ if ' data_n=' in unicode(tag.span(data_n='*')):
                     if '_' in k:
                         k = k.replace('_', '-')
                     return k
-                kwargs = dict((normalize(k), v) for k, v in kwargs.iteritems())
+                kwargs = dict((normalize(k), v) for k, v in _iteritems(kwargs))
             return super(ElementFixup, self)._dict_from_kwargs(kwargs)
 
     class ElementFactoryFixup(ElementFactory):
@@ -152,7 +194,7 @@ class TicketCalendar(object):
         for idx, c in enumerate(constraints):
             if idx != 0:
                 args.append(('or', empty))
-            for key, val in c.iteritems():
+            for key, val in _iteritems(c):
                 if isinstance(val, (list, tuple)):
                     val = '|'.join(val)
                 args.append((key, val))
@@ -211,11 +253,11 @@ class TicketCalendar(object):
         for idx, c in enumerate(query.constraints):
             if idx != 0:
                 args.append(('or', empty))
-            args.extend(c.iteritems())
+            args.extend(_iteritems(c))
         args.append(('order', query.order))
         if query.desc:
             args.append(('desc', 1))
-        args.extend(kwargs.iteritems())
+        args.extend(_iteritems(kwargs))
         return self.req.href(name, args)
 
     def get_list_href(self, query, start=None, period=7):
@@ -231,11 +273,11 @@ class TicketCalendar(object):
             kwargs['_month'] = month.strftime('%Y-%m')
         return self._get_href('box', query, kwargs)
 
-    @property
+    @lazy
     def default_query(self):
         return self.config.get('query', 'default_query')
 
-    @property
+    @lazy
     def default_anonymous_query(self):
         return self.config.get('query', 'default_anonymous_query')
 
@@ -413,8 +455,8 @@ class TicketCalendar(object):
 
             td = tag.td(
                 class_=' '.join(tdclass),
-                data_for_start_date=day.strftime(start_date_format),
-                data_for_due_date=day.strftime(due_date_format),
+                data_for_start_date=_strftime(day, start_date_format),
+                data_for_due_date=_strftime(day, due_date_format),
                 data_fdate=formatted_day)
 
             label = []
@@ -552,7 +594,7 @@ class TicketCalendar(object):
         for ticket in tickets:
             begin = get_start_date(ticket)
             if begin is None:
-                begin = _getdate(ticket.get('time'), tzinfo)
+                begin = _datepart(ticket.get('time'), tzinfo)
             end = get_due_date(ticket)
 
             if begin == end:
@@ -577,7 +619,7 @@ class TicketCalendar(object):
         for milestone in milestones:
             if not milestone.due:
                 continue
-            due = _getdate(milestone.due, tzinfo)
+            due = _datepart(milestone.due, tzinfo)
             if due in rv:
                 rv[due].append(milestone)
         return rv
@@ -689,34 +731,20 @@ e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."""))
         if _locale_dir:
             add_domain(self.env.path, _locale_dir)
 
-    @property
+    @lazy
     def start_date_format(self):
-        return self._start_date_format.encode('utf-8')
+        return self._start_date_format
 
-    @property
+    @lazy
     def due_date_format(self):
-        return self._due_date_format.encode('utf-8')
+        return self._due_date_format
 
     def get_start_date(self, ticket):
-        return self._getdate(ticket.get(self.start_date_name),
-                             self.start_date_format)
+        return _to_date(ticket.get(self.start_date_name),
+                        self.start_date_format)
 
     def get_due_date(self, ticket):
-        return self._getdate(
-                ticket.get(self.due_date_name)
-                , self.due_date_format)
-
-    def _getdate(self, d, format='%d/%m/%Y'):
-        if isinstance(d, int):
-            return date.fromtimestamp(d).date()
-        elif isinstance(d, basestring):
-            try:
-                tt = time.strptime(d, format)
-                return date(*tt[0:3])
-            except ValueError:
-                return None
-        else:
-            return None
+        return _to_date(ticket.get(self.due_date_name), self.due_date_format)
 
     # IRequestFilter methods
 
@@ -835,7 +863,7 @@ Usage:
                                       for key in ('type', 'label', 'options',
                                                   'optgroups')
                                       if key in field))
-                          for name, field in data['fields'].iteritems())
+                          for name, field in _iteritems(data['fields']))
         add_script_data(req, {'properties': properties,
                               'modes': self._get_modes(data)})
         redirect = 'update' in req.args
@@ -858,8 +886,8 @@ Usage:
             value = value.copy()
             value['text'] = value['name']  # for Trac 0.12, see trac:r9958
             return value
-        return dict((type, [add_text_prop(value) for value in mode])
-                    for type, mode in data['modes'].iteritems())
+        return dict((type_, [add_text_prop(value) for value in mode])
+                    for type_, mode in _iteritems(data['modes']))
 
     def _render_query_form_filters(self, req, data):
         if 'query_href' not in req.session:
