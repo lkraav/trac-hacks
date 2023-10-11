@@ -7,18 +7,19 @@
 # you should have received as part of this distribution.
 #
 
-import inspect
+import pkg_resources
+import re
 import time
 from datetime import datetime, date, timedelta
 
-from genshi.builder import tag
-
 from trac.core import Component, implements
+from trac.env import Environment
 from trac.ticket.model import Ticket, Milestone
 from trac.ticket.query import Query, QueryModule
 from trac.ticket.web_ui import TicketModule
 from trac.util.compat import any
 from trac.util.datefmt import parse_date
+from trac.util.html import tag
 from trac.util.text import empty
 from trac.web.api import IRequestHandler, IRequestFilter
 from trac.web.chrome import (
@@ -31,10 +32,9 @@ try:
     from trac.web.chrome import web_context
 except ImportError:
     from trac.mimeview.api import Context
-    def web_context(*args, **kwargs):
-        return Context.from_request(*args, **kwargs)
+    web_context = Context.from_request
 
-from ticketcalendar.api import (
+from .api import (
     Locale, LOCALE_ALIASES, UnknownLocaleError,
     _, tag_, N_, gettext, add_domain, TEXTDOMAIN,
     Option, IntOption, ListOption,
@@ -42,7 +42,24 @@ from ticketcalendar.api import (
 )
 
 
+_has_db_query = hasattr(Environment, 'db_query')
+_use_jinja2 = hasattr(Chrome, 'jenv')
+_locale_dir = pkg_resources.resource_filename(__name__, 'locale') \
+              if pkg_resources.resource_isdir(__name__, 'locale') else None
+_htdocs_dir = pkg_resources.resource_filename(__name__, 'htdocs')
+_templates_dir = pkg_resources.resource_filename(
+    __name__, 'templates/{0}'.format('jinja2' if _use_jinja2 else 'genshi'))
+
+
 # Utility functions
+
+if _use_jinja2:
+    def _render_fragment(env, req, template, data):
+        return Chrome(env).render_fragment(req, template, data)
+else:
+    def _render_fragment(env, req, template, data):
+        return Chrome(env) \
+               .render_template(req, template, data, None, fragment=True)
 
 def _get_month_name(date, loc):
     m = date.month
@@ -90,10 +107,34 @@ def _parse_duration_arg(arg, tzinfo):
     return default
 
 
-"""
-Output html data for Ticket calendar.
-"""
+if ' data_n=' in unicode(tag.span(data_n='*')):
+
+    from trac.util.html import Element, ElementFactory
+
+    class ElementFixup(Element):
+
+        def _dict_from_kwargs(self, kwargs):
+            if any('_' in k for k in kwargs):
+                def normalize(k):
+                    if k.endswith('_'):
+                        k = k[:-1]
+                    if '_' in k:
+                        k = k.replace('_', '-')
+                    return k
+                kwargs = dict((normalize(k), v) for k, v in kwargs.iteritems())
+            return super(ElementFixup, self)._dict_from_kwargs(kwargs)
+
+    class ElementFactoryFixup(ElementFactory):
+
+        def __getattr__(self, tag):
+             return ElementFixup(tag)
+
+    tag = ElementFactoryFixup()
+
+
 class TicketCalendar(object):
+    """Output html data for Ticket calendar."""
+
     def __init__(self, env, req):
         self.env = env
         self.config = env.config
@@ -127,15 +168,23 @@ class TicketCalendar(object):
     def get_ticket_type_icon(self, name):
         return self._ticket_type_icons.get(name, 'ui-icon-contact')
 
-    def _prepare_list(self, type, values):
+    if _has_db_query:
+        def _prepare_list(self, type_, values):
+            with self.env.db_query as db:
+                return self._prepare_list_0(db, type_, values)
+    else:
+        def _prepare_list(self, type_, values):
+            db = self.env.get_read_db()
+            return self._prepare_list_0(db, type_, values)
+
+    def _prepare_list_0(self, db, type_, values):
         values = filter(None, values)
         if not values:
             return {}
-        db = self.env.get_read_db()
         cursor = db.cursor()
         cursor.execute('SELECT name FROM enum WHERE type=%s'
                        ' ORDER BY value',
-                       (type,))
+                       (type_,))
         names = [row[0] for row in cursor]
         cycle = []
         data = {}
@@ -304,13 +353,13 @@ class TicketCalendar(object):
         return query.template_data(context, tickets, None,
                                    datetime.now(req.tz), req)
 
-    if 'db' in inspect.getargspec(Query.execute)[0]:
+    if _has_db_query:
+        def _query_execute(self, query, req):
+            return query.execute(req)
+    else:
         def _query_execute(self, query, req):
             db = self.env.get_read_db()
             return query.execute(req, db)
-    else:
-        def _query_execute(self, query, req):
-            return query.execute(req)
 
     def gen_calendar(self, tickets, query, month, width=None, nav=True):
         milestones = self._get_milestones()
@@ -492,8 +541,8 @@ class TicketCalendar(object):
             'create_ticket': self._create_ticket_item,
             'create_milestone': self._create_milestone_item,
         }
-        return Chrome(self.env).render_template(
-            self.req, 'ticketcalendar_list.html', data, None, fragment=True)
+        return _render_fragment(self.env, self.req, 'ticketcalendar_list.html',
+                                data)
 
     def _filter_tickets(self, days, tickets, tzinfo):
         get_start_date = self.mod.get_start_date
@@ -637,10 +686,8 @@ e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."""))
         doc=N_("The format for due date of ticket"))
 
     def __init__(self):
-        from pkg_resources import resource_filename, resource_isdir
-        if resource_isdir(__name__, 'locale'):
-            locale_dir = resource_filename(__name__, 'locale')
-            add_domain(self.env.path, locale_dir)
+        if _locale_dir:
+            add_domain(self.env.path, _locale_dir)
 
     @property
     def start_date_format(self):
@@ -686,12 +733,10 @@ e.g. `defect:ui-icon-contact, task:ui-icon-lightbulb, ...`."""))
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('ticketcalendar', resource_filename(__name__, 'htdocs'))]
+        yield 'ticketcalendar', _htdocs_dir
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        yield _templates_dir
 
     # INavigationContributor methods
 
@@ -765,7 +810,16 @@ Usage:
                                  '/ticketcalendar-list',
                                  '/ticketcalendar-ticket')
 
-    def process_request(self, req):
+    if _use_jinja2:
+        def process_request(self, req):
+            return self._process_request(req)
+    else:
+        def process_request(self, req):
+            return self._process_request(req) + (None,)
+
+    # Internal methods
+
+    def _process_request(self, req):
         req.perm.assert_permission('TICKET_VIEW')
         req.send_header('X-UA-Compatible', 'IE=edge')
 
@@ -773,7 +827,6 @@ Usage:
             return self._process_ticket_detail(req)
 
         self._add_header_contents(req)
-
         calendar = TicketCalendar(self.env, req)
         query = calendar.get_query(calendar.get_constraints())
         data = calendar.template_data(req, query)
@@ -813,9 +866,26 @@ Usage:
             req.session['query_href'] = ''  # workaround crashing in batchmod
         data = data.copy()
         data['headers'] = data['groups'] = data['tickets'] = ()
-        fragment = Chrome(self.env).render_template(req, 'query.html', data,
-                                                    None, fragment=True)
-        return fragment.select('//fieldset[@id="filters"]')
+        initial = {'links': {}, 'scripts': [], 'script_data': {}}
+        saved = dict((key, req.chrome.get(key))
+                      for key in ('links', 'scripts', 'script_data'))
+        req.chrome.update(initial)
+        try:
+            fragment = _render_fragment(self.env, req, 'query.html', data)
+        finally:
+            req.chrome.update(saved)
+        if _use_jinja2:
+            m = re.search(r' *<fieldset\s+id="filters"', fragment)
+            if not m:
+                return ''
+            fragment = fragment[m.start(0):]
+            m = re.search(r' *</fieldset>\s*', fragment)
+            if not m:
+                return ''
+            fragment = fragment[:m.end(0)]
+            return fragment
+        else:
+            return fragment.select('//fieldset[@id="filters"]')
 
     def _process_box(self, req, query, data, month):
         calendar = TicketCalendar(self.env, req)
@@ -829,7 +899,7 @@ Usage:
         add_ctxtnav(req, _('Calendar view'))
         add_ctxtnav(req, _('List view'), calendar.get_list_href(query))
 
-        return 'ticketcalendar_calendar.html', data, None
+        return 'ticketcalendar_calendar.html', data
 
     def _process_list(self, req, query, data, start_date, period):
         calendar = TicketCalendar(self.env, req)
@@ -848,27 +918,28 @@ Usage:
             '[[TicketCalendar(type=list,duration=%s,query=%s,order=%s%s)]]' % (
             '%s/P%dD' % (start_date.strftime('%Y-%m-%d'), period),
             calendar.build_query_string(query.constraints),
-            query.order,
-            query.desc and ',desc=1' or '')
+            query.order, ',desc=1' if query.desc else '')
 
         add_ctxtnav(req, _('Calendar view'),
                     calendar.get_box_href(query, get_today(req.tz)))
         add_ctxtnav(req, _('List view'))
 
-        return 'ticketcalendar_calendar.html', data, None
+        return 'ticketcalendar_calendar.html', data
 
     def _process_ticket_detail(self, req):
         ticket = Ticket(self.env, int(req.args.get('id')))
-        data = {'ticket': ticket,
-                'fields': self._prepare_fields(req, ticket),
-                'description_change': None,
-                'can_append': None,
-                'preview_mode': None,
-                'writable': 'TICKET_CHGPROP' in req.perm or
-                            'TICKET_APPEND' in req.perm or
-                            'TICKET_MODIFY' in req.perm,
-                }
-        return 'ticketcalendar_ticket_detail.html', data, None
+        data = {
+            'ticket': ticket,
+            'fields': self._prepare_fields(req, ticket),
+            'description_change': None,
+            'can_append': None,
+            'preview_mode': None,
+            'writable': 'TICKET_CHGPROP' in req.perm or
+                        'TICKET_APPEND' in req.perm or
+                        'TICKET_MODIFY' in req.perm,
+            'version': None,
+        }
+        return 'ticketcalendar_ticket_detail.html', data
 
     def _add_header_contents(self, req):
         add_stylesheet(req, 'common/css/report.css')

@@ -1,0 +1,26 @@
+# extends 'layout.html'
+<!DOCTYPE html>
+# set preview_mode = 'preview' in req.args
+<html>
+  <head>
+    <title>
+      # block title
+      ${title} ${ super() }
+      # endblock title
+    </title>
+  </head>
+  <body>
+    # block content
+    <div id="content">
+      <h1>${title}</h1>
+      # include 'ticketcalendar_query_form.html'
+      # if ticketcalendar.mode == 'calendar':
+      ${content}
+      # else:
+      #   include 'ticketcalendar_list.html'
+      # endif
+    </div>
+    ${ super() }
+    # endblock content
+  </body>
+</html>

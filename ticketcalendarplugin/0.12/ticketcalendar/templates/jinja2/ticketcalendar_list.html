@@ -1,0 +1,44 @@
+<div class="ticketcalendar">
+  # if macro:
+  <div class="ticketcalendar-nav">
+    <span class="ticketcalendar-macro">
+      ${dgettext("ticketcalendar", "Macro")}
+      <input type="text" readonly="readonly" size="80" value="${macro}"
+             style="display:none;width:0" />
+    </span>
+  </div>
+  # endif
+  <p>
+    # if ticketcalendar.last_week:
+    <a href="${ticketcalendar.last_week}">${
+      dgettext("ticketcalendar", "View tickets in last week")
+    }</a>
+    # endif
+  </p>
+  <dl>
+    # for day in ticketcalendar.events:
+    <dt>${day.formatted_date}</dt>
+    <dd>
+      # if day.tickets or day.milestones:
+      <ul>
+        # for milestone in day.milestones:
+        ${ticketcalendar.create_milestone(milestone)}
+        # endfor
+        # for ticket in day.tickets:
+        ${ticketcalendar.create_ticket(ticket)}
+        # endfor
+      </ul>
+      # else:
+      ${dgettext("ticketcalendar", "No tickets and no milestones")}
+      # endif
+    </dd>
+    # endfor
+  </dl>
+  <p>
+    # if ticketcalendar.next_week:
+    <a href="${ticketcalendar.next_week}">${
+      dgettext("ticketcalendar", "View tickets in next week")
+    }</a>
+    # endif
+  </p>
+</div>

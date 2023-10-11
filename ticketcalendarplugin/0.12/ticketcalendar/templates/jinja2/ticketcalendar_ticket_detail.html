@@ -1,0 +1,20 @@
+<div class="ticketcalendar-ticket">
+  <div id="content" class="ticket">
+    <h1 id="trac-ticket-title">
+      <a href="${href.ticket(ticket.id)}">${tag_("Ticket #%(id)s", id=ticket.id)}</a>
+      <span class="status">({#
+        #}${ticket.status}{%
+        if ticket.type %} ${ticket.type}{% endif %}{%
+        if ticket.resolution %}: ${ticket.resolution}{% endif %}{#
+        #})</span>
+    </h1>
+    # include 'ticket_box.html'
+    # if writable:
+    <p class="ticketcalendar-edit">
+      <a href="${href.ticket(ticket.id)}#propertyform">${
+        dgettext("ticketcalendar", "Edit this ticket")
+      }</a>
+    </p>
+    # endif
+  </div>
+</div>

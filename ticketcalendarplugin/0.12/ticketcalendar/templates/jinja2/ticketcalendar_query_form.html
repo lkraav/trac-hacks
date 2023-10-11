@@ -1,0 +1,43 @@
+<form id="query" method="post">
+  ${jmacros.form_token_input()}
+  ${query_form_filters}
+  <fieldset id="sort">
+    <legend class="foldable">${dgettext("ticketcalendar", "Sort")}</legend>
+    <table summary="Query filters">
+      <tbody>
+        <tr>
+          <td>
+            <select name="order" id="sort-selecter">
+              <option></option>
+              # for field_name, field in fields|dictsort(true):
+              <option${{
+                  'value': field_name,
+                  'selected': query.order == field_name,
+                }|htmlattr}>${field.label}</option>
+              # endfor
+            </select>
+          </td>
+          <td>
+            <label for="sort-desc-off">
+              <input type="radio" name="desc" value="" id="sort-desc-off"
+                     checked="${not query.desc and 'checked' or None}" />
+              ${dgettext("ticketcalendar", "Asc")}
+            </label>
+            &nbsp;/&nbsp;
+            <label for="sort-desc-on">
+              <input type="radio" name="desc" value="1" id="sort-desc-on"
+                     checked="${query.desc and 'checked' or None}" />
+              ${dgettext("ticketcalendar", "Desc")}
+            </label>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <div class="buttons">
+    <input type="hidden" name="month" value="${month}" />
+    <input type="submit" name="update" value="${dgettext('ticketcalendar', 'Update')}" />
+  </div>
+  <hr />
+</form>
