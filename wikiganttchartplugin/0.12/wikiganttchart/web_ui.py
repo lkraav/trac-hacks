@@ -6,25 +6,22 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+import json
+import pkg_resources
 import re
+import sys
 import time
 from datetime import datetime, timedelta
-try:
-    import json
-except ImportError:
-    import simplejson as json
-from pkg_resources import resource_exists, resource_filename, resource_isdir
-
-from genshi.builder import tag
 
 from trac.core import Component, TracError, implements
+from trac.env import Environment
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.test import Mock, MockPerm
 from trac.ticket.api import IMilestoneChangeListener, TicketSystem
 from trac.ticket.model import Milestone, Ticket
 from trac.util import hex_entropy
-from trac.util.compat import any
+from trac.util.html import tag
 from trac.util.datefmt import localtz, to_datetime, to_utimestamp, utc
 from trac.util.text import expandtabs, exception_to_unicode, to_unicode
 from trac.web.api import IRequestHandler, IRequestFilter, RequestDone
@@ -32,32 +29,56 @@ from trac.web.chrome import (
     Chrome, ITemplateProvider, add_script, add_script_data, add_stylesheet,
 )
 from trac.web.main import FakeSession
-from trac.wiki import WikiPage
 from trac.wiki.api import IWikiMacroProvider, IWikiPageManipulator
 from trac.wiki.formatter import Formatter
+from trac.wiki.model import WikiPage
 from trac.wiki.parser import WikiParser
 try:
     from trac.web.chrome import web_context
 except ImportError:
     from trac.mimeview.api import Context
     web_context = Context.from_request
+    del Context
 
 from wikiganttchart.api import (
-    _, N_, ChoiceOption, IntOption, Option, TEXTDOMAIN, add_domain, db_exc,
-    gettext, iso8601_parse_date, iso8601_format_date, locale_en,
-    l10n_format_datetime, tag_,
+    _, N_, ChoiceOption, IntOption, Option, TEXTDOMAIN, add_domain, babel,
+    db_exc, getargspec, gettext, iso8601_parse_date, iso8601_format_date,
+    locale_en, l10n_format_datetime, tag_,
 )
 
+if sys.version_info[0] != 2:
+    unicode = str
+    xrange = range
+
+_use_jinja2 = hasattr(Chrome, 'jenv')
+
+_htdocs_dirs = (
+    ('wikiganttchart', pkg_resources.resource_filename(__name__, 'htdocs')),
+)
+
+_templates_dirs = (
+    pkg_resources.resource_filename(
+        __name__,
+        'templates/{0}'.format('jinja2' if _use_jinja2 else 'genshi'),
+    ),
+)
+
+_has_ipnr = 'remote_addr' in getargspec(WikiPage.save)[0]
 
 MACRO_NAME = 'Gantt'
 NEWLINE = u'\r\n'
 
 
-def _send_json(req, data, content_type='text/javascript', status=200):
+def _send_json(req, data, status=200):
     data = json.dumps(data)
     if isinstance(data, unicode):
         data = data.encode('utf-8')
-    req.send(data, content_type, status)
+    req.send(data, 'text/javascript', status)
+
+
+def _send_json_exception(req, e, status=200):
+    data = {'valid': False, 'content': to_unicode(e)}
+    _send_json(req, data, status)
 
 
 def new_id():
@@ -144,9 +165,8 @@ class WikiGanttChart(object):
             if task == {}:
                 return {}
             return task.to_dict()
-        tasks = map(fn, self.tasks)
-        return {'id': self._id, 'tasks': tasks, 'writable': self.writable,
-                'style': self.style, 'zoom': 4,
+        return {'id': self._id, 'tasks': [fn(task) for task in self.tasks],
+                'writable': self.writable, 'style': self.style, 'zoom': 4,
                 'ticketCreatable': self.ticket_creatable}
 
     def to_json(self):
@@ -175,13 +195,13 @@ class WikiGanttChart(object):
         content = expandtabs(content)
         content = ''.join(line + '\n' for line in content.splitlines())
         formatter = Formatter(self.env, self.context)
-        id = None
+        id_ = None
         for match in self._replace_macro_re.finditer(content):
             args = formatter.parse_processor_args(match.group('params'))
-            id = args.get('id')
-            if id == self._id:
+            id_ = args.get('id')
+            if id_ == self._id:
                 break
-        if id != self._id:
+        if id_ != self._id:
             raise WikiGanttChartError(_("No %(name)s macro.", name=MACRO_NAME))
         generated = self.generate_macro()
         self._parse_macro_body(self._last_body)
@@ -286,21 +306,21 @@ class WikiGanttChart(object):
 
         task = {}
         level = self._get_level(line, i)
-        itr = self._get_cv(line.strip(), i)
+        fields = self._iter_fields(line.strip(), i)
 
         try:
-            title = itr.next()
+            title = next(fields)
             m = re.search(r'\A#(\d+)\s*(.*)\Z', title)
             if m:
                 task['ticket'] = m.group(1)
                 task['name'] = m.group(2)
             else:
                 task['name'] = title
-            owner = [value.strip() for value in itr.next().split(",")]
-            task['owner'] = filter(None, owner)
-            task['startDate'] = itr.next()
-            task['dueDate'] = itr.next()
-            ratio_src = itr.next()
+            owner = [value.strip() for value in next(fields).split(",")]
+            task['owner'] = [v for v in owner if v]
+            task['startDate'] = next(fields)
+            task['dueDate'] = next(fields)
+            ratio_src = next(fields)
             ratio = None
             m = re.search(r'^(\d+)\s*%?', ratio_src)
             if m:
@@ -319,7 +339,7 @@ class WikiGanttChart(object):
         task['level'] = level
         return task
 
-    def _get_cv(self, line, idx):
+    def _iter_fields(self, line, idx):
         line = ',' + line
         while len(line) > 0:
             col = ""
@@ -588,8 +608,8 @@ class WikiGanttChartModule(Component):
            "it wouldn't create a new version of wiki page."))
 
     def __init__(self):
-        if resource_isdir(__name__, 'locale'):
-            locale_dir = resource_filename(__name__, 'locale')
+        if pkg_resources.resource_isdir(__name__, 'locale'):
+            locale_dir = pkg_resources.resource_filename(__name__, 'locale')
             add_domain(self.env.path, locale_dir)
         self._stylesheet_files = self.config.getlist('wikiganttchart',
                                                      'stylesheet_files')
@@ -642,12 +662,10 @@ class WikiGanttChartModule(Component):
     # ITemplateProvider methods
 
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('wikiganttchart', resource_filename(__name__, 'htdocs'))]
+        return _htdocs_dirs
 
     def get_templates_dirs(self):
-        from pkg_resources import resource_filename
-        return [resource_filename(__name__, 'templates')]
+        return _templates_dirs
 
     # IWikiMacroProvider methods
 
@@ -690,7 +708,7 @@ class WikiGanttChartModule(Component):
         try:
             gantt = WikiGanttChart(self, req, model)
             gantt.parse_macro(**args)
-        except WikiGanttChartError, e:
+        except WikiGanttChartError as e:
             return tag.div(
                 tag.div(tag.strong('Error: Macro WikiGanttChart failed'),
                         tag.pre(to_unicode(e), class_='system-message')),
@@ -702,9 +720,7 @@ class WikiGanttChartModule(Component):
             'updateUrl': req.href('_wikiganttchart', 'update'),
             'createTicketUrl': req.href('_wikiganttchart', 'create-ticket'),
         })
-        chrome = Chrome(self.env)
-        return chrome.render_template(req, 'wikiganttchart-macro.html', params,
-                                      None, fragment=True)
+        return self._render_fragment(req, 'wikiganttchart-macro.html', params)
 
     # IRequestHandler methods
 
@@ -740,19 +756,14 @@ class WikiGanttChartModule(Component):
             elif req.path_info.endswith('create-ticket'):
                 self._create_ticket_request(req, model, gantt)
 
-        except WikiGanttChartError, e:
-            _send_json(req, {'valid': False, 'content': to_unicode(e)})
-
-        except PermissionError, e:
-            _send_json(req, {'valid': False, 'content': to_unicode(e)},
-                       status=403)
-
         except RequestDone:
             raise
-
-        except TracError, e:
-            _send_json(req, {'valid': False, 'content': to_unicode(e)},
-                       status=500)
+        except WikiGanttChartError as e:
+            _send_json_exception(req, e, 200)
+        except PermissionError as e:
+            _send_json_exception(req, e, 403)
+        except TracError as e:
+            _send_json_exception(req, e, 500)
 
     # IWikiPageManipulator methods
 
@@ -783,8 +794,8 @@ class WikiGanttChartModule(Component):
         self._add_script_data_jquery_ui(req)
 
         locale = req.locale and str(req.locale)
-        if locale and resource_exists(__name__,
-                                      'htdocs/js/locale/%s.js' % locale):
+        if locale and pkg_resources.resource_exists(
+                                __name__, 'htdocs/js/locale/%s.js' % locale):
             add_script(req, 'wikiganttchart/js/locale/%s.js' % locale)
 
         if self._stylesheet_files or self._javascript_files:
@@ -815,15 +826,10 @@ class WikiGanttChartModule(Component):
             add_script(req, 'wikiganttchart/js/jquery-ui.min.js')
 
     def _add_script_data_jquery_ui(self, req):
-        try:
-            import babel
-        except ImportError:
-            locale = None
-        else:
-            locale = req.locale
+        locale = req.locale if babel else None
         if locale:
             from babel.dates import (get_date_format, get_day_names,
-                                     get_month_names, get_time_format)
+                                     get_month_names)
             def month_names(width):
                 names = get_month_names(width, locale=locale)
                 return [names[i] for i in xrange(1, 13)]
@@ -883,6 +889,14 @@ class WikiGanttChartModule(Component):
                     session=FakeSession({}),
                     chrome={'notices': [], 'warnings': []},
                     args={}, arg_list=(), locale=locale_en, tz=localtz)
+
+    if _use_jinja2:
+        def _render_fragment(self, req, template, data):
+            return Chrome(self.env).render_fragment(req, template, data)
+    else:
+        def _render_fragment(self, req, template, data):
+            return Chrome(self.env).render_template(req, template, data, None,
+                                                    fragment=True)
 
     _empty_macro_re = re.compile(
         r'!?\{\{\{.*?\}\}\}|'
@@ -1020,21 +1034,13 @@ class WikiGanttChartModule(Component):
         if realm == 'wiki':
             now = datetime.now(utc)
             if self._in_short_term(req, model, now):
-                @self.env.with_transaction()
-                def do_update(db):
-                    cursor = db.cursor()
-                    cursor.execute(
-                        "UPDATE wiki SET text=%s,time=%s,ipnr=%s "
-                        "WHERE name=%s AND version=%s",
-                        (text, to_utimestamp(now), req.remote_addr,
-                         model.name, model.version))
+                self._update_wiki_version(req, model, text, now)
             else:
-                model.text = text
                 try:
-                    model.save(req.authname, self._comment(), req.remote_addr)
-                except db_exc(self.env).IntegrityError, e:
-                    self.log.warn('Exception caught while saving wiki page: '
-                                  '%s', exception_to_unicode(e))
+                    self._save_wiki(req, model, text, now)
+                except db_exc(self.env).IntegrityError as e:
+                    self.log.warning('Exception caught while saving wiki '
+                                     'page: %s', exception_to_unicode(e))
                     req.send('Integrity error', status=500)
             return model.version
 
@@ -1042,6 +1048,42 @@ class WikiGanttChartModule(Component):
             model.description = text
             model.update()
             return None
+
+    if not _has_ipnr:
+        def _db_update_wiki_version(self, db, req, model, text, t):
+            cursor = db.cursor()
+            cursor.execute("""
+                UPDATE wiki SET text=%s,time=%s WHERE name=%s AND version=%s
+                """,
+                (text, to_utimestamp(t), model.name, model.version))
+
+        def _save_wiki(self, req, model, text, t):
+            model.text = text
+            model.save(req.authname, self._comment(), t=t)
+
+    else:
+        def _db_update_wiki_version(self, db, req, model, text, t):
+            cursor = db.cursor()
+            cursor.execute("""
+                UPDATE wiki SET text=%s,time=%s,ipnr=%s
+                WHERE name=%s AND version=%s
+                """,
+                (text, to_utimestamp(t), req.remote_addr, model.name,
+                 model.version))
+
+        def _save_wiki(self, req, model, text, t):
+            model.text = text
+            model.save(req.authname, self._comment(), req.remote_addr, t=t)
+
+    if hasattr(Environment, 'db_transaction'):
+        def _update_wiki_version(self, req, model, text, t):
+            with self.env.db_transaction as db:
+                self._db_update_wiki_version(db, req, model, text, t)
+    else:
+        def _update_wiki_version(self, req, model, text, t):
+            @self.env.with_transaction()
+            def do_update(db):
+                self._db_update_wiki_version(db, req, model, text, t)
 
     def _in_short_term(self, req, model, now):
         realm = model.resource.realm

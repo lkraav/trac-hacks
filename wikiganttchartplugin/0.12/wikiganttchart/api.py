@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 
 from datetime import date, datetime
+import inspect
 
 from trac.core import TracError
 from trac.config import ChoiceOption, IntOption, Option
@@ -66,10 +67,15 @@ else:
         raise AssertionError('[trac] database is invalid: %r' % database)
 
 
+getargspec = inspect.getfullargspec \
+             if hasattr(inspect, 'getfullargspec') else \
+             inspect.getargspec
+
+
 def iso8601_parse_date(text, tzinfo=utc):
     try:
         return parse_date(text, tzinfo=tzinfo)
-    except TracError, e:
+    except TracError as e:
         raise ValueError(e)
 
 
@@ -83,7 +89,7 @@ try:
     import babel
 
 except ImportError:
-    locale_en = None
+    babel = locale_en = None
 
     def l10n_format_datetime(t, format=None, locale=None):
         return iso8601_format_date(t)

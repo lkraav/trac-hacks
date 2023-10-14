@@ -1,0 +1,71 @@
+<div class="wikiganttchartmacro" id="gantt-${gantt.id}"></div>
+<script type="text/javascript">
+jQuery(function($) {
+    var data = ${to_json(gantt.export())|safe};
+    var updateUrl = ${to_json(updateUrl)|safe};
+    var createTicketUrl = ${to_json(createTicketUrl)|safe};
+    var realm = ${to_json(realm)|safe};
+    var id = ${to_json(id)|safe};
+    var version = ${to_json(version)|safe};
+    var token = ${to_json(token)|safe};
+    var element = ${to_json('gantt-' + gantt.id)|safe};
+{% raw %}
+    var ajaxSuccess = function(successed, failed) {
+        return function(data) {
+            if (data.valid) {
+                version = data.version;
+                successed(data.content);
+            }
+            else {
+                failed(data.content);
+            }
+        };
+    };
+    var ajaxError = function(failed) {
+        return function(xhr, status, e) {
+            var ctype = (xhr.getResponseHeader('Content-Type') ||
+                         '').toLowerCase();
+            switch (ctype) {
+            case 'text/javascript':
+            case 'application/javascript':
+                var data = $.parseJSON(xhr.responseText);
+                failed(data.content);
+                break;
+            default:
+                failed(status);
+                break;
+            }
+        };
+    };
+    element = $(document.getElementById(element));
+    element.rmgantt(data, {
+        onSave: function(data, successed, failed) {
+            var options = {type: 'POST', dataType: 'json'};
+            options.url = updateUrl;
+            options.data = {content: JSON.stringify(data),
+                            realm: realm,
+                            id: id,
+                            version: version,
+                            __FORM_TOKEN: token};
+            options.success = ajaxSuccess(successed, failed);
+            options.error = ajaxError(failed);
+            $.ajax(options);
+        },
+        createTicket: function(data, line, successed, failed) {
+            var options = {type: 'POST', dataType: 'json'};
+            options.url = createTicketUrl;
+            options.data = {content: JSON.stringify(data),
+                            line: line,
+                            realm: realm,
+                            id: id,
+                            version: version,
+                            __FORM_TOKEN: token};
+            options.success = ajaxSuccess(successed, failed);
+            options.error = ajaxError(failed);
+            $.ajax(options);
+        }
+    });
+{% endraw %}
+});
+</script>
+</div>
