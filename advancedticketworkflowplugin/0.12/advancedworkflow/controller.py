@@ -341,7 +341,6 @@ class TicketWorkflowOpRunExternal(TicketWorkflowOpBase):
 
     def apply_action_side_effects(self, req, ticket, action):
         """Run the external script"""
-        print "running external script for %s" % action
         script = os.path.join(self.env.path, 'hooks', action)
         for extension in ('', '.exe', '.cmd', '.bat'):
             if os.path.exists(script + extension):
