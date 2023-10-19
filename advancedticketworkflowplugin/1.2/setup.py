@@ -32,8 +32,13 @@ setup(
     description='Advanced workflow operations Trac plugin',
     long_description='Provides more advanced workflow operations for Trac 1.2',
     url='https://trac-hacks.org/wiki/AdvancedTicketWorkflowPlugin',
-    classifiers=['Framework :: Trac'],
-    packages=find_packages(),
+    classifiers=[
+        'Framework :: Trac',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
+    packages=find_packages(exclude=['*.tests*']),
     package_data={
         'advancedworkflow': [
             'locale/*/LC_MESSAGES/*.mo',

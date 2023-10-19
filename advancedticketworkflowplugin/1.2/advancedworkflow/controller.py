@@ -23,7 +23,7 @@ from trac.ticket.default_workflow import ConfigurableTicketWorkflow
 from trac.ticket.notification import TicketChangeEvent
 from trac.resource import ResourceNotFound
 from trac.util.datefmt import utc
-from trac.util.html import html
+from trac.util.html import tag
 from trac.util.text import to_unicode
 from trac.util.translation import domain_functions
 from trac.web.chrome import Chrome, add_warning
@@ -164,7 +164,7 @@ class TicketWorkflowOpOwnerComponent(TicketWorkflowOpBase):
         try:
             component = model.Component(self.env, name=ticket['component'])
             return component.owner
-        except ResourceNotFound, e:
+        except ResourceNotFound as e:
             self.log.warning("In %s, %s", self._op_name, to_unicode(e))
             return None
 
@@ -230,7 +230,7 @@ class TicketWorkflowOpFieldAuthor(TicketWorkflowOpBase):
         hint = _("The '%(field)s' field will be set to '%(username)s'.",
             field=self._field_name(action, ticket),
             username=req.authname)
-        control = html('')
+        control = tag('')
         return (label, control, hint)
 
     def get_ticket_changes(self, req, ticket, action):
@@ -269,7 +269,7 @@ class TicketWorkflowOpFieldsClear(TicketWorkflowOpBase):
         hint = ngettext("The %(fields)s field will be cleared.",
                         "The %(fields)s fields will be cleared.", len(fields),
                         fields=', '.join(fields))
-        control = html('')
+        control = tag('')
         return (label, control, hint)
 
     def get_ticket_changes(self, req, ticket, action):
@@ -509,7 +509,7 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
         hint = actions[action].get('xref_hint') or \
                _("The specified ticket will be cross-referenced with this "
                  "ticket.")
-        control = html.input(type='text', id=id, name=id, value=ticketnum)
+        control = tag.input(type='text', id=id, name=id, value=ticketnum)
         return label, control, hint
 
     def get_ticket_changes(self, req, ticket, action):
@@ -526,7 +526,7 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
                 add_warning(req, 'The cross-referenced ticket number "%s" '
                                  'was not a number', ticket_num)
                 return {}
-            except ResourceNotFound, e:
+            except ResourceNotFound as e:
                 #put in preview mode to prevent ticket being saved
                 req.args['preview'] = True
                 add_warning(req, "Unable to cross-reference Ticket #%s (%s).",
@@ -573,7 +573,7 @@ class TicketWorkflowOpXRef(TicketWorkflowOpBase):
         event = TicketChangeEvent('changed', xticket, now, author)
         try:
             NotificationSystem(self.env).notify(event)
-        except Exception, e:
+        except Exception as e:
             self.log.exception("Failure sending notification on change to "
                                "ticket #%s: %s", ticketnum, e)
 
@@ -621,6 +621,6 @@ class TicketWorkflowOpResetMilestone(TicketWorkflowOpBase):
         if ticket['milestone']:
             try:
                 return model.Milestone(self.env, ticket['milestone'])
-            except ResourceNotFound, e:
+            except ResourceNotFound as e:
                 self.log.warning("In %s, %s", self._op_name, to_unicode(e))
         return None
