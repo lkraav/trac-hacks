@@ -416,7 +416,7 @@ class TracIniAdminPanel(Component):
         add_stylesheet(req, 'iniadminpanel/main.css')
         add_script(req, 'iniadminpanel/editor.js')
         # still Genshi, last argument must be none for Trac >= 1.4
-        return 'admin_tracini.html', data, None
+        return 'admin_tracini.html', data
 
     'also change iniadminpanel/htdocs/editor.js when changing this'
     @staticmethod
