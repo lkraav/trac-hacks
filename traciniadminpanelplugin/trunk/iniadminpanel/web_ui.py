@@ -121,7 +121,7 @@ class TracIniAdminPanel(Component):
 
         registry = ConfigSection.get_registry(self.compmgr)
         descriptions = { }
-        for section_name, section in registry.items():
+        for section_name, section in list(registry.items()):
             if section_name == 'components':
                 continue
             doc = section.__doc__
@@ -140,10 +140,10 @@ class TracIniAdminPanel(Component):
         manager = None
         try:
             manager = self.security_manager
-        except Exception, detail:  # "except ... as ..." is only available since Python 2.6
+        except Exception as detail:
             if req.method != 'POST':
                 # only add this warning once
-                add_warning(req, _('Security manager could not be initated. %s') % unicode(detail))
+                add_warning(req, _('Security manager could not be initated. %s') % str(detail))
 
         if manager is None:
             #
@@ -211,7 +211,7 @@ class TracIniAdminPanel(Component):
             #
             if req.method == 'POST':
                 # Overwrite option values with POST values so that they don't get lost
-                for key, value in req.args.items():
+                for key, value in list(req.args.items()):
                     if not key.startswith('iniadmin_value##'): # skip unrelated args
                         continue
 
@@ -250,7 +250,7 @@ class TracIniAdminPanel(Component):
                         default_using_options = [ ]
                     elif type(default_using_options).__name__ != 'list':
                         # if there's only one checkbox it's just a string
-                        default_using_options = [ unicode(default_using_options) ]
+                        default_using_options = [ str(default_using_options) ]
 
                     for default_using_option in default_using_options:
                         name = default_using_option.split('##')
@@ -302,7 +302,7 @@ class TracIniAdminPanel(Component):
                     else:
                         # apply all sections
                         changes_applied = False
-                        for section_name, options in sections.items():
+                        for section_name, options in list(sections.items()):
                             if self._apply_section_changes(req, section_name, options):
                                 changes_applied = True
 
@@ -320,7 +320,7 @@ class TracIniAdminPanel(Component):
                         add_notice(req, _('Your changes for section %s have been discarded.') % section_name)
                     else:
                         # discard all sections
-                        for section_name, options in sections.items():
+                        for section_name, options in list(sections.items()):
                             self._discard_section_changes(req, section_name, options)
                         add_notice(req, _('All changes have been discarded.'))
 
@@ -360,11 +360,11 @@ class TracIniAdminPanel(Component):
         modifiable_options = { }
         readonly_options = { }
         hidden_options = { }
-        for section_name, options in sections.items():
+        for section_name, options in list(sections.items()):
             sect_modifiable = { }
             sect_readonly = { }
             sect_hidden =  { }
-            for option_name, option in options.items():
+            for option_name, option in list(options.items()):
                 if option['access'] == ACCESS_MODIFIABLE:
                     sect_modifiable[option_name] = option
                 elif option['access'] == ACCESS_READONLY:
@@ -378,7 +378,7 @@ class TracIniAdminPanel(Component):
 
         registry = ConfigSection.get_registry(self.compmgr)
         descriptions = { }
-        for name, section in registry.items():
+        for name, section in list(registry.items()):
             doc = section.__doc__
             if doc:
                 descriptions[name] = dgettext(section.doc_domain, doc)
@@ -395,12 +395,12 @@ class TracIniAdminPanel(Component):
 
         section_counters = {}
         settings_stored_values = {}
-        for section_name, section in sections.iteritems():
+        for section_name, section in sections.items():
             escaped = self._fixname(section_name)
             section_counters[escaped] = {'option_count': len(section)}
             settings_stored_values[escaped] = dict(
                 (name, option['stored_value'])
-                for name, option in modifiable_options[section_name].iteritems()
+                for name, option in modifiable_options[section_name].items()
                 if option['type'] != 'password')
 
         add_script_data(req, {
@@ -458,7 +458,7 @@ class TracIniAdminPanel(Component):
             the options for the specified section will be returned.
         """
         sections = { }
-        for item_name in req.session.keys():
+        for item_name in list(req.session.keys()):
             if not item_name.startswith('iniadmin-custom|'):
                 continue
 
@@ -512,7 +512,7 @@ class TracIniAdminPanel(Component):
             custom_options = self._get_session_custom_options(req, section_name)
 
         if section_name in custom_options:
-            for option_name in custom_options[section_name].keys():
+            for option_name in list(custom_options[section_name].keys()):
                 if option_name in options:
                     continue
 
@@ -532,12 +532,12 @@ class TracIniAdminPanel(Component):
                 else:
                     return 'false'
             elif (option_type == 'ListOption' or option_type == 'OrderedExtensionsOption') and type(value).__name__ == 'list':
-                return unicode(option.sep).join(value)
+                return str(option.sep).join(value)
 
         if value is None:
             return ''
 
-        return unicode(value)
+        return str(value)
 
     def _gather_option_data(self, req, section_name, option_name, section_default_values):
         option = None
@@ -600,7 +600,7 @@ class TracIniAdminPanel(Component):
     def _apply_section_changes(self, req, section_name, options):
         values_applied = False #indicates whether at least one value has been set
 
-        for option_name, option in options.items():
+        for option_name, option in list(options.items()):
             if option['access'] != ACCESS_MODIFIABLE:
                 # Simply ignore options we don't have access to.
                 self._remove_session_value(req, section_name, option_name) # remove if exists
@@ -659,7 +659,7 @@ class TracIniAdminPanel(Component):
 
 
     def _discard_section_changes(self, req, section_name, options):
-        for option_name, option in options.items():
+        for option_name, option in list(options.items()):
             option['value'] = option['stored_value']
             self._remove_session_value(req, section_name, option_name)
             self._remove_session_custom_option(req, section_name, option_name)

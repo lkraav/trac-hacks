@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2006 Edgewall Software
@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 
 NAME = 'TracIniAdminPanel'
 PACKAGE = 'iniadminpanel'
-VERSION = '1.4.1'
+VERSION = '1.6.0'
 
 extra = {}
 try:
