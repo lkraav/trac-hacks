@@ -1,0 +1,433 @@
+# French translations for TracIniAdminPanel.
+# Copyright (C) 2019 ORGANIZATION
+# This file is distributed under the same license as the
+# TracIniAdminPanel project.
+#
+# Translators:
+# Michel LIBERADO <michel.liberado@gmail.com>, 2019
+# Vincent Privat <vincent.privat@gmail.com>, 2017
+msgid ""
+msgstr ""
+"Project-Id-Version: Trac Plugin L10N\n"
+"Report-Msgid-Bugs-To: trac@dstoecker.de\n"
+"POT-Creation-Date: 2019-12-20 22:03+0100\n"
+"PO-Revision-Date: 2019-09-25 02:44+0000\n"
+"Last-Translator: Steffen Hoffmann <hoff.st@web.de>\n"
+"Language: fr\n"
+"Language-Team: French (http://www.transifex.com/hasienda/Trac_Plugin-"
+"L10N/language/fr/)\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.4.0\n"
+
+#: iniadminpanel/default_manager.py:71
+msgid ""
+"Defines the default access level for options that don't have an\n"
+"explicit access level defined. Defaults to readonly."
+msgstr ""
+"Définit le niveau d'accès par défaut pour les options qui n'ont pas de\n"
+"niveau d'accès explicite défini. Par défaut, lecture seule."
+
+#: iniadminpanel/default_manager.py:75
+msgid ""
+"This section is used to store restriction configurations used by\n"
+"TracIniAdminPanel plugin security manager. An example file can be found "
+"at\n"
+"http://trac-hacks.org/browser/traciniadminpanelplugin/0.12/safe-"
+"restrictions.ini"
+msgstr ""
+
+#: iniadminpanel/web_ui.py:28 iniadminpanel/web_ui.py:35
+msgid ""
+"Defines the valid characters for a section name or option name in\n"
+"`trac.ini`. Must be a valid regular expression. You only need to change\n"
+"these if you have plugins that use some strange section or option names."
+msgstr ""
+
+#: iniadminpanel/web_ui.py:42
+msgid ""
+"Defines the security manager that specifies whether the user has\n"
+"access to certain options."
+msgstr ""
+
+#: iniadminpanel/web_ui.py:49
+msgid ""
+"Defines option fields (as `section-name|option-name`) that\n"
+"represent passwords. Password input fields are used for these fields.\n"
+"Note the fields specified here are taken additionally to some predefined\n"
+"fields provided by the ini editor."
+msgstr ""
+
+#: iniadminpanel/web_ui.py:56
+msgid ""
+"This section is used to handle configurations used by\n"
+"TracIniAdminPanel plugin."
+msgstr ""
+"Cette section est utilisée pour gérer les configurations utilisées par \n"
+"le plugin TracIniAdminPanel."
+
+#: iniadminpanel/web_ui.py:84
+msgid "General"
+msgstr "Général"
+
+#: iniadminpanel/web_ui.py:85
+msgid "trac.ini Editor"
+msgstr "Editeur pour le fichier trac.ini"
+
+#: iniadminpanel/web_ui.py:109 iniadminpanel/web_ui.py:173
+msgid "The section \"components\" can't be edited with the ini editor."
+msgstr "La section \"composants\" ne peut pas être éditée avec l'éditeur de ini."
+
+#: iniadminpanel/web_ui.py:113 iniadminpanel/web_ui.py:176
+#, python-format
+msgid "The section name %s is invalid."
+msgstr "Le nom de section %s est invalide."
+
+#: iniadminpanel/web_ui.py:146
+#, python-format
+msgid "Security manager could not be initated. %s"
+msgstr "Le gestionnaire de sécurité n'a pas pu être initialisé. %s"
+
+#: iniadminpanel/web_ui.py:170
+msgid "The section name was empty."
+msgstr "Le nom de section était vide."
+
+#: iniadminpanel/web_ui.py:180
+#, python-format
+msgid ""
+"Section %s has been created. Note that you need to add at least one "
+"option to store it permanently."
+msgstr ""
+"La section %s a été créée. Notez que vous devez créer au moins une option"
+" pour l'enregistrer définitivement."
+
+#: iniadminpanel/web_ui.py:182
+msgid "The section already exists."
+msgstr "Cette section existe déjà."
+
+#: iniadminpanel/web_ui.py:298
+#, python-format
+msgid "Changes for section %s have been applied."
+msgstr "Les changements pour la section %s ont été appliqués."
+
+#: iniadminpanel/web_ui.py:301 iniadminpanel/web_ui.py:313
+msgid "No changes have been applied."
+msgstr "Aucun changement n'a été appliqué."
+
+#: iniadminpanel/web_ui.py:310
+msgid "Changes have been applied."
+msgstr "Les changements ont été appliqués."
+
+#: iniadminpanel/web_ui.py:320
+#, python-format
+msgid "Your changes for section %s have been discarded."
+msgstr "Vos changement pour la section %s ont été abandonnés."
+
+#: iniadminpanel/web_ui.py:325
+msgid "All changes have been discarded."
+msgstr "Tous les changements ont été abandonnés."
+
+#: iniadminpanel/web_ui.py:340
+#, python-format
+msgid "The option name %s is invalid."
+msgstr "Le nom d'option %s est invalide."
+
+#: iniadminpanel/web_ui.py:345
+#, python-format
+msgid "The new option %s could not be added due to security restrictions."
+msgstr ""
+"La nouvelle option %s n'a pas pu être ajoutée à cause de restrictions de "
+"sécurité."
+
+#: iniadminpanel/web_ui.py:352
+#, python-format
+msgid "The new fields have been added to section %s."
+msgstr "Les nouveaux champs ont été ajoutés à la section %s."
+
+#: iniadminpanel/web_ui.py:354
+msgid "No new fields have been added."
+msgstr "Aucun nouveau champ n'a été ajouté."
+
+#: iniadminpanel/web_ui.py:409
+msgid ""
+"You have unsaved changes in this section. Do you still want to change the"
+" section?"
+msgstr ""
+"Vous avez des changements non sauvegardés dans cette section. Voulez-vous"
+" toujours changer de section ?"
+
+#: iniadminpanel/web_ui.py:412
+#, python-format
+msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
+msgstr "Modifié(s) : %(mod)d | Défaut(s) : %(def)d | Nombre d'options : %(opt)d"
+
+#: iniadminpanel/web_ui.py:553 iniadminpanel/web_ui.py:556
+msgid "text"
+msgstr "texte"
+
+#: iniadminpanel/web_ui.py:560
+msgid "password"
+msgstr "mot de passe"
+
+#: iniadminpanel/web_ui.py:616
+#, python-format
+msgid ""
+"The default value for option \"%s\" in section \"%s\" is invalid. Reason:"
+" %s"
+msgstr ""
+"La valeur par défaut \"%s\" dans la section \"%s\" est invalide.\n"
+"Motif : %s"
+
+#: iniadminpanel/web_ui.py:645
+#, python-format
+msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
+msgstr ""
+"La valeur pour l'option \"%s\" dans la section \"%s\" est invalide.\n"
+"Motif : %s "
+
+#: iniadminpanel/templates/admin_tracini.html:11
+#: iniadminpanel/templates/admin_tracini.html:15
+msgid "Edit Trac Settings (trac.ini)"
+msgstr "Editer les Paramètres Trac (trac.ini)"
+
+#: iniadminpanel/templates/admin_tracini.html:17
+msgid ""
+"Allows you to edit the trac.ini file.[1:][2:Note:] To \"delete\" an "
+"option from the trac.ini file, just set it to its default value."
+msgstr ""
+"Permet d'éditer le fichier trac.ini.[1:][2:Note:]  Pour \"effacer\" une "
+"option du fichier trac.ini, mettez la simplement à sa valeur par défaut."
+
+#: iniadminpanel/templates/admin_tracini.html:25
+msgid "Change Section"
+msgstr "Changer de section"
+
+#: iniadminpanel/templates/admin_tracini.html:26
+#: iniadminpanel/templates/admin_tracini.html:43
+msgid "Section name:"
+msgstr "Nom de section :"
+
+#: iniadminpanel/templates/admin_tracini.html:28
+msgid "select section"
+msgstr "sélectionner section"
+
+#: iniadminpanel/templates/admin_tracini.html:29
+msgid "all sections"
+msgstr "toutes les sections"
+
+#: iniadminpanel/templates/admin_tracini.html:33
+msgid "Show Section"
+msgstr "Montrer la section"
+
+#: iniadminpanel/templates/admin_tracini.html:34
+msgid "Warning: Changing the section discards all unsaved changes."
+msgstr ""
+"Attention : Changer de section abandonne toutes les modifications non "
+"sauvegardées."
+
+#: iniadminpanel/templates/admin_tracini.html:42
+msgid "Add New Section"
+msgstr "Ajouter une Nouvelle Section"
+
+#: iniadminpanel/templates/admin_tracini.html:44
+msgid "Add Section"
+msgstr "Ajouter une Nouvelle Section"
+
+#: iniadminpanel/templates/admin_tracini.html:45
+msgid "Warning: Adding a new section discards all unsaved changes."
+msgstr ""
+"Attention : Ajouter une nouvelle section abandonne toutes les "
+"modifications non sauvegardées."
+
+#: iniadminpanel/templates/admin_tracini.html:58
+msgid "Name"
+msgstr "Nom"
+
+#: iniadminpanel/templates/admin_tracini.html:59
+msgid "Default"
+msgstr "Défaut"
+
+#: iniadminpanel/templates/admin_tracini.html:60
+msgid "Value"
+msgstr "Valeur"
+
+#: iniadminpanel/templates/admin_tracini.html:67
+msgid ""
+"[1:Note:] This section is essentially [2:empty and won't persist] unless "
+"a not-default value is \n"
+"                  specified for at least one option in this section."
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:72
+msgid "Options count:"
+msgstr "Nombre d'options :"
+
+#: iniadminpanel/templates/admin_tracini.html:83
+msgid "Modifiable Options"
+msgstr "Options éditables"
+
+#: iniadminpanel/templates/admin_tracini.html:83
+msgid "Read-only Options"
+msgstr "Options en lecture seule"
+
+#: iniadminpanel/templates/admin_tracini.html:101
+msgid "true"
+msgstr "vrai"
+
+#: iniadminpanel/templates/admin_tracini.html:106
+msgid "false"
+msgstr "faux"
+
+#: iniadminpanel/templates/admin_tracini.html:127
+msgid ""
+"[1:Note:] This option represents [2:a password]. Therefore the value of "
+"this field is intentionally empty.\n"
+"                    To change the password, simply enter it. To keep the "
+"current password keep this field empty."
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:133
+msgid ""
+"[1:Note:] This option is a [2:custom option]. It will be [3:completely "
+"deleted] if it's set to its default value. \n"
+"                    To keep it you need to assign a (non-empty) value to "
+"it."
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:140
+msgid "Description:"
+msgstr "Description :"
+
+#: iniadminpanel/templates/admin_tracini.html:142
+msgid "Type:"
+msgstr "Type :"
+
+#: iniadminpanel/templates/admin_tracini.html:144
+#, python-format
+msgid "list (separated by '%(separation)s')"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:145
+msgid "file system path"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:146
+msgid "file system path relative to the Trac env"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:147
+#, python-format
+msgid "one component implementing '%(name)s'"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:148
+#, python-format
+msgid "ordered list of components implementing '%(name)s' (comma separated)"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:151
+msgid "Access:"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:153
+#, python-format
+msgid ""
+"| [1:Default value:] %(default)s\n"
+"                          | [2:Currently stored value:] %(stored)s"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:157
+#, python-format
+msgid ""
+"| [1:Default value:] %(default)s \n"
+"                          | [2:Currently stored value:] %(stored)s"
+msgstr ""
+
+#: iniadminpanel/templates/admin_tracini.html:170
+msgid "Hidden Options"
+msgstr "Options cachées"
+
+#: iniadminpanel/templates/admin_tracini.html:174
+msgid ""
+"Due to security restrictions there is one option marked as hidden in this"
+" section."
+msgstr ""
+"Une option est marquée en tant que cachée dans cette section à cause des "
+"restrictions de sécurité."
+
+#: iniadminpanel/templates/admin_tracini.html:175
+#, python-format
+msgid ""
+"Due to security restrictions there are %(options)s options marked as "
+"hidden in this section."
+msgstr ""
+"Il y a %(options)soption(s) marquée(s) en tant que cachée(s) dans cette "
+"section à cause des restrictions de sécurité."
+
+#: iniadminpanel/templates/admin_tracini.html:181
+#: iniadminpanel/templates/admin_tracini.html:193
+msgid "Apply changes"
+msgstr "Appliquer les changements"
+
+#: iniadminpanel/templates/admin_tracini.html:181
+msgid "Applies the changes from this section."
+msgstr "Appliquer les changements de cette section."
+
+#: iniadminpanel/templates/admin_tracini.html:182
+msgid "Discard changes"
+msgstr "Abandonner les changements"
+
+#: iniadminpanel/templates/admin_tracini.html:182
+msgid ""
+"Discards the changes from this section. Also removes custom options, if "
+"they still have their default value."
+msgstr ""
+"Abandonner les changements de cette section. Enlève également les options"
+" personnalisées si elles ont leur valeur par défaut."
+
+#: iniadminpanel/templates/admin_tracini.html:184
+msgid "Options to be added to this section; comma-separated"
+msgstr "Options à ajouter à cette section; séparées par des virgules"
+
+#: iniadminpanel/templates/admin_tracini.html:185
+msgid "Add options"
+msgstr "Ajouter les options"
+
+#: iniadminpanel/templates/admin_tracini.html:185
+msgid "Adds the specified options to this section"
+msgstr "Ajouter les options spécifiées à cette section"
+
+#: iniadminpanel/texts/othertexts.py:4
+msgid "bool"
+msgstr "bool"
+
+#: iniadminpanel/texts/othertexts.py:5
+msgid "int"
+msgstr "int"
+
+#: iniadminpanel/texts/othertexts.py:6
+msgid "choice"
+msgstr "choix"
+
+#: iniadminpanel/texts/othertexts.py:9
+msgid "readonly"
+msgstr "lecture seule"
+
+#: iniadminpanel/texts/othertexts.py:10
+msgid "hidden"
+msgstr "caché"
+
+#: iniadminpanel/texts/othertexts.py:11
+msgid "modifiable"
+msgstr "éditable"
+
+#: iniadminpanel/texts/othertexts.py:14
+msgid "<default value>"
+msgstr ""
+
+#: iniadminpanel/texts/othertexts.py:15
+msgid "<none>"
+msgstr "<none>"
+
