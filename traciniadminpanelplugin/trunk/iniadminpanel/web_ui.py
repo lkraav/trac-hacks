@@ -392,7 +392,6 @@ class TracIniAdminPanel(Component):
                  'modifiable_options': modifiable_options,
                  'readonly_options': readonly_options,
                  'hidden_options': hidden_options,
-                 '_': _,
                  '_fix': self._fixname,
                }
 
@@ -418,13 +417,12 @@ class TracIniAdminPanel(Component):
 
         add_stylesheet(req, 'iniadminpanel/main.css')
         add_script(req, 'iniadminpanel/editor.js')
-        # still Genshi, last argument must be none for Trac >= 1.4
-        return 'admin_tracini.html', data
+        return 'admin_tracini.html', data, {'domain': 'iniadminpanel'}
 
     'also change iniadminpanel/htdocs/editor.js when changing this'
     @staticmethod
     def _fixname(name):
-        return re.sub('[:.]', '_', name);
+        return re.sub('[:.]', '_', name)
 
     def _get_session_value(self, req, section_name, option_name):
         """ Returns the value for an unsaved option stored in the current session,
