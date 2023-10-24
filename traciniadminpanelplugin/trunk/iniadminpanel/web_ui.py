@@ -372,9 +372,9 @@ class TracIniAdminPanel(Component):
                 else:
                     sect_hidden[option_name] = option
 
-            modifiable_options[section_name] = sect_modifiable
-            readonly_options[section_name] = sect_readonly
-            hidden_options[section_name] = sect_hidden
+            modifiable_options[section_name] = dict(sorted(sect_modifiable.items()))
+            readonly_options[section_name] = dict(sorted(sect_readonly.items()))
+            hidden_options[section_name] = dict(sorted(sect_hidden.items()))
 
         registry = ConfigSection.get_registry(self.compmgr)
         descriptions = { }
@@ -383,8 +383,11 @@ class TracIniAdminPanel(Component):
             if doc:
                 descriptions[name] = dgettext(section.doc_domain, doc)
 
+        for key, value in sections.items():
+            value['emptynote'] = len([option for option in value.values() if (option['value'] != option['default_value'] or option['option_info'] is not None)]) == 0
+
         data = { 'all_section_names': all_section_names,
-                 'sections' : sections,
+                 'sections' : dict(sorted(sections.items())),
                  'descriptions' : descriptions,
                  'modifiable_options': modifiable_options,
                  'readonly_options': readonly_options,

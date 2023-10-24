@@ -24,13 +24,6 @@ try:
     cmdclass = get_l10n_cmdclass()
     if cmdclass:
         extra['cmdclass'] = cmdclass
-        extractors = [
-            ('**.py',                'trac.dist:extract_python', None),
-            ('**/templates/**.html', 'genshi', None)
-        ]
-        extra['message_extractors'] = {
-            PACKAGE: extractors,
-        }
 except ImportError:
     pass
 
