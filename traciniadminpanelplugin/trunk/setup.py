@@ -41,7 +41,7 @@ setup(
         'Framework :: Trac',
         'License :: OSI Approved :: BSD License',
     ],
-    install_requires = ['Trac'],
+    install_requires = ['Trac>=1.5'],
     packages = find_packages(exclude=['*.texts*']),
     package_data = { PACKAGE: [ 'templates/*', 'htdocs/*', 'locale/*/LC_MESSAGES/*.mo' ] },
 
@@ -49,6 +49,6 @@ setup(
         '%s.web_ui = %s.web_ui' % (PACKAGE, PACKAGE),
         '%s.default_manager = %s.default_manager' % (PACKAGE, PACKAGE),
         # Add additional components here
-      ] },
+    ] },
     **extra
 )
