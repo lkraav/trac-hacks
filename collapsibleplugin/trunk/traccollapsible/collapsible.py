@@ -14,7 +14,6 @@
 
 from io import StringIO
 
-#from trac.core import *
 from trac.wiki.formatter import Formatter
 from trac.wiki.macros import WikiMacroBase
 
