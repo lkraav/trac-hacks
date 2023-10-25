@@ -14,7 +14,7 @@
 
 from io import StringIO
 
-from trac.wiki.formatter import Formatter
+from trac.wiki.formatter import OneLinerFormatter
 from trac.wiki.macros import WikiMacroBase
 
 class CollapsibleStartMacro(WikiMacroBase):
@@ -25,11 +25,12 @@ class CollapsibleStartMacro(WikiMacroBase):
      """
 
     def expand_macro(self, formatter, name, content):
-        outtitle = StringIO()
-        Formatter(self.env, formatter.context).format(content, outtitle)
+        title = StringIO()
+        OneLinerFormatter(self.env, formatter.context).format(content, title)
+        title = title.getvalue()
 
-        return("<div class=\"collapsed\"> " +
-               "<h3 class=\"foldable\">" + outtitle.getvalue() + "</h3>" +
+        return("<div class=\"collapsed collapsibleplugin\"> " +
+               "<h3 class=\"foldable\">" + title + "</h3>" +
                "<div>")
 
 class CollapsibleEndMacro(WikiMacroBase):
