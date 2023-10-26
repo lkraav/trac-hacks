@@ -15,25 +15,22 @@ import urllib.request, urllib.error, urllib.parse
 import base64
 from datetime import datetime
 
+from pkg_resources import resource_filename
+
 from trac.core import *
 from trac.config import Option, BoolOption, ListOption
 from trac.perm import IPermissionRequestor
 from trac.timeline.api import ITimelineEventProvider
-from trac.util import Markup
 from trac.util.datefmt import datetime_now, format_datetime, \
                               pretty_timedelta, user_time, utc
-from trac.util.html import tag
+from trac.util.html import Markup, tag
 from trac.util.text import unicode_quote
 from trac.web.chrome import INavigationContributor, ITemplateProvider
 from trac.web.chrome import add_notice, add_stylesheet, web_context
 from trac.wiki.formatter import format_to_oneliner
+from trac.util.translation import domain_functions
 
-try:
-    from ast import literal_eval
-except ImportError:
-    def literal_eval(str):
-        return eval(str, {"__builtins__":None}, {"True":True, "False":False})
-
+_, add_domain = domain_functions("hudsontrac", ('_', 'add_domain'))
 
 class HudsonTracPlugin(Component):
     """
@@ -45,7 +42,7 @@ class HudsonTracPlugin(Component):
                ITemplateProvider, IPermissionRequestor)
 
     disp_mod = BoolOption('hudson', 'display_modules', 'false',
-                          'Display status of modules in the timeline too. ')
+                          'Display status of modules in the timeline too. ', doc_domain="hudsontrac")
     job_url  = Option('hudson', 'job_url', 'http://localhost/hudson/',
                       'The url of the top-level hudson page if you want to '
                       'display all jobs, or a job or module url (such as '
@@ -53,35 +50,35 @@ class HudsonTracPlugin(Component):
                       'only display builds from a single job or module. '
                       'This must be an absolute url.')
     username = Option('hudson', 'username', '',
-                      'The username to use to access hudson')
+                      'The username to use to access hudson', doc_domain="hudsontrac")
     password = Option('hudson', 'password', '',
                       'The password to use to access hudson - but see also '
-                      'the api_token field.')
+                      'the api_token field.', doc_domain="hudsontrac")
     api_token = Option('hudson', 'api_token', '',
                        'The API Token to use to access hudson. This takes '
                        'precendence over any password and is the preferred '
                        'mechanism if you are running Jenkins 1.426 or later '
                        'and Jenkins is enforcing authentication (as opposed '
-                       'to, for example, a proxy in front of Jenkins).')
+                       'to, for example, a proxy in front of Jenkins).', doc_domain="hudsontrac")
     nav_url  = Option('hudson', 'main_page', '/hudson/',
                       'The url of the hudson main page to which the trac nav '
                       'entry should link; if empty, no entry is created in '
-                      'the nav bar. This may be a relative url.')
+                      'the nav bar. This may be a relative url.', doc_domain="hudsontrac")
     tl_label = Option('hudson', 'timeline_opt_label', 'Hudson Builds',
-                      'The label for the timeline option to display builds')
+                      'The label for the timeline option to display builds', doc_domain="hudsontrac")
     disp_tab = BoolOption('hudson', 'display_in_new_tab', 'false',
-                          'Open hudson page in new tab/window')
+                          'Open hudson page in new tab/window', doc_domain="hudsontrac")
     alt_succ = BoolOption('hudson', 'alternate_success_icon', 'false',
                           'Use an alternate success icon (green ball instead '
-                          'of blue)')
+                          'of blue)', doc_domain="hudsontrac")
     use_desc = BoolOption('hudson', 'display_build_descriptions', 'true',
                           'Whether to display the build descriptions for '
                           'each build instead of the canned "Build finished '
-                          'successfully" etc messages.')
+                          'successfully" etc messages.', doc_domain="hudsontrac")
     disp_building = BoolOption('hudson', 'display_building', False,
-                               'Also show in-progress builds')
+                               'Also show in-progress builds', doc_domain="hudsontrac")
     list_changesets = BoolOption('hudson', 'list_changesets', False,
-                                 'List the changesets for each build')
+                                 'List the changesets for each build', doc_domain="hudsontrac")
     disp_culprit = ListOption('hudson', 'display_culprit', [], doc =
                               'Display the culprit(s) for each build. This is '
                               'a comma-separated list of zero or more of the '
@@ -98,9 +95,17 @@ class HudsonTracPlugin(Component):
                               'who started the build if it was started '
                               'manually, else list the authors of the commits '
                               'that triggered the build if any, else show no '
-                              'author for the build).')
+                              'author for the build).', doc_domain="hudsontrac")
 
     def __init__(self):
+        """Set up translation domain"""
+        try:
+            locale_dir = resource_filename(__name__, 'locale')
+        except KeyError:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
+
         # get base api url
         api_url = unicode_quote(self.job_url, '/%:@')
         if api_url and api_url[-1] != '/':
@@ -175,12 +180,12 @@ class HudsonTracPlugin(Component):
                 if ct != 'text/x-python':
                     local_exc = True
                     raise IOError(
-                        "Error getting build info from '%s': returned document "
-                        "has unexpected type '%s' (expected 'text/x-python'). "
-                        "The returned text is:\n%s" %
-                        (self.info_url, ct, str(resp.read(), cset)))
+                        _("Error getting build info from '%(url)s': returned document "
+                        "has unexpected type '%(mime)s' (expected 'text/x-python'). "
+                        "The returned text is:\n%(err)s") %
+                        {'url': self.info_url, 'mime': ct, 'error': str(resp.read(), cset)})
 
-                info = literal_eval(resp.read())
+                info = eval(resp.read(), {"__builtins__":None}, {"True":True, "False":False})
 
                 return info, cset
             except Exception:
@@ -191,11 +196,10 @@ class HudsonTracPlugin(Component):
                 self.env.log.exception("Error getting build info from '%s'",
                                        self.info_url)
                 raise IOError(
-                    "Error getting build info from '%s': %s: %s. This most "
+                    _("Error getting build info from '%(url)s': %(name)s: %(info)s. This most "
                     "likely means you configured a wrong job_url, username, "
-                    "or password." %
-                    (self.info_url, sys.exc_info()[0].__name__,
-                     str(sys.exc_info()[1])))
+                    "or password." % {'url': self.info_url, 'name': sys.exc_info()[0].__name__,
+                     'info': str(sys.exc_info()[1])}))
         finally:
             self.url_opener.close()
 
@@ -251,7 +255,7 @@ class HudsonTracPlugin(Component):
     def get_navigation_items(self, req):
         if self.nav_url and 'BUILD_VIEW' in req.perm:
             yield ('mainnav', 'builds',
-                   tag.a('Builds', href=self.nav_url,
+                   tag.a(_('Builds'), href=self.nav_url,
                          target='hudson' if self.disp_tab else None))
 
     # ITemplateProvider methods
@@ -288,7 +292,7 @@ class HudsonTracPlugin(Component):
         try:
             info, cset = self.__get_info()
         except:
-            add_notice(req, "Error accessing build status")
+            add_notice(req, _("Error accessing build status"))
             return
 
         # extract all build entries
@@ -315,15 +319,15 @@ class HudsonTracPlugin(Component):
 
             # get message
             message, kind = {
-                'SUCCESS': ('Build finished successfully',
+                'SUCCESS': (_('Build finished successfully'),
                             ('build-successful',
                              'build-successful-alt')[self.alt_succ]),
-                'UNSTABLE': ('Build unstable', 'build-unstable'),
-                'ABORTED': ('Build aborted', 'build-aborted'),
-                'IN-PROGRESS': ('Build in progress',
+                'UNSTABLE': (_('Build unstable'), 'build-unstable'),
+                'ABORTED': (_('Build aborted'), 'build-aborted'),
+                'IN-PROGRESS': (_('Build in progress'),
                                 ('build-inprogress',
                                  'build-inprogress-alt')[self.alt_succ]),
-                }.get(result, ('Build failed', 'build-failed'))
+                }.get(result, (_('Build failed'), 'build-failed'))
 
             if self.use_desc:
                 message = entry['description'] and \
@@ -337,7 +341,7 @@ class HudsonTracPlugin(Component):
                                                 self.__find_all(entry, paths)]
                 if revs:
                     revs = [self.__fmt_changeset(r, req) for r in revs]
-                    changesets = '<br/>Changesets: ' + ', '.join(revs)
+                    changesets = '<br/>'+_("Changesets:")+' ' + ', '.join(revs)
 
             # get author(s)
             author = None

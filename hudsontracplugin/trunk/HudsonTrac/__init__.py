@@ -1,5 +1,5 @@
 # Hudson Trac module
-from .HudsonTracPlugin import *
+from HudsonTrac import *
 
 import pkg_resources
-pkg_resources.require('Trac >= 1.2')
+pkg_resources.require('Trac >= 1.6')
