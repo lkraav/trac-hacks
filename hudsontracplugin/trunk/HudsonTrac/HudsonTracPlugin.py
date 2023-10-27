@@ -22,7 +22,7 @@ from trac.config import Option, BoolOption, ListOption
 from trac.perm import IPermissionRequestor
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import datetime_now, format_datetime, \
-                              pretty_timedelta, user_time, utc
+                              pretty_timedelta, user_time, utc, to_timestamp
 from trac.util.html import Markup, tag
 from trac.util.text import unicode_quote
 from trac.web.chrome import INavigationContributor, ITemplateProvider
@@ -30,7 +30,7 @@ from trac.web.chrome import add_notice, add_stylesheet, web_context
 from trac.wiki.formatter import format_to_oneliner
 from trac.util.translation import domain_functions
 
-_, add_domain = domain_functions("hudsontrac", ('_', 'add_domain'))
+_, N_, add_domain = domain_functions("hudsontrac", ('_', 'N_', 'add_domain'))
 
 class HudsonTracPlugin(Component):
     """
@@ -49,6 +49,8 @@ class HudsonTracPlugin(Component):
                       'http://localhost/hudson/job/build_foo/) if you want '
                       'only display builds from a single job or module. '
                       'This must be an absolute url.')
+    interfacename = Option('hudson', 'interfacename', 'Hudson',
+                      'The interfacename (i.e. Hudson/Jenkins) to use', doc_domain="hudsontrac")
     username = Option('hudson', 'username', '',
                       'The username to use to access hudson', doc_domain="hudsontrac")
     password = Option('hudson', 'password', '',
@@ -64,8 +66,11 @@ class HudsonTracPlugin(Component):
                       'The url of the hudson main page to which the trac nav '
                       'entry should link; if empty, no entry is created in '
                       'the nav bar. This may be a relative url.', doc_domain="hudsontrac")
-    tl_label = Option('hudson', 'timeline_opt_label', 'Hudson Builds',
-                      'The label for the timeline option to display builds', doc_domain="hudsontrac")
+    nav_label = Option('hudson', 'nav_label', N_('Builds'),
+                      'The label for the nav menu entry (default value will be translated)', doc_domain="hudsontrac")
+    tl_label = Option('hudson', 'timeline_opt_label', '%(interfacename)s Builds',
+                      'The label for the timeline option to display builds, can contain '
+                      '%(interfacename) to be replaced by the interface name option', doc_domain="hudsontrac")
     disp_tab = BoolOption('hudson', 'display_in_new_tab', 'false',
                           'Open hudson page in new tab/window', doc_domain="hudsontrac")
     alt_succ = BoolOption('hudson', 'alternate_success_icon', 'false',
@@ -174,9 +179,13 @@ class HudsonTracPlugin(Component):
             local_exc = False
             try:
                 resp = self.url_opener.open(self.info_url)
-                cset = resp.info().getparam('charset') or 'ISO-8859-1'
+                cset = resp.info().get_param('charset') or 'ISO-8859-1'
 
-                ct   = resp.info().gettype()
+                self.log.warn(self.info_url)
+                self.log.warn(resp)
+                self.log.warn(cset)
+                ct   = resp.info().get_content_type()
+                self.log.warn(ct)
                 if ct != 'text/x-python':
                     local_exc = True
                     raise IOError(
@@ -186,8 +195,9 @@ class HudsonTracPlugin(Component):
                         {'url': self.info_url, 'mime': ct, 'error': str(resp.read(), cset)})
 
                 info = eval(resp.read(), {"__builtins__":None}, {"True":True, "False":False})
+                self.log.warn(info)
 
-                return info, cset
+                return info
             except Exception:
                 if local_exc:
                     raise
@@ -255,7 +265,7 @@ class HudsonTracPlugin(Component):
     def get_navigation_items(self, req):
         if self.nav_url and 'BUILD_VIEW' in req.perm:
             yield ('mainnav', 'builds',
-                   tag.a(_('Builds'), href=self.nav_url,
+                   tag.a(_(self.nav_label) % {'interfacename': self.interfacename}, href=self.nav_url,
                          target='hudson' if self.disp_tab else None))
 
     # ITemplateProvider methods
@@ -270,7 +280,7 @@ class HudsonTracPlugin(Component):
 
     def get_timeline_filters(self, req):
         if 'BUILD_VIEW' in req.perm:
-            yield ('build', self.tl_label)
+            yield ('build', self.tl_label % {'interfacename': self.interfacename})
 
     def __fmt_changeset(self, rev, req):
         ctxt = web_context(req, 'changeset', rev)
@@ -280,17 +290,14 @@ class HudsonTracPlugin(Component):
         if 'build' not in filters or 'BUILD_VIEW' not in req.perm:
             return
 
-        # Support both Trac 0.10 and 0.11
-        if isinstance(start, datetime): # Trac>=0.11
-            from trac.util.datefmt import to_timestamp
-            start = to_timestamp(start)
-            stop = to_timestamp(stop)
+        start = to_timestamp(start)
+        stop = to_timestamp(stop)
 
         add_stylesheet(req, 'HudsonTrac/hudsontrac.css')
 
         # get and parse the build-info
         try:
-            info, cset = self.__get_info()
+            info = self.__get_info()
         except:
             add_notice(req, _("Error accessing build status"))
             return
@@ -330,15 +337,13 @@ class HudsonTracPlugin(Component):
                 }.get(result, (_('Build failed'), 'build-failed'))
 
             if self.use_desc:
-                message = entry['description'] and \
-                            str(entry['description'], cset) or message
+                message = entry['description'] and entry['description'] or message
 
             # get changesets
             changesets = ''
             if self.list_changesets:
                 paths = ['changeSet.items.revision', 'changeSet.items.id']
-                revs  = [str(str(r), cset) for r in \
-                                                self.__find_all(entry, paths)]
+                revs  = self.__find_all(entry, paths)
                 if revs:
                     revs = [self.__fmt_changeset(r, req) for r in revs]
                     changesets = '<br/>'+_("Changesets:")+' ' + ', '.join(revs)
@@ -364,24 +369,26 @@ class HudsonTracPlugin(Component):
                 if author and not isinstance(author, str):
                     author = ', '.join(set(author))
                 if author:
-                    author = str(author, cset)
+                    author = author
                     break
 
             # format response
             if result == 'IN-PROGRESS':
-                comment = Markup("%s since %s, duration %s%s" % (
-                                 message, user_time(req, format_datetime, started),
-                                 pretty_timedelta(started, completed),
-                                 changesets))
+                comment = Markup(_("%(message)s since %(time)s, duration %(duration)s%(changesets)s") % {
+                                 'message': message, 'time': user_time(req, format_datetime, started),
+                                 'duration': pretty_timedelta(started, completed),
+                                 'changesets': changesets})
             else:
-                comment = Markup("%s at %s, duration %s%s" % (
-                                 message, user_time(req, format_datetime, completed),
-                                 pretty_timedelta(started, completed),
-                                 changesets))
+                comment = Markup(_("%(message)s at %(time)s, duration %(duration)s%(changesets)s") % {
+                                 'message': message, 'time': user_time(req, format_datetime, completed),
+                                 'duration': pretty_timedelta(started, completed),
+                                 'changesets': changesets})
 
             href  = entry['url']
-            title = 'Build "%s" (%s)' % \
-                    (str(entry['fullDisplayName'], cset), result.lower())
+            self.log.warn(entry['fullDisplayName'])
+            self.log.warn(result)
+            title = _('Build "%(name)s" (%(result)s)') % \
+                    {'name': entry['fullDisplayName'], 'result': result.lower()}
 
             yield kind, completed, author, (href, title, comment)
 
