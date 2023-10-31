@@ -33,8 +33,7 @@ setup(
     version='4.0.0',
     packages=['tracpdf'],
     package_data={
-        'tracpdf': ['templates/*.html'
-        ]
+        'tracpdf': ['templates/*.html', 'htdocs/css/*.css'],
     },
     install_requires=['pdfkit', 'trac'],
     author='Cinc-th',
