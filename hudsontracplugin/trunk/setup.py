@@ -32,7 +32,7 @@ setup(
     ],
     packages = find_packages(exclude=['*.texts*']),
     package_data = {
-        'HudsonTrac' : ['htdocs/*.css', 'htdocs/*.gif', 'locale/*/LC_MESSAGES/*.mo']
+        'HudsonTrac' : ['htdocs/*.css', 'htdocs/*.svg', 'locale/*/LC_MESSAGES/*.mo']
     },
     entry_points = {
         'trac.plugins' : [ '%s = HudsonTrac.HudsonTracPlugin' % (PACKAGE) ]

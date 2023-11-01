@@ -1,7 +1,7 @@
-dt.build-successful a     { background-image: url(success.png)        !important }
-dt.build-successful-alt a { background-image: url(success-alt.png)    !important }
-dt.build-failed a         { background-image: url(failed.png)         !important }
-dt.build-aborted a        { background-image: url(aborted.png)        !important }
-dt.build-unstable a       { background-image: url(unstable.png)       !important }
-dt.build-inprogress a     { background-image: url(inprogress.png)     !important }
-dt.build-inprogress-alt a { background-image: url(inprogress-alt.png) !important }
+dt.build-successful a     { background-image: url(success.svg)        !important }
+dt.build-successful-alt a { background-image: url(success-alt.svg)    !important }
+dt.build-failed a         { background-image: url(failed.svg)         !important }
+dt.build-aborted a        { background-image: url(aborted.svg)        !important }
+dt.build-unstable a       { background-image: url(unstable.svg)       !important }
+dt.build-inprogress a     { background-image: url(inprogress.svg)     !important }
+dt.build-inprogress-alt a { background-image: url(inprogress-alt.svg) !important }
