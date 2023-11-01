@@ -1,0 +1,100 @@
+{# Copyright (C) 2023 OpenGroove,Inc.
+   All rights reserved.
+
+   This software is licensed as described in the file COPYING, which
+   you should have received as part of this distribution.
+-#}
+# macro render_field(field, fullrow)
+#   with
+#     set v_name = 'h_' + field.name if field
+#     if not field:
+#       set v_header = none
+#       set v_rendered = undefined
+#       set v_missing = false
+#     elif field.name == 'reporter':
+#       set v_header = (gettext)("Reported by:")
+#       set v_rendered = reporter_link if reporter_link else authorinfo(ticket.reporter)
+#       set v_missing = not v_rendered
+#     elif field.name == 'owner':
+#       set v_header = (gettext)("Owned by:")
+#       set v_rendered = (owner_link if owner_link else authorinfo(ticket.owner)) if ticket.owner
+#       set v_missing = not v_rendered
+#     else:
+#       set v_header = (gettext)("%(label)s:", label=field.label or field.name)
+#       set v_rendered = field.rendered if 'rendered' in field
+#       set v_missing = ('rendered' in field and not field.rendered) or not ticket[field.name]
+#     endif
+    <th${{'id': v_name, 'class': {'missing': v_missing}}|htmlattr}>${v_header}</th>
+    <td${{'headers': v_name,
+          'class': 'searchable' if field and field.name in ('cc', 'keywords'),
+          'colspan': 3 if fullrow,
+         }|htmlattr}>
+#       set value = ticket[field.name] if field
+#       if v_rendered is not undefined:
+      ${- v_rendered}
+#       elif not field:
+#       elif 'rendered' in field:
+      ${- field.rendered}
+#       elif not value:
+#       elif field.type == 'time':
+      ${- pretty_dateinfo(value, field.format, dateonly=field.format != 'relative')}
+#       elif field.type == 'text' and field.format == 'wiki':
+      ${- wiki_to_oneliner(context, value)}
+#       elif field.type == 'textarea' and field.format == 'wiki':
+      ${- wiki_to_html(context, value, escape_newlines=preserve_newlines)}
+#       elif field.type == 'textarea':
+#         for line in value.splitlines():
+      {%- if not loop.first %}<br />{% endif %}${line}
+#         endfor
+#       else:
+      ${- value}
+#       endif
+    </td>
+#   endwith
+# endmacro
+# macro render_group_toggle(group)
+    <tr class="ticketfieldslayout-toggle">
+      <td colspan="4">
+        <fieldset${{'class': {'collapsed': group.collapsed}}|htmlattr}>
+          <legend class="ticketfieldslayout-foldable">
+            <a href="javascript:void(0)">${group.label}</a>
+          </legend>
+        </fieldset>
+      </td>
+    </tr>
+# endmacro
+<col class="th" /><col class="td" />
+<col class="th" /><col class="td" />
+# with
+#   for group_name in ticketfieldslayout.fields:
+#     set is_group = group_name.startswith('@')
+#     set group = ticketfieldslayout.groups[group_name[1 if is_group else 0:]]
+#     set fields = group.field_items|rejectattr(
+        'name', 'in',
+        ('summary', 'description', 'type', 'status', 'resolution'),
+      )
+#     for row in fields|groupattr(2, 'type', 'not_equalto', 'textarea'):
+#       if loop.first:
+<tbody${{'class': {'ticketfieldslayout-collapsed': is_group and group.collapsed}}|htmlattr}>
+#         if is_group:
+  ${- render_group_toggle(group) -}
+#         endif
+#       endif
+  <tr>
+#       for field in row:
+    ${- render_field(field, len(row) == 1) -}
+#       endfor
+  </tr>
+#       if loop.last:
+</tbody>
+#       endif
+#     endfor
+#   endfor
+# endwith
+<script>
+  setTimeout(function() {
+    jQuery('#content table.properties .ticketfieldslayout-foldable')
+      .addClass('foldable')
+      .removeClass('ticketfieldslayout-foldable');
+  }, 0);
+</script>

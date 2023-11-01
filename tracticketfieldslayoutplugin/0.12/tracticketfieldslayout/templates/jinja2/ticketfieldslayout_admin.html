@@ -1,0 +1,105 @@
+{# Copyright (C) 2023 OpenGroove,Inc.
+   All rights reserved.
+
+   This software is licensed as described in the file COPYING, which
+   you should have received as part of this distribution.
+-#}
+# extends 'admin.html'
+
+# block admintitle
+${dgettext('ticketfieldslayout', 'Ticket Layout')}
+# endblock admintitle
+
+# block head
+  ${- super() }
+  <script>jQuery('html').addClass('ticketfieldslayout-script')</script>
+# endblock head
+
+# block adminpanel
+  <h2>${dgettext('ticketfieldslayout', 'Ticket Layout')}</h2>
+
+#  for help_ in helps:
+  <p class="help">${help_}</p>
+#  endfor
+
+  <form class="ticketfieldslayout-admin" method="post" action="${panel_href()}">
+    ${jmacros.form_token_input()}
+    <div class="buttons">
+      <input type="submit" name="add" value="${dgettext('ticketfieldslayout', 'Add group')}" />
+      <input type="submit" name="apply" value="${(gettext)('Apply changes')}" />
+      <input type="submit" name="restore" value="${dgettext('ticketfieldslayout', 'Restore the default settings')}" />
+    </div>
+
+    <fieldset class="ticketfieldslayout-root">
+      <legend>
+        ${dgettext('ticketfieldslayout', 'Ticket Fields')}
+        <input type="hidden" name="group" value="" />
+      </legend>
+      <ul>
+#   for field in fields:
+        <li class="${classes('ticketfieldslayout-group' if field.group)}">
+          <span class="ticketfieldslayout-type">${'G' if field.group else 'f'}</span>
+          <span class="ticketfieldslayout-name">${field.label}</span>
+          <input type="hidden" name="field" value="${field.name}" />
+        </li>
+#   endfor
+        <li class="ticketfieldslayout-group ticketfieldslayout-tmpl-item">
+          <span class="ticketfieldslayout-type">G</span>
+          <span class="ticketfieldslayout-name">${
+            dgettext('ticketfieldslayout', 'Group')
+          }</span>
+          <input type="hidden" name="field" value="" disabled="disabled" />
+        </li>
+      </ul>
+    </fieldset>
+
+#   for group in groups:
+    <fieldset>
+      <legend>
+        <input type="hidden" name="group" value="${group.name}" />
+        <input type="text" name="label.${group.name}" value="${group.label}" />
+        <label>
+          <input type="checkbox" name="collapsed.${group.name}" value="1"
+                 checked="${group.collapsed and 'checked' or None}"
+                 />${dgettext('ticketfieldslayout', 'Collapsed')}
+        </label>
+        <span class="ticketfieldslayout-remove">&times;</span>
+      </legend>
+      <ul>
+#     for field in group.fields:
+        <li>
+          <span class="ticketfieldslayout-type">f</span> ${field.label}
+          <input type="hidden" name="field.${group.name}" value="${field.name}" />
+        </li>
+#     endfor
+      </ul>
+    </fieldset>
+#   endfor
+
+    <fieldset>
+      <legend>
+        ${dgettext('ticketfieldslayout', '(Hidden)')}
+        <input type="hidden" name="group" value="=hidden" />
+      </legend>
+      <ul id="ticketfieldslayout-hiddens">
+#   for field in hiddens:
+        <li>
+          <span class="ticketfieldslayout-type">f</span> ${field.label}
+          <input type="hidden" name="field.=hidden" value="${field.name}" />
+        </li>
+#   endfor
+      </ul>
+    </fieldset>
+
+    <fieldset class="ticketfieldslayout-tmpl-group">
+      <legend>
+        <input type="hidden" name="group" value="" disabled="disabled" />
+        <input type="text" name="label" value="" disabled="disabled" />
+        <label><input type="checkbox" name="collapsed" value="1" disabled="disabled"
+                      />${dgettext('ticketfieldslayout', 'Collapsed')}</label>
+        <span class="ticketfieldslayout-remove">&times;</span>
+      </legend>
+      <ul></ul>
+    </fieldset>
+  </form>
+# endblock adminpanel

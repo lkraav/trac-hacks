@@ -1,5 +1,5 @@
 # Japanese translations for TracTicketFieldsLayoutPlugin.
-# Copyright (C) 2013 ORGANIZATION
+# Copyright (C) 2023 ORGANIZATION
 # This file is distributed under the same license as the
 # TracTicketFieldsLayoutPlugin project.
 # Jun Omae <jun66j5@gmail.com>, 2013.

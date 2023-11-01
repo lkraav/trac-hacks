@@ -1,28 +1,31 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013,2014 OpenGroove,Inc.
+# Copyright (C) 2013-2023 OpenGroove,Inc.
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-import unittest
-from cStringIO import StringIO
-from genshi import XML
-from genshi.core import START
 from pkg_resources import parse_version
+import unittest
+import sys
+import lxml.html
 
 from trac import __version__
-from trac.test import EnvironmentStub, MockPerm
+from trac.test import EnvironmentStub, MockRequest
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
 from trac.ticket.query import QueryModule
 from trac.ticket.web_ui import TicketModule
-from trac.util.datefmt import utc
-from trac.web.api import Request
 from trac.web.chrome import Chrome
-from trac.web.main import FakeSession
-from tracticketfieldslayout.web_ui import TicketFieldsLayoutModule
+from trac.web.main import RequestDispatcher
+
+from ..api import TicketFieldsLayoutSetup
+from ..web_ui import TicketFieldsLayoutModule
+
+
+if sys.version_info[0] != 2:
+    unicode = str
 
 
 _parsed_version = parse_version(__version__)
@@ -40,10 +43,12 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
 
     def setUp(self):
         env = EnvironmentStub(default_data=True,
-                              enable=['trac.*', TicketFieldsLayoutModule])
+                              enable=['trac.*', TicketFieldsLayoutSetup,
+                                      TicketFieldsLayoutModule])
+        env.needs_upgrade()
         self.env = env
         self.config = env.config
-        self.mod = TicketFieldsLayoutModule(env)
+        self.dispatcher = RequestDispatcher(env)
         self.tktmod = TicketModule(env)
         self.querymod = QueryModule(env)
 
@@ -52,55 +57,47 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
 
     def _create_ticket(self, **kwargs):
         ticket = Ticket(self.env)
-        for name, value in kwargs.iteritems():
-            ticket[name] = value
+        for name in kwargs:
+            ticket[name] = kwargs[name]
         ticket.insert()
         return ticket
 
     def _reset_ticket_fields(self):
         TicketSystem(self.env).reset_ticket_fields()
 
-    def _make_environ(self, scheme='http', server_name='example.org',
-                      server_port=80, method='GET', script_name='/trac',
-                      **kwargs):
-        environ = {'wsgi.url_scheme': scheme, 'wsgi.input': StringIO(''),
-                   'REQUEST_METHOD': method, 'SERVER_NAME': server_name,
-                   'SERVER_PORT': server_port, 'SCRIPT_NAME': script_name}
-        environ.update(kwargs)
-        return environ
+    def _parse_html(self, content):
+        return lxml.html.fromstring(content)
 
     def _make_req(self, path_info=None):
-        buf = StringIO()
-        def start_response(status, headers):
-            return buf.write
-        environ = self._make_environ(PATH_INFO=path_info)
-        req = Request(environ, start_response)
-        req.authname = 'anonymous'
-        req.perm = MockPerm()
-        req.session = FakeSession()
-        req.chrome = {}
-        req.tz = utc
-        req.locale = None
-        req.lc_time = 'iso8601'
-        req.form_token = None
-        return req
+        return MockRequest(self.env, path_info=path_info)
 
     def _process_request(self, req, mod):
         self.assertTrue(mod.match_request(req))
         return mod.process_request(req)
 
+    def _post_process_request(self, req, *resp):
+        return self.dispatcher._post_process_request(req, *resp)
+
     def _render(self, req, mod):
-        template, data, content_type = self._process_request(req, mod)
-        return Chrome(self.env).render_template(req, template, data,
-                                                content_type, fragment=True)
+        resp = self._process_request(req, mod)
+        resp = self._post_process_request(req, *resp)
+        chrome = Chrome(self.env)
+        content = chrome.render_template(req, *resp)
+        if isinstance(content, unicode):
+            return content
+        if isinstance(content, bytes):
+            return content.decode('utf-8')
+        return u''.join(chunk.decode('utf-8')
+                        if isinstance(chunk, bytes) else
+                        chunk for chunk in content)
 
     def _render_ticket_page(self, req):
         return self._render(req, self.tktmod)
 
     def _test_script_data_in_query_page(self, ticketfieldslayout):
         req = self._make_req('/query')
-        template, data, content_type = self._process_request(req, self.querymod)
-        self.mod.post_process_request(req, template, data, content_type)
+        resp = self._process_request(req, self.querymod)
+        resp = self._post_process_request(req, *resp)
         script_data = req.chrome.get('script_data', {})
         self.assertIn('ticketfieldslayout', set(script_data))
         self.assertEqual(ticketfieldslayout['fields'],
@@ -124,42 +121,44 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
                         'summary,reporter,owner,description')
 
         req = self._make_req('/newticket')
-        stream = self._render_ticket_page(req)
-        stream = stream.select('//fieldset[@id="properties"]')
-        content = unicode(stream)
+        content = self._render_ticket_page(req)
+        parsed = self._parse_html(content)
+        elements = parsed.xpath('.//fieldset[@id="properties"]')
+        self.assertEqual(1, len(elements))
+        fieldset = elements[0]
 
-        positions = []
+        positions = {}
         for field in self.hidden_fields:
-            self.assertIn('<label for="field-%s">' % field, content)
-            self.assertIn(' name="field_%s"' % field, content)
-            positions.append((content.index(' name="field_%s"' % field),
-                              field))
+            self.assertTrue(fieldset.xpath('.//label[@for="field-%s"]' %
+                                           field))
+            self.assertTrue(fieldset.xpath('.//*[@name="field_%s"]' % field))
+            positions[field] = content.index(' name="field_%s"' % field)
         self.assertEqual(self.hidden_fields,
-                         tuple(map(lambda v: v[1], sorted(positions))))
+                         tuple(sorted(positions, key=positions.get)))
 
-        XML(content)  # try to parse as an xml
         for field in ('type', 'priority', 'milestone', 'component', 'version',
                       'keywords'):
-            self.assertNotIn('<label for="field-%s">' % field, content)
-            self.assertNotIn('name="field_%s"' % field, content)
+            self.assertFalse(fieldset.xpath('.//label[@for="field-%s"]' %
+                                            field), content)
+            self.assertFalse(fieldset.xpath('.//*[@name="field_%s"]' % field))
 
         ticket = self._create_ticket(summary='Layout', status='new')
         req = self._make_req('/ticket/%d' % ticket.id)
-        stream = self._render_ticket_page(req)
-        stream = stream.select('//table[@class="properties"]')
-        content = unicode(stream)
+        content = self._render_ticket_page(req)
+        elements = parsed.xpath('.//table[@class="properties"]')
+        self.assertEqual(1, len(elements))
+        table = elements[0]
 
-        positions = []
+        positions = {}
         for field in ('reporter', 'owner'):
-            self.assertIn('<th id="h_%s"' % field, content)
-            self.assertIn(' headers="h_%s"' % field, content)
-            positions.append((content.index(' headers="h_%s"' % field),
-                              field))
+            self.assertTrue(table.xpath('.//th[@id="h_%s"]' % field))
+            self.assertTrue(table.xpath('.//*[@headers="h_%s"]' % field))
+            positions[field] = content.index(' headers="h_%s"' % field)
         self.assertEqual(['reporter', 'owner'],
-                         map(lambda v: v[1], sorted(positions)))
+                         sorted(positions, key=positions.get))
         for field in ('summary', 'description', 'type'):
-            self.assertNotIn('<th id="h_%s"' % field, content)
-            self.assertNotIn(' headers="h_%s"' % field, content)
+            self.assertFalse(table.xpath('.//th[@id="h_%s"]' % field))
+            self.assertFalse(table.xpath('.//*[@headers="h_%s"]' % field))
 
         self._test_script_data_in_query_page(
             {'fields': ['resolution', 'status', 'time', 'changetime',
@@ -185,43 +184,46 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
         self.config.set('ticketfieldslayout', 'fields', ','.join(fields))
 
         req = self._make_req('/newticket')
-        stream = self._render_ticket_page(req)
-        stream = stream.select('//fieldset[@id="properties"]')
-        content = unicode(stream)
+        content = self._render_ticket_page(req)
+        parsed = self._parse_html(content)
+        elements = parsed.xpath('.//fieldset[@id="properties"]')
+        self.assertEqual(1, len(elements))
+        fieldset = elements[0]
 
-        positions = []
+        positions = {}
         for field in fields:
             if field == 'owner' and not self.has_owner_field:
                 continue
             if field != 'f_radio':
-                self.assertIn('<label for="field-%s">' % field, content)
-            self.assertIn(' name="field_%s"' % field, content)
-            positions.append((content.index(' name="field_%s"' % field),
-                              field))
+                self.assertTrue(fieldset.xpath('.//label[@for="field-%s"]' %
+                                               field))
+            self.assertTrue(fieldset.xpath('.//*[@name="field_%s"]' % field))
+            positions[field] = content.index(' name="field_%s"' % field)
         expected = ['f_radio', 'f_select', 'f_checkbox', 'f_textarea',
                     'f_text', 'summary', 'reporter', 'description']
         if self.has_owner_field:
             expected.append('owner')
-        self.assertEqual(expected, map(lambda v: v[1], sorted(positions)))
+        self.assertEqual(expected, sorted(positions, key=positions.get))
 
         ticket = self._create_ticket(summary='Layout', status='new')
         req = self._make_req('/ticket/%d' % ticket.id)
-        stream = self._render_ticket_page(req)
-        stream = stream.select('//table[@class="properties"]')
-        content = unicode(stream)
+        content = self._render_ticket_page(req)
+        parsed = self._parse_html(content)
+        elements = parsed.xpath('.//table[@class="properties"]')
+        self.assertEqual(1, len(elements))
+        table = elements[0]
 
-        positions = []
+        positions = {}
         for field in set(fields) - set(('summary', 'description')):
-            self.assertIn('<th id="h_%s"' % field, content)
-            self.assertIn(' headers="h_%s"' % field, content)
-            positions.append((content.index(' headers="h_%s"' % field),
-                              field))
+            self.assertTrue(table.xpath('.//th[@id="h_%s"]' % field))
+            self.assertTrue(table.xpath('.//*[@headers="h_%s"]' % field))
+            positions[field] = content.index(' headers="h_%s"' % field)
         expected = ['f_radio', 'f_select', 'f_checkbox', 'f_textarea',
                     'f_text', 'reporter', 'owner']
-        self.assertEqual(expected, map(lambda v: v[1], sorted(positions)))
+        self.assertEqual(expected, sorted(positions, key=positions.get))
         for field in ('summary', 'description', 'type'):
-            self.assertNotIn('<th id="h_%s"' % field, content)
-            self.assertNotIn(' headers="h_%s"' % field, content)
+            self.assertFalse(table.xpath('.//th[@id="h_%s"]' % field))
+            self.assertFalse(table.xpath('.//*[@headers="h_%s"]' % field))
 
         self._test_script_data_in_query_page(
             {'fields': ['resolution', 'status', 'time', 'changetime',
@@ -242,67 +244,66 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
                         'enabled')
 
         req = self._make_req('/newticket')
-        stream = self._render_ticket_page(req)
-        stream = stream.select('//fieldset[@id="properties"]')
-        content = unicode(stream)
+        content = self._render_ticket_page(req)
+        parsed = self._parse_html(content)
+        elements = parsed.xpath('.//fieldset[@id="properties"]')
+        self.assertEqual(1, len(elements))
+        fieldset = elements[0]
 
         fields = ['summary', 'reporter', 'description', 'milestone',
                   'component', 'type', 'priority', 'version']
         if self.has_owner_field:
             fields.append('owner')
-        positions = []
+        positions = {}
         for field in fields:
-            self.assertIn('<label for="field-%s">' % field, content)
-            self.assertIn(' name="field_%s"' % field, content)
-            positions.append((content.index(' name="field_%s"' % field),
-                              field))
-        self.assertEqual(fields, map(lambda v: v[1], sorted(positions)))
+            self.assertTrue(fieldset.xpath('.//label[@for="field-%s"]' %
+                                           field))
+            self.assertTrue(fieldset.xpath('.//*[@name="field_%s"]' % field))
+            positions[field] = content.index(' name="field_%s"' % field)
+        self.assertEqual(fields, sorted(positions, key=positions.get))
 
-        tbody = filter(lambda (kind, data, pos): \
-                       (kind is START and data[0].localname == 'tbody'),
-                       XML(content).select('//tbody'))
-        self.assertEqual(None, tbody[0][1][1].get('class'))
+        elements = fieldset.xpath('.//tbody')
+        self.assertEqual(None, elements[0].attrib.get('class'))
         self.assertEqual('ticketfieldslayout-collapsed',
-                         tbody[1][1][1].get('class'))
+                         elements[1].attrib.get('class'))
         if self.has_owner_field:
-            self.assertEqual(None, tbody[2][1][1].get('class'))
-            self.assertEqual(3, len(tbody))
+            self.assertEqual(None, elements[2].attrib.get('class'))
+            self.assertEqual(3, len(elements))
         else:
-            self.assertEqual(2, len(tbody))
+            self.assertEqual(2, len(elements))
 
-        XML(content)  # try to parse as an xml
         for field in ('keywords',):
-            self.assertNotIn('<label for="field-%s">' % field, content)
-            self.assertNotIn('name="field_%s"' % field, content)
+            self.assertFalse(fieldset.xpath('.//label[@for="field-%s"]' %
+                                            field))
+            self.assertFalse(fieldset.xpath('.//*[@name="field_%s"]' % field))
 
         ticket = self._create_ticket(summary='Layout', status='new')
         req = self._make_req('/ticket/%d' % ticket.id)
-        stream = self._render_ticket_page(req)
-        stream = stream.select('//table[@class="properties"]')
-        content = unicode(stream)
+        content = self._render_ticket_page(req)
+        parsed = self._parse_html(content)
+        elements = parsed.xpath('.//table[@class="properties"]')
+        self.assertEqual(1, len(elements))
+        table = elements[0]
 
         fields = ['reporter', 'milestone', 'component', 'priority', 'version']
         if self.has_owner_field:
             fields.append('owner')
-        positions = []
+        positions = {}
         for field in fields:
-            self.assertIn('<th id="h_%s"' % field, content)
-            self.assertIn(' headers="h_%s"' % field, content)
-            positions.append((content.index(' headers="h_%s"' % field),
-                              field))
-        self.assertEqual(fields, map(lambda v: v[1], sorted(positions)))
+            self.assertTrue(table.xpath('.//th[@id="h_%s"]' % field))
+            self.assertTrue(table.xpath('.//*[@headers="h_%s"]' % field))
+            positions[field] = content.index(' headers="h_%s"' % field)
+        self.assertEqual(fields, sorted(positions, key=positions.get))
         for field in ('summary', 'description', 'type'):
-            self.assertNotIn('<th id="h_%s"' % field, content)
-            self.assertNotIn(' headers="h_%s"' % field, content)
+            self.assertFalse(table.xpath('.//th[@id="h_%s"]' % field))
+            self.assertFalse(table.xpath('.//*[@headers="h_%s"]' % field))
 
-        tbody = filter(lambda (kind, data, pos): \
-                       (kind is START and data[0].localname == 'tbody'),
-                       XML(content).select('//tbody'))
-        self.assertEqual(None, tbody[0][1][1].get('class'))
+        elements = table.xpath('.//tbody')
+        self.assertEqual(3, len(elements))
+        self.assertEqual(None, elements[0].attrib.get('class'))
         self.assertEqual('ticketfieldslayout-collapsed',
-                         tbody[1][1][1].get('class'))
-        self.assertEqual(None, tbody[2][1][1].get('class'))
-        self.assertEqual(3, len(tbody))
+                         elements[1].attrib.get('class'))
+        self.assertEqual(None, elements[2].attrib.get('class'))
 
         self._test_script_data_in_query_page({
             'fields': ['resolution', 'status', 'time', 'changetime', '@_std',
@@ -327,18 +328,21 @@ class TicketFieldsLayoutTestCase(unittest.TestCase):
                         ','.join(f['name'] for f in tktsys.fields))
 
         req = self._make_req('/newticket')
-        stream = self._render_ticket_page(req)
-        classes = [' '.join(sorted(data[1].get('class').split()))
-                   for kind, data, pos
-                   in stream.select('//fieldset[@id="properties"]'
-                                    '//td[@colspan="3"]')
-                   if kind is START and data[0].localname == 'td']
+        content = self._render_ticket_page(req)
+        parsed = self._parse_html(content)
+        elements = parsed.xpath(
+                            './/fieldset[@id="properties"]//td[@colspan="3"]')
+        classes = [' '.join(sorted((element.attrib.get('class') or '')
+                                   .split()))
+                   for element in elements]
 
-        self.assertEqual(['fullrow'] * 3, classes[:3])
-        expected = 'col1' if _parsed_version < parse_version('1.2') else \
-                   'col1 fullrow'
-        self.assertEqual(expected, classes[3])
-        self.assertEqual(4, len(classes))
+        if _parsed_version >= parse_version('1.4'):
+            expected = ['col1 fullrow'] * 4
+        elif _parsed_version >= parse_version('1.2'):
+            expected = ['fullrow'] * 3 + ['col1 fullrow']
+        else:
+            expected = ['fullrow'] * 3 + ['col1']
+        self.assertEqual(expected, classes)
 
 
 def test_suite():

@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 OpenGroove,Inc.
+# Copyright (C) 2014-2023 OpenGroove,Inc.
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
 import unittest
-from cStringIO import StringIO
 
 from trac.admin.web_ui import AdminModule
-from trac.test import EnvironmentStub, Mock, MockPerm
-from trac.util.datefmt import utc
+from trac.test import EnvironmentStub, MockRequest
 from trac.ticket.api import TicketSystem
-from trac.web.api import Request, RequestDone
+from trac.web.api import RequestDone
 from tracticketfieldslayout.admin import TicketFieldsLayoutAdminModule
 
 
@@ -26,30 +24,8 @@ class CustomFieldsModificationTestCase(unittest.TestCase):
     def tearDown(self):
         self.env.reset_db()
 
-    def _make_environ(self, scheme='http', server_name='example.org',
-                      server_port=80, method='POST', script_name='/trac',
-                      **kwargs):
-        environ = {'wsgi.url_scheme': scheme, 'wsgi.input': StringIO(''),
-                   'REQUEST_METHOD': method, 'SERVER_NAME': server_name,
-                   'SERVER_PORT': server_port, 'SCRIPT_NAME': script_name}
-        environ.update(kwargs)
-        return environ
-
     def _make_req(self, method='POST', path_info='/admin/ticket/customfields'):
-        buf = StringIO()
-        def start_response(status, headers):
-            return buf.write
-        environ = self._make_environ(method=method, PATH_INFO=path_info)
-        req = Request(environ, start_response)
-        req.authname = 'anonymous'
-        req.perm = MockPerm()
-        req.session = Mock(save=lambda: None)
-        req.chrome = {}
-        req.tz = utc
-        req.locale = None
-        req.lc_time = 'iso8601'
-        req.form_token = None
-        return req
+        return MockRequest(self.env, method=method, path_info=path_info)
 
     def _pseudo_process_request(self, fn):
         handler = AdminModule(self.env)

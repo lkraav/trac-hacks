@@ -1,27 +1,52 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 OpenGroove,Inc.
+# Copyright (C) 2013-2023 OpenGroove,Inc.
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
+
+import inspect
+import os
+import pkg_resources
+import sys
 
 from trac.core import Component, implements
 from trac.config import ListOption, Option
 from trac.env import IEnvironmentSetupParticipant
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
-from trac.util import arity
+from trac.util import lazy
 from trac.util.translation import dgettext, domain_functions
+from trac.web.chrome import Chrome
 
 
-__all__ = ['TicketFieldsLayoutTxModule']
+__all__ = ('TicketFieldsLayoutSetup',)
 
 
+if sys.version_info[0] == 2:
+    itervalues = lambda d: d.itervalues()
+    iteritems = lambda d: d.iteritems()
+else:
+    itervalues = lambda d: d.values()
+    iteritems = lambda d: d.items()
+
+getargspec = inspect.getfullargspec \
+             if hasattr(inspect, 'getfullargspec') else \
+             inspect.getargspec
+
+
+use_jinja2 = hasattr(Chrome, 'jenv')
 _DOMAIN = 'ticketfieldslayout'
 
 
-if arity(Option.__init__) <= 5:
+if use_jinja2:
+    from ._jinja2 import make_jinja2_ext
+else:
+    make_jinja2_ext = None
+
+
+if 'doc_domain' not in getargspec(Option.__init__)[0]:
     def _option_tx_0_12(Base):  # Trac 0.12.x
         class OptionTx(Base):
             def __getattribute__(self, name):
@@ -45,24 +70,46 @@ else:
 ListOption = _option_tx(ListOption)
 add_domain, _ = domain_functions(_DOMAIN, ('add_domain', '_'))
 
+try:
+    _locale_dir = pkg_resources.resource_filename(__name__, 'locale')
+except KeyError:
+    _locale_dir = None
 
-class TicketFieldsLayoutTxModule(Component):
+
+class TicketFieldsLayoutSetup(Component):
 
     implements(IEnvironmentSetupParticipant)
 
     def __init__(self):
-        from pkg_resources import resource_exists, resource_filename
-        if resource_exists(__name__, 'locale'):
-            add_domain(self.env.path, resource_filename(__name__, 'locale'))
+        if _locale_dir:
+            add_domain(self.env.path, _locale_dir)
+        if use_jinja2:
+            self._install_jinja2_ext()
+
+    # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
         pass
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, *args):
         return False
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, *args):
         pass
+
+    # Internal methods
+
+    def _install_jinja2_ext(self):
+        chrome = Chrome(self.env)
+        try:
+            chrome.load_template(os.devnull)
+        except:
+            pass
+        chrome.jenv.add_extension(self._jinja2_ext)
+
+    @lazy
+    def _jinja2_ext(self):
+        return make_jinja2_ext(self.env)
 
 
 def get_default_fields(env):

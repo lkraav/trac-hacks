@@ -1,0 +1,162 @@
+{# Copyright (C) 2023 OpenGroove,Inc.
+   All rights reserved.
+
+   This software is licensed as described in the file COPYING, which
+   you should have received as part of this distribution.
+-#}
+# macro render_field_editor(field, fullrow, first, index)
+#   set name = field.name
+#   set value = (ticket[name] if ticket.exists else ticket.get_value_or_default(name))
+#   if first or not fullrow:
+  <th class="${classes('col%d' % index, 'trac-textarea' if field.type == 'textarea')}">
+#     if field:
+#       set label = (dgettext)('messages', "%(label)s:",
+                               label=field.edit_label or field.label or name)
+#       if field.type == 'radio':
+    ${label}
+#       else:
+    <label for="field-${name}">${label}</label>
+#       endif
+#     endif
+  </th>
+#   endif
+#   if first or not fullrow:
+  <td${{'class': classes('col%d' % index, fullrow=fullrow),
+        'colspan': 3 if fullrow,
+       }|htmlattr}>
+#     if field:
+#       if field.type == 'select':
+    <select id="field-${name}" name="field_${name}">
+#         if field.optional:
+      <option label="${(dgettext)('messages', '(unset)')}"></option>
+#         endif
+#         for option in field.options:
+      <option${{'selected': value == option, 'value': option}|htmlattr}>${option}</option>
+#         endfor
+#         for optgroup in field.optgroups:
+#           if optgroup.options:
+      <optgroup label="${optgroup.label}">
+#             for option in optgroup.options:
+        <option${{'selected': value == option, 'value': option}|htmlattr}>${option}</option>
+#             endfor
+      </optgroup>
+#           endif
+#         endfor
+    </select>
+#       elif field.type == 'textarea':
+    <textarea id="field-${name}" name="field_${name}"
+              class="${classes('trac-resizable', wikitext=field.format == 'wiki')}"
+              cols="60" rows="${field.height}">${value}</textarea>
+#         if name == 'description':
+    <label for="field-description" class="trac-textarea-hint">${
+      (tag_)('You may use %(wikiformatting)s here.',
+             wikiformatting=jmacros.wikiformatting_link())|safe
+    }</label>
+#         endif
+#       elif field.type == 'checkbox':
+    <span>
+      <input type="checkbox" id="field-${name}" name="field_${name}"
+             value="1"${{'checked': value == '1'}|htmlattr}/>
+      <input type="hidden" name="field_checkbox_${name}" value="1" />
+    </span>
+#       elif field.type == 'radio':
+#         for option in field.options:
+    <label>
+      <input type="radio" name="field_${name}"${
+            {'checked': value == option, 'value': option}|htmlattr}/>
+      ${option}
+    </label>
+#         endfor
+#       elif field.type == 'time':
+    <input type="text" id="field-${name}" title="${field.format_hint}"
+           name="field_${name}" value="${field.edit}"
+           class="trac-${'date' if field.format == 'date' else 'datetime'}picker"/>
+#       else:
+#         if name == 'cc':
+    <span>
+#           if 'cc_entry' in field:
+#             if field.cc_action is none:
+      <em>
+#               set preferences_link
+        <a href="${href.prefs()}" class="trac-target-new">${(dgettext)('messages', "Preferences")}</a>
+#               endset
+        ${(tag_)("Set your email in %(preferences_link)s", preferences_link=preferences_link)}
+      </em>
+#             else:
+      <label for="field-cc"><em>${field.cc_entry}</em></label>
+#             endif
+      <input type="checkbox" id="field-cc" name="cc_update"${
+             {'title': (dgettext)('messages',
+                                  "This checkbox allows you to add or remove "
+                                  "yourself from the CC list."),
+              'style': 'display: none' if field.cc_action is none,
+              'disabled': field.cc_action is none,
+              'checked': field.cc_update,
+             }|htmlattr} />
+#           elif field.cc_action is not none:
+      <input type="text" id="field-${name}" name="field_${name}"${
+             {'title': (dgettext)('messages',
+                                  "Space or comma delimited email addresses "
+                                  "and usernames are accepted."),
+              'value': value,
+             }|htmlattr} />
+#           endif
+    </span>
+#         else:
+    <input type="text" id="field-${name}" name="field_${name}"${
+           {'class': 'wikitext' if field.format == 'wiki' else None,
+            'value': value,
+           }|htmlattr}/>
+#         endif
+#       endif
+#     endif
+  </td>
+#   endif
+# endmacro
+# macro render_group_toggle(group)
+    <tr class="ticketfieldslayout-toggle">
+      <td colspan="4">
+        <fieldset${{'class': {'collapsed': group.collapsed}}|htmlattr}>
+          <legend class="ticketfieldslayout-foldable">
+            <a href="javascript:void(0)">${group.label}</a>
+          </legend>
+        </fieldset>
+      </td>
+    </tr>
+# endmacro
+<col class="th" /><col class="td" />
+<col class="th" /><col class="td" />
+# with
+#   for group_name in ticketfieldslayout.fields:
+#     set is_group = group_name.startswith('@')
+#     set group = ticketfieldslayout.groups[group_name[1 if is_group else 0:]]
+#     set fields = group.field_items|rejectattr('name', 'eq', 'owner')|list
+#     set fullrow_fields = (
+        fields|selectattr('name', 'in', ('summary', 'reporter'))|list +
+        fields|selectattr('type', 'equalto', 'textarea')|list
+      )|map(attribute='name')|list
+#     for row in fields|groupattr(2, 'name', 'not_in', fullrow_fields):
+#       if loop.first:
+<tbody${{'class': {'ticketfieldslayout-collapsed': is_group and group.collapsed}}|htmlattr}>
+#         if is_group:
+  ${- render_group_toggle(group) -}
+#         endif
+#       endif
+  <tr>
+#       for field in row:
+    ${- render_field_editor(field, len(row) == 1, loop.first, loop.index) -}
+#       endfor
+  </tr>
+#       if loop.last:
+</tbody>
+#       endif
+#     endfor
+#   endfor
+# endwith
+<script>
+  setTimeout(function() {
+    jQuery('#content table.trac-properties .ticketfieldslayout-foldable')
+      .addClass('foldable')
+      .removeClass('ticketfieldslayout-foldable');
+  }, 0);
+</script>

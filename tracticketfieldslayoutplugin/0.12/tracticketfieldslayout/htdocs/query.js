@@ -1,4 +1,4 @@
-// Copyright (C) 2017 OpenGroove,Inc.
+// Copyright (C) 2017-2023 OpenGroove,Inc.
 // All rights reserved.
 //
 // This software is licensed as described in the file COPYING, which

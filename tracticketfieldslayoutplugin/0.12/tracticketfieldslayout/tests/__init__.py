@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 OpenGroove,Inc.
+# Copyright (C) 2014-2023 OpenGroove,Inc.
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which

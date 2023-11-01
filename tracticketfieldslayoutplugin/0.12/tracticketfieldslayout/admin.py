@@ -1,22 +1,25 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 OpenGroove,Inc.
+# Copyright (C) 2013-2023 OpenGroove,Inc.
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+import re
+
 from trac.core import Component, implements
 from trac.admin.api import IAdminPanelProvider
 from trac.admin.web_ui import AdminModule
+from trac.util.html import tag
 from trac.ticket.api import TicketSystem
 from trac.ticket.model import Ticket
-from trac.util.translation import gettext as _gettext
+from trac.util.translation import dgettext, gettext as _gettext
 from trac.web.api import IRequestFilter
 from trac.web.chrome import Chrome, add_notice, add_script, add_stylesheet
 
-from tracticketfieldslayout.api import get_default_fields, get_groups, _
-from tracticketfieldslayout.web_ui import TicketFieldsLayoutModule
+from .api import _, get_default_fields, get_groups, iteritems
+from .web_ui import TicketFieldsLayoutModule
 
 
 __all__ = ['TicketFieldsLayoutAdminModule']
@@ -123,7 +126,8 @@ class TicketFieldsLayoutAdminModule(Component):
             hiddens.append({'name': name,
                             'label': ticket_fields_map[name]['label']})
 
-        data = {'groups': groups, 'fields': root_fields, 'hiddens': hiddens}
+        data = {'groups': groups, 'fields': root_fields, 'hiddens': hiddens,
+                'helps': self._get_view_helps()}
         return 'ticketfieldslayout_admin.html', data
 
     def _process_field_apply(self, req, category, page, path_info):
@@ -171,12 +175,12 @@ class TicketFieldsLayoutAdminModule(Component):
         for name, value in self.config.options(_SECTION):
             if name.startswith('group.'):
                 self.config.remove(_SECTION, name)
-        for name, value in options.iteritems():
+        for name, value in iteritems(options):
             if isinstance(value, list):
                 value = ','.join(value)
             self.config.set(_SECTION, name, value)
-        for idx, (name, _) in enumerate(sorted(custom_fields.iteritems(),
-                                               key=lambda (k, v): v)):
+        for idx, name in enumerate(sorted(custom_fields,
+                                          key=custom_fields.get)):
             self.config.set('ticket-custom', name + '.order', idx + 1)
         self.config.save()
 
@@ -192,6 +196,27 @@ class TicketFieldsLayoutAdminModule(Component):
 
     def _add_notice_saved(self, req):
         add_notice(req, _gettext("Your changes have been saved."))
+
+    def _get_view_helps(self):
+        helps = []
+        helps.append(dgettext('ticketfieldslayout',
+                              'You can group fields of ticket and hide the '
+                              'fields in view and form of ticket page.'))
+        help_ = dgettext('ticketfieldslayout',
+                         '[1:Notes:] In the view, summary field is always '
+                         'placed at the first field and description field is '
+                         'always placed at the last field. In the form, owner '
+                         'field is always placed at the last field.')
+        fragment = tag()
+        for value in re.split(r'(\[[1-9][0-9]*:[^]]*\])', help_):
+            if value.startswith('['):
+                n, value = value[1:-1].split(':', 1)
+                fragment.append(tag.strong(value))
+            else:
+                fragment.append(value)
+        helps.append(fragment)
+        return helps
+
 
     def _clear_layout_settings(self):
         names = ['fields']
@@ -212,7 +237,7 @@ class TicketFieldsLayoutAdminModule(Component):
             return
 
         config = self.config
-        options = map(lambda (name, _): name, config.options(_SECTION))
+        options = [item[0] for item in config.options(_SECTION)]
         if removed:
             for option in options:
                 if not (option.startswith('group.') and
@@ -232,7 +257,9 @@ class TicketFieldsLayoutAdminModule(Component):
                     # remove the group from "fields"
                     removed.add('@' + option[6:])
         old_fields = config.getlist(_SECTION, 'fields')
-        new_fields = filter(lambda val: val not in removed, old_fields) + added
+        new_fields = []
+        new_fields.extend(filter(lambda val: val not in removed, old_fields))
+        new_fields.extend(added)
         if not new_fields:
             for option in options:
                 if option == 'fields' or option.startswith('group.'):

@@ -1,20 +1,17 @@
-// Copyright (C) 2013,2014 OpenGroove,Inc.
+// Copyright (C) 2013-2023 OpenGroove,Inc.
 // All rights reserved.
 //
 // This software is licensed as described in the file COPYING, which
 // you should have received as part of this distribution.
 
 jQuery(document).ready(function($) {
-    setTimeout(function() {
-        var onclick = function() {
-            var node = $(this);
-            node.parent().toggleClass('collapsed');
-            node.closest('tbody').toggleClass('ticketfieldslayout-collapsed');
-            return false;
-        };
-        $('.ticketfieldslayout-foldable')
-            .addClass('foldable')
-            .removeClass('ticketfieldslayout-foldable')
-            .click(onclick);
-    }, 1);
+    var listener = function() {
+        console.log('------');
+        var node = $(this);
+        var fieldset = node.closest('fieldset');
+        fieldset.toggleClass('collapsed');
+        fieldset.closest('tbody').toggleClass('ticketfieldslayout-collapsed');
+        return false;
+    };
+    $('#content').on('click', '.ticketfieldslayout-toggle .foldable', listener);
 });

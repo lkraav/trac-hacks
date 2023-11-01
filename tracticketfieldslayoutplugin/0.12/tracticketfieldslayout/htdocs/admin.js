@@ -1,4 +1,4 @@
-// Copyright (C) 2013,2014 OpenGroove,Inc.
+// Copyright (C) 2013-2023 OpenGroove,Inc.
 // All rights reserved.
 //
 // This software is licensed as described in the file COPYING, which
