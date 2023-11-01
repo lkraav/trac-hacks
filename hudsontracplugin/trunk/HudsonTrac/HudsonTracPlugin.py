@@ -179,28 +179,21 @@ class HudsonTracPlugin(Component):
             local_exc = False
             try:
                 resp = self.url_opener.open(self.info_url)
-                cset = resp.info().get_param('charset') or 'ISO-8859-1'
 
-                self.log.warn(self.info_url)
-                self.log.warn(resp)
-                self.log.warn(cset)
                 ct   = resp.info().get_content_type()
-                self.log.warn(ct)
-                if ct != 'text/x-python':
+                mimewant = 'text/x-python'
+                if ct != mimewant:
                     local_exc = True
                     raise IOError(
                         _("Error getting build info from '%(url)s': returned document "
-                        "has unexpected type '%(mime)s' (expected 'text/x-python'). "
-                        "The returned text is:\n%(err)s") %
-                        {'url': self.info_url, 'mime': ct, 'error': str(resp.read(), cset)})
+                        "has unexpected type '%(mime)s' (expected '%(mimewant)s'). "
+                        "The returned text is:\n%(text)s") %
+                        {'url': self.info_url, 'mime': ct, 'mimewant': mimewant, 'text': resp.read()})
 
-                info = eval(resp.read(), {"__builtins__":None}, {"True":True, "False":False})
-                self.log.warn(info)
-
-                return info
-            except Exception:
+                return eval(resp.read(), {"__builtins__":None}, {"True":True, "False":False})
+            except Exception as e:
                 if local_exc:
-                    raise
+                    raise e
 
                 import sys
                 self.env.log.exception("Error getting build info from '%s'",
@@ -208,8 +201,8 @@ class HudsonTracPlugin(Component):
                 raise IOError(
                     _("Error getting build info from '%(url)s': %(name)s: %(info)s. This most "
                     "likely means you configured a wrong job_url, username, "
-                    "or password." % {'url': self.info_url, 'name': sys.exc_info()[0].__name__,
-                     'info': str(sys.exc_info()[1])}))
+                    "or password.") % {'url': self.info_url, 'name': sys.exc_info()[0].__name__,
+                     'info': str(sys.exc_info()[1])})
         finally:
             self.url_opener.close()
 
@@ -298,8 +291,9 @@ class HudsonTracPlugin(Component):
         # get and parse the build-info
         try:
             info = self.__get_info()
-        except:
+        except Exception as e:
             add_notice(req, _("Error accessing build status"))
+            self.log.warn(repr(e))
             return
 
         # extract all build entries
@@ -385,8 +379,6 @@ class HudsonTracPlugin(Component):
                                  'changesets': changesets})
 
             href  = entry['url']
-            self.log.warn(entry['fullDisplayName'])
-            self.log.warn(result)
             title = _('Build "%(name)s" (%(result)s)') % \
                     {'name': entry['fullDisplayName'], 'result': result.lower()}
 

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HudsonTrac 1.0\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2023-10-27 12:21+0200\n"
+"POT-Creation-Date: 2023-11-01 18:14+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -106,62 +106,62 @@ msgid ""
 " show no author for the build)."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:192
+#: HudsonTrac/HudsonTracPlugin.py:188
 #, python-format
 msgid ""
 "Error getting build info from '%(url)s': returned document has "
-"unexpected type '%(mime)s' (expected 'text/x-python'). The returned "
+"unexpected type '%(mime)s' (expected '%(mimewant)s'). The returned "
 "text is:\n"
-"%(err)s"
+"%(text)s"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:212
+#: HudsonTrac/HudsonTracPlugin.py:202
 #, python-format
 msgid ""
 "Error getting build info from '%(url)s': %(name)s: %(info)s. This "
 "most likely means you configured a wrong job_url, username, or "
-"password.url"
+"password."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:302
+#: HudsonTrac/HudsonTracPlugin.py:295
 msgid "Error accessing build status"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:329
+#: HudsonTrac/HudsonTracPlugin.py:323
 msgid "Build finished successfully"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:332
+#: HudsonTrac/HudsonTracPlugin.py:326
 msgid "Build unstable"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:333
+#: HudsonTrac/HudsonTracPlugin.py:327
 msgid "Build aborted"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:334
+#: HudsonTrac/HudsonTracPlugin.py:328
 msgid "Build in progress"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:337
+#: HudsonTrac/HudsonTracPlugin.py:331
 msgid "Build failed"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:349
+#: HudsonTrac/HudsonTracPlugin.py:343
 msgid "Changesets:"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:377
+#: HudsonTrac/HudsonTracPlugin.py:371
 #, python-format
 msgid "%(message)s since %(time)s, duration %(duration)s%(changesets)s"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:382
+#: HudsonTrac/HudsonTracPlugin.py:376
 #, python-format
 msgid "%(message)s at %(time)s, duration %(duration)s%(changesets)s"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:390
+#: HudsonTrac/HudsonTracPlugin.py:382
 #, python-format
 msgid "Build \"%(name)s\" (%(result)s)"
 msgstr ""
