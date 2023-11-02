@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2023-11-01 18:14+0100\n"
+"POT-Creation-Date: 2023-11-02 19:08+0100\n"
 "PO-Revision-Date: 2023-10-26 20:36+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -196,4 +196,20 @@ msgstr "%(message)s um %(time)s, Dauer %(duration)s%(changesets)s"
 #, python-format
 msgid "Build \"%(name)s\" (%(result)s)"
 msgstr "Build \"%(name)s\" (%(result)s)"
+
+#: HudsonTrac/texts/othertexts.py:4
+msgid "success"
+msgstr "erfolgreich"
+
+#: HudsonTrac/texts/othertexts.py:5
+msgid "in-progress"
+msgstr "läuft"
+
+#: HudsonTrac/texts/othertexts.py:6
+msgid "unstable"
+msgstr "instabil"
+
+#: HudsonTrac/texts/othertexts.py:7
+msgid "failure"
+msgstr "fehlgeschlagen"
 

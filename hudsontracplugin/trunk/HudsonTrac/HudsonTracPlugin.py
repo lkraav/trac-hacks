@@ -380,7 +380,8 @@ class HudsonTracPlugin(Component):
 
             href  = entry['url']
             title = _('Build "%(name)s" (%(result)s)') % \
-                    {'name': entry['fullDisplayName'], 'result': result.lower()}
+                    {'name': entry['fullDisplayName'], 'result': _(result.lower())}
+            # Results: _("success"), _("in-progress"), _("unstable"), _("failure")
 
             yield kind, completed, author, (href, title, comment)
 

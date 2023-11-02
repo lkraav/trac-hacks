@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HudsonTrac 1.0\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2023-11-01 18:14+0100\n"
+"POT-Creation-Date: 2023-11-02 19:08+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -164,5 +164,21 @@ msgstr ""
 #: HudsonTrac/HudsonTracPlugin.py:382
 #, python-format
 msgid "Build \"%(name)s\" (%(result)s)"
+msgstr ""
+
+#: HudsonTrac/texts/othertexts.py:4
+msgid "success"
+msgstr ""
+
+#: HudsonTrac/texts/othertexts.py:5
+msgid "in-progress"
+msgstr ""
+
+#: HudsonTrac/texts/othertexts.py:6
+msgid "unstable"
+msgstr ""
+
+#: HudsonTrac/texts/othertexts.py:7
+msgid "failure"
 msgstr ""
 
