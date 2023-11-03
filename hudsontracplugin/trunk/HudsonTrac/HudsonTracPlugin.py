@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-A Trac plugin which interfaces with the Hudson Continuous integration server
+A Trac plugin which interfaces with the Jenkins Continuous integration server
 
 You can configure this component via the
 [wiki:TracIni#hudson-section "[hudson]"]
 section in the trac.ini file.
 
 See also:
- - http://hudson-ci.org/
- - http://wiki.hudson-ci.org/display/HUDSON/Trac+Plugin
+ - https://jenkins-ci.org/
+ - https://trac-hacks.org/wiki/HudsonTracPlugin
 """
 
 import urllib.request, urllib.error, urllib.parse
@@ -35,7 +35,7 @@ _, N_, add_domain = domain_functions("hudsontrac", ('_', 'N_', 'add_domain'))
 
 class HudsonTracPlugin(Component):
     """
-    Display Hudson results in the timeline and an entry in the main navigation
+    Display Jenkins results in the timeline and an entry in the main navigation
     bar.
     """
 
@@ -44,29 +44,29 @@ class HudsonTracPlugin(Component):
 
     disp_mod = BoolOption('hudson', 'display_modules', 'false',
                           'Display status of modules in the timeline too. ', doc_domain="hudsontrac")
-    job_url  = Option('hudson', 'job_url', 'http://localhost/hudson/',
-                      'The url of the top-level hudson page if you want to '
+    job_url  = Option('hudson', 'job_url', 'http://localhost/jenkins/',
+                      'The url of the top-level Jenkins page if you want to '
                       'display all jobs, or a job or module url (such as '
-                      'http://localhost/hudson/job/build_foo/) if you want '
+                      'http://localhost/jenkins/job/build_foo/) if you want '
                       'only display builds from a single job or module. '
                       'This must be an absolute url.', doc_domain="hudsontrac")
     api_path = Option('hudson', 'api_path', 'api/json',
                       'The path part of the API, either "api/python" or "api/json"', doc_domain="hudsontrac")
-    interfacename = Option('hudson', 'interfacename', 'Hudson',
-                      'The interfacename (i.e. Hudson/Jenkins) to use', doc_domain="hudsontrac")
+    interfacename = Option('hudson', 'interfacename', 'Jenkins',
+                      'The interfacename (i.e. Jenkins) to use', doc_domain="hudsontrac")
     username = Option('hudson', 'username', '',
-                      'The username to use to access hudson', doc_domain="hudsontrac")
+                      'The username to use to access Jenkins', doc_domain="hudsontrac")
     password = Option('hudson', 'password', '',
-                      'The password to use to access hudson - but see also '
+                      'The password to use to access Jenkins - but see also '
                       'the api_token field.', doc_domain="hudsontrac")
     api_token = Option('hudson', 'api_token', '',
-                       'The API Token to use to access hudson. This takes '
+                       'The API Token to use to access Jenkins. This takes '
                        'precendence over any password and is the preferred '
                        'mechanism if you are running Jenkins 1.426 or later '
                        'and Jenkins is enforcing authentication (as opposed '
                        'to, for example, a proxy in front of Jenkins).', doc_domain="hudsontrac")
-    nav_url  = Option('hudson', 'main_page', '/hudson/',
-                      'The url of the hudson main page to which the trac nav '
+    nav_url  = Option('hudson', 'main_page', '/jenkins/',
+                      'The url of the Jenkins main page to which the trac nav '
                       'entry should link; if empty, no entry is created in '
                       'the nav bar. This may be a relative url.', doc_domain="hudsontrac")
     nav_label = Option('hudson', 'nav_label', N_('Builds'),
@@ -75,7 +75,7 @@ class HudsonTracPlugin(Component):
                       'The label for the timeline option to display builds, can contain '
                       '%(interfacename) to be replaced by the interface name option', doc_domain="hudsontrac")
     disp_tab = BoolOption('hudson', 'display_in_new_tab', 'false',
-                          'Open hudson page in new tab/window', doc_domain="hudsontrac")
+                          'Open Jenkins page in new tab/window', doc_domain="hudsontrac")
     alt_succ = BoolOption('hudson', 'alternate_success_icon', 'false',
                           'Use an alternate success icon (green ball instead '
                           'of blue)', doc_domain="hudsontrac")
@@ -95,7 +95,7 @@ class HudsonTracPlugin(Component):
                               'the user that started the build, if any; '
                               '`author` is the author of the first commit, if '
                               'any; `authors` is the list of authors of all '
-                              'commits; `culprit` is the first of what hudson '
+                              'commits; `culprit` is the first of what Jenkins '
                               'thinks are the culprits that caused the build; '
                               'and `culprits` is the list of all culprits. If '
                               'given a list, the first non-empty value is used.'
@@ -177,7 +177,7 @@ class HudsonTracPlugin(Component):
         self.env.log.debug("Build-info url: '%s'", self.info_url)
 
     def __get_info(self):
-        """Retrieve build information from Hudson"""
+        """Retrieve build information from Jenkins"""
         try:
             local_exc = False
             try:
@@ -241,8 +241,8 @@ class HudsonTracPlugin(Component):
         return len(l) > 0 and l[0] or None
 
     def __extract_builds(self, info):
-        """Extract individual builds from the info returned by Hudson.
-        What we may get from Hudson is zero or more of the following:
+        """Extract individual builds from the info returned by Jenkins.
+        What we may get from Jenkins is zero or more of the following:
           {'jobs': [{'modules': [{'builds': [{'building': False, ...
           {'jobs': [{'builds': [{'building': False, ...
           {'modules': [{'builds': [{'building': False, ...

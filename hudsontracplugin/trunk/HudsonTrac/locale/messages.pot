@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HudsonTrac 1.0\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2023-11-03 09:15+0100\n"
+"POT-Creation-Date: 2023-11-03 21:44+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -24,9 +24,9 @@ msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:47
 msgid ""
-"The url of the top-level hudson page if you want to display all jobs,"
-" or a job or module url (such as "
-"http://localhost/hudson/job/build_foo/) if you want only display "
+"The url of the top-level Jenkins page if you want to display all "
+"jobs, or a job or module url (such as "
+"http://localhost/jenkins/job/build_foo/) if you want only display "
 "builds from a single job or module. This must be an absolute url."
 msgstr ""
 
@@ -35,22 +35,22 @@ msgid "The path part of the API, either \"api/python\" or \"api/json\""
 msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:55
-msgid "The interfacename (i.e. Hudson/Jenkins) to use"
+msgid "The interfacename (i.e. Jenkins) to use"
 msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:57
-msgid "The username to use to access hudson"
+msgid "The username to use to access Jenkins"
 msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:59
 msgid ""
-"The password to use to access hudson - but see also the api_token "
+"The password to use to access Jenkins - but see also the api_token "
 "field."
 msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:62
 msgid ""
-"The API Token to use to access hudson. This takes precendence over "
+"The API Token to use to access Jenkins. This takes precendence over "
 "any password and is the preferred mechanism if you are running "
 "Jenkins 1.426 or later and Jenkins is enforcing authentication (as "
 "opposed to, for example, a proxy in front of Jenkins)."
@@ -58,7 +58,7 @@ msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:68
 msgid ""
-"The url of the hudson main page to which the trac nav entry should "
+"The url of the Jenkins main page to which the trac nav entry should "
 "link; if empty, no entry is created in the nav bar. This may be a "
 "relative url."
 msgstr ""
@@ -74,7 +74,7 @@ msgid ""
 msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:77
-msgid "Open hudson page in new tab/window"
+msgid "Open Jenkins page in new tab/window"
 msgstr ""
 
 #: HudsonTrac/HudsonTracPlugin.py:79
@@ -102,7 +102,7 @@ msgid ""
 "`authors`, `culprit`, `culprits`. `starter` is the user that started "
 "the build, if any; `author` is the author of the first commit, if "
 "any; `authors` is the list of authors of all commits; `culprit` is "
-"the first of what hudson thinks are the culprits that caused the "
+"the first of what Jenkins thinks are the culprits that caused the "
 "build; and `culprits` is the list of all culprits. If given a list, "
 "the first non-empty value is used. Example: `starter,authors` (this "
 "would show who started the build if it was started manually, else "
