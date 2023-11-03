@@ -14,6 +14,7 @@ See also:
 import urllib.request, urllib.error, urllib.parse
 import base64
 from datetime import datetime
+import json
 
 from pkg_resources import resource_filename
 
@@ -48,7 +49,9 @@ class HudsonTracPlugin(Component):
                       'display all jobs, or a job or module url (such as '
                       'http://localhost/hudson/job/build_foo/) if you want '
                       'only display builds from a single job or module. '
-                      'This must be an absolute url.')
+                      'This must be an absolute url.', doc_domain="hudsontrac")
+    api_path = Option('hudson', 'api_path', 'api/json',
+                      'The path part of the API, either "api/python" or "api/json"', doc_domain="hudsontrac")
     interfacename = Option('hudson', 'interfacename', 'Hudson',
                       'The interfacename (i.e. Hudson/Jenkins) to use', doc_domain="hudsontrac")
     username = Option('hudson', 'username', '',
@@ -115,7 +118,7 @@ class HudsonTracPlugin(Component):
         api_url = unicode_quote(self.job_url, '/%:@')
         if api_url and api_url[-1] != '/':
             api_url += '/'
-        api_url += 'api/python'
+        api_url += self.api_path
 
         # set up http authentication
         if self.username and self.api_token:
@@ -181,16 +184,21 @@ class HudsonTracPlugin(Component):
                 resp = self.url_opener.open(self.info_url)
 
                 ct   = resp.info().get_content_type()
-                mimewant = 'text/x-python'
-                if ct != mimewant:
+                mimewantpy = 'text/x-python'
+                mimewantjs = 'application/json'
+                mimewantjsold = 'application/javascript'
+                if ct == mimewantjs or ct == mimewantjsold:
+                  return json.loads(resp.read())
+                elif ct == mimewantpy:
+                  return eval(resp.read(), {"__builtins__":None}, {"True":True, "False":False})
+                else:
                     local_exc = True
                     raise IOError(
                         _("Error getting build info from '%(url)s': returned document "
-                        "has unexpected type '%(mime)s' (expected '%(mimewant)s'). "
+                        "has unexpected type '%(mime)s' (expected '%(mimewantjs)s' or '%(mimewantpy)s'). "
                         "The returned text is:\n%(text)s") %
-                        {'url': self.info_url, 'mime': ct, 'mimewant': mimewant, 'text': resp.read()})
-
-                return eval(resp.read(), {"__builtins__":None}, {"True":True, "False":False})
+                        {'url': self.info_url, 'mime': ct, 'mimewantpy': mimewantpy,
+                         'mimewantjs': mimewantjs, 'text': resp.read()})
             except Exception as e:
                 if local_exc:
                     raise e

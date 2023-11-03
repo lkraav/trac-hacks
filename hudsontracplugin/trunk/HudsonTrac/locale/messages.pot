@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HudsonTrac 1.0\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2023-11-02 19:08+0100\n"
+"POT-Creation-Date: 2023-11-03 09:15+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
 
-#: HudsonTrac/HudsonTracPlugin.py:44
+#: HudsonTrac/HudsonTracPlugin.py:45
 msgid "Display status of modules in the timeline too."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:46
+#: HudsonTrac/HudsonTracPlugin.py:47
 msgid ""
 "The url of the top-level hudson page if you want to display all jobs,"
 " or a job or module url (such as "
@@ -30,21 +30,25 @@ msgid ""
 "builds from a single job or module. This must be an absolute url."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:52
+#: HudsonTrac/HudsonTracPlugin.py:53
+msgid "The path part of the API, either \"api/python\" or \"api/json\""
+msgstr ""
+
+#: HudsonTrac/HudsonTracPlugin.py:55
 msgid "The interfacename (i.e. Hudson/Jenkins) to use"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:54
+#: HudsonTrac/HudsonTracPlugin.py:57
 msgid "The username to use to access hudson"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:56
+#: HudsonTrac/HudsonTracPlugin.py:59
 msgid ""
 "The password to use to access hudson - but see also the api_token "
 "field."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:59
+#: HudsonTrac/HudsonTracPlugin.py:62
 msgid ""
 "The API Token to use to access hudson. This takes precendence over "
 "any password and is the preferred mechanism if you are running "
@@ -52,46 +56,46 @@ msgid ""
 "opposed to, for example, a proxy in front of Jenkins)."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:65
+#: HudsonTrac/HudsonTracPlugin.py:68
 msgid ""
 "The url of the hudson main page to which the trac nav entry should "
 "link; if empty, no entry is created in the nav bar. This may be a "
 "relative url."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:69
+#: HudsonTrac/HudsonTracPlugin.py:72
 msgid "The label for the nav menu entry (default value will be translated)"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:71
+#: HudsonTrac/HudsonTracPlugin.py:74
 msgid ""
 "The label for the timeline option to display builds, can contain "
 "%(interfacename) to be replaced by the interface name option"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:74
+#: HudsonTrac/HudsonTracPlugin.py:77
 msgid "Open hudson page in new tab/window"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:76
+#: HudsonTrac/HudsonTracPlugin.py:79
 msgid "Use an alternate success icon (green ball instead of blue)"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:79
+#: HudsonTrac/HudsonTracPlugin.py:82
 msgid ""
 "Whether to display the build descriptions for each build instead of "
 "the canned \"Build finished successfully\" etc messages."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:83
+#: HudsonTrac/HudsonTracPlugin.py:86
 msgid "Also show in-progress builds"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:85
+#: HudsonTrac/HudsonTracPlugin.py:88
 msgid "List the changesets for each build"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:87
+#: HudsonTrac/HudsonTracPlugin.py:90
 msgid ""
 "Display the culprit(s) for each build. This is a comma-separated list"
 " of zero or more of the following tokens: `starter`, `author`, "
@@ -106,16 +110,16 @@ msgid ""
 " show no author for the build)."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:188
+#: HudsonTrac/HudsonTracPlugin.py:197
 #, python-format
 msgid ""
 "Error getting build info from '%(url)s': returned document has "
-"unexpected type '%(mime)s' (expected '%(mimewant)s'). The returned "
-"text is:\n"
+"unexpected type '%(mime)s' (expected '%(mimewantjs)s' or "
+"'%(mimewantpy)s'). The returned text is:\n"
 "%(text)s"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:202
+#: HudsonTrac/HudsonTracPlugin.py:210
 #, python-format
 msgid ""
 "Error getting build info from '%(url)s': %(name)s: %(info)s. This "
@@ -123,45 +127,45 @@ msgid ""
 "password."
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:295
+#: HudsonTrac/HudsonTracPlugin.py:303
 msgid "Error accessing build status"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:323
+#: HudsonTrac/HudsonTracPlugin.py:331
 msgid "Build finished successfully"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:326
+#: HudsonTrac/HudsonTracPlugin.py:334
 msgid "Build unstable"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:327
+#: HudsonTrac/HudsonTracPlugin.py:335
 msgid "Build aborted"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:328
+#: HudsonTrac/HudsonTracPlugin.py:336
 msgid "Build in progress"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:331
+#: HudsonTrac/HudsonTracPlugin.py:339
 msgid "Build failed"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:343
+#: HudsonTrac/HudsonTracPlugin.py:351
 msgid "Changesets:"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:371
+#: HudsonTrac/HudsonTracPlugin.py:379
 #, python-format
 msgid "%(message)s since %(time)s, duration %(duration)s%(changesets)s"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:376
+#: HudsonTrac/HudsonTracPlugin.py:384
 #, python-format
 msgid "%(message)s at %(time)s, duration %(duration)s%(changesets)s"
 msgstr ""
 
-#: HudsonTrac/HudsonTracPlugin.py:382
+#: HudsonTrac/HudsonTracPlugin.py:390
 #, python-format
 msgid "Build \"%(name)s\" (%(result)s)"
 msgstr ""
