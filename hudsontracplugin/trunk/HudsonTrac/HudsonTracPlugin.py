@@ -19,7 +19,7 @@ import json
 from pkg_resources import resource_filename
 
 from trac.core import *
-from trac.config import Option, BoolOption, ListOption
+from trac.config import Option, BoolOption, ListOption, ConfigSection
 from trac.perm import IPermissionRequestor
 from trac.timeline.api import ITimelineEventProvider
 from trac.util.datefmt import datetime_now, format_datetime, \
@@ -41,6 +41,10 @@ class HudsonTracPlugin(Component):
 
     implements(INavigationContributor, ITimelineEventProvider,
                ITemplateProvider, IPermissionRequestor)
+
+    hudson_section = ConfigSection('hudson',
+               """This section is used to store configurations used by Jenkins Interface (HudsonTracPlugin)""",
+               doc_domain='hudsontrac')
 
     disp_mod = BoolOption('hudson', 'display_modules', 'false',
                           'Display status of modules in the timeline too. ', doc_domain="hudsontrac")
