@@ -1,13 +1,20 @@
 """Implements ASCIIMathML as a macro for Trac"""
 
-from trac.wiki.macros import WikiMacroBase
+import sys
 from xml.etree.ElementTree import tostring
+
+from trac.util.text import exception_to_unicode, to_unicode
+from trac.wiki.macros import WikiMacroBase
 
 author = "Jeffrey Armstrong"
 author_email = "jeff@approximatrix.com"
 version = "1.0-$Rev$"
 license = "GPL"
 url = "https://trac-hacks.org/wiki/AsciiMathMacro"
+
+
+if sys.version_info[0] != 2:
+    basestring = str
 
 
 class ASCIIMathMacro(WikiMacroBase):
@@ -22,28 +29,30 @@ class ASCIIMathMacro(WikiMacroBase):
        This macro allows equations to be written in a simple text format using
        a subset of the ASCIIMathML syntax.  When the page is requested, the
        ASCII text is transformed into MathML, which can be rendered in any
-       capable browser (Firefox for sure, IE with MathPlayer plugin, maybe
+       capable browser (Firefox for sure, IE with !MathPlayer plugin, maybe
        Opera).
 
        See [http://www1.chapman.edu/~jipsen/mathml/asciimath.html] for info on
        proper equation formatting.
 
        Usage:
-       {{{!#ASCIIMath
+       {{{
+       {{{#!ASCIIMath
        <your equation here>
+       }}}
        }}}
 
        This code is licensed under GNU GPL Version 3.
     """
 
     def expand_macro(self, formatter, name, text, args=None):
-
-        #text = "whatever '''wiki''' markup you want, even containing other macros"
-
         try:
             output = tostring(parse(text))
-        except e:
-            output = '<em>An error has occured: {0}</em>'.format(e.message)
+        except Exception as e:
+            self.log.warning('Exception caught while converting AsciiMath to '
+                             'MathML%s',
+                             exception_to_unicode(e, traceback=True))
+            output = '<em>An error has occured: {0}</em>'.format(to_unicode(e))
 
         return output
 
@@ -130,7 +139,7 @@ def sub(base, subscript):
     subscript = strip_parens(subscript)
 
     if base.tag in ('msup', 'mover'):
-        children = base.getchildren()
+        children = list(base)
         n = El('msubsup' if base.tag == 'msup' else 'munderover', children[0], subscript, children[1])
     else:
         n = El('munder' if base.get('_underover', False) else 'msub', base, subscript)
@@ -141,7 +150,7 @@ def sup(base, superscript):
     superscript = strip_parens(superscript)
 
     if base.tag in ('msub', 'munder'):
-        children = base.getchildren()
+        children = list(base)
         n = El('msubsup' if base.tag == 'msub' else 'munderover', children[0], children[1], superscript)
     else:
         n = El('mover' if base.get('_underover', False) else 'msup', base, superscript)
@@ -225,7 +234,7 @@ def find_node(ns, text):
 def nodes_to_row(row):
     mrow = El('mtr')
 
-    nodes = row.getchildren()
+    nodes = list(row)
 
     while True:
         i = find_node(nodes, ',')
@@ -285,7 +294,7 @@ def remove_private(n):
     for _k in _ks:
         del n.attrib[_k]
 
-    for c in n.getchildren():
+    for c in list(n):
         remove_private(c)
 
     return n
@@ -295,12 +304,12 @@ def remove_invisible(ns):
         if ns[i].get('_invisible', False):
             del ns[i]
         else:
-            remove_invisible(ns[i].getchildren())
+            remove_invisible(list(ns[i]))
 
 def copy(n):
     m = El(n.tag, n.text, **dict(n.items()))
 
-    for c in n.getchildren():
+    for c in list(n):
         m.append(copy(c))
 
     return m
@@ -538,4 +547,4 @@ Symbol(input="text", el=El("mtext", _arity=1))
 # {input:"mbox", tag:"mtext", output:"mbox", tex:null, ttype:TEXT},
 # {input:"\"",   tag:"mtext", output:"mbox", tex:null, ttype:TEXT};
 
-symbol_names = sorted(symbols.keys(), key=lambda s: len(s), reverse=True)
+symbol_names = sorted(symbols, key=lambda s: len(s), reverse=True)
