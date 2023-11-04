@@ -7,16 +7,21 @@
 # you should have received as part of this distribution.
 #
 
-from trac.wiki.macros import WikiMacroBase
-from trac.util import escape
-from StringIO import StringIO
 import csv
+import io
+import sys
+
+from trac.wiki.macros import WikiMacroBase
+from trac.util.html import escape
 
 author = "Alec Thomas"
 author_email = "alec@swapoff.org"
 version = "1.0-$Rev$"
 license = "3-Clause BSD"
 url = "https://trac-hacks.org/wiki/CsvMacro"
+
+
+_py2 = sys.version_info[0] == 2
 
 
 class CsvMacro(WikiMacroBase):
@@ -41,14 +46,27 @@ class CsvMacro(WikiMacroBase):
     def get_macros(self):
         yield 'CSV'
 
-    def expand_macro(self, formatter, name, txt):
+    def expand_macro(self, formatter, name, content):
         sniffer = csv.Sniffer()
-        txt = txt.encode('ascii', 'replace')
-        reader = csv.reader(StringIO(txt), sniffer.sniff(txt))
-        formatter.out.write('<table class="wiki">\n')
-        for row in reader:
-            formatter.out.write('<tr>')
-            for col in row:
-                formatter.out.write('<td>%s</td>' % escape(col))
-            formatter.out.write('</tr>\n')
-        formatter.out.write('</table>\n')
+        if _py2:
+            content = content.encode('utf-8')
+            f = io.BytesIO(content)
+        else:
+            f = io.StringIO(content)
+        with io.StringIO() as out:
+            with f:
+                reader = csv.reader(f, sniffer.sniff(content))
+                out.write(u'<table class="wiki">\n')
+                out.write(u'<tbody>\n')
+                for row in reader:
+                    out.write(u'<tr>')
+                    for col in row:
+                        if isinstance(col, bytes):
+                            col = col.decode('utf-8')
+                        out.write(u'<td>')
+                        out.write(escape(col))
+                        out.write(u'</td>')
+                    out.write(u'</tr>\n')
+                out.write(u'</tbody>\n')
+                out.write(u'</table>\n')
+            return out.getvalue()
