@@ -43,7 +43,7 @@ class HudsonTracPlugin(Component):
                ITemplateProvider, IPermissionRequestor)
 
     hudson_section = ConfigSection('hudson',
-               """This section is used to store configurations used by Jenkins Interface (HudsonTracPlugin)""",
+               """This section is used to store configurations used by Jenkins Interface ([[https://trac-hacks.org/wiki/HudsonTracPlugin|HudsonTracPlugin]]).""",
                doc_domain='hudsontrac')
 
     disp_mod = BoolOption('hudson', 'display_modules', 'false',
