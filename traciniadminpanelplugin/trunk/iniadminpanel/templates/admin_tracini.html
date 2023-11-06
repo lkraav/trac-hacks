@@ -40,7 +40,7 @@
                 <option value=""${{'selected': len(sections) == 0}|htmlattr}>${_("select section")}</option>
                 <option value="_all_sections"${{'selected': len(sections) > 1}|htmlattr}>${_("all sections")}</option>
                 # for section_name in all_section_names:
-                <option value="${section_name}"${{'selected': len(sections) == 1 and sections.keys()[0] == section_name}|htmlattr}>${section_name}</option>
+                <option value="${section_name}"${{'selected': len(sections) == 1 and (sections.keys()|first) == section_name}|htmlattr}>${section_name}</option>
                 # endfor
               </select>
             </label>

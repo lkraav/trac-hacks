@@ -244,13 +244,10 @@ class TracIniAdminPanel(Component):
                 # NOTE: Must be done after assigning field value from the previous step
                 #   to ensure that the default value has been initialized.
                 if 'iniadmin_default' in req.args:
-                    default_using_options = req.args.get('iniadmin_default')
+                    default_using_options = req.args.getlist('iniadmin_default')
                     if default_using_options is None or len(default_using_options) == 0:
                         # if no checkbox was selected make this explicitly a list (just for safety)
                         default_using_options = [ ]
-                    elif type(default_using_options).__name__ != 'list':
-                        # if there's only one checkbox it's just a string
-                        default_using_options = [ str(default_using_options) ]
 
                     for default_using_option in default_using_options:
                         name = default_using_option.split('##')

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Trac Plugin L10N\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2023-10-24 16:21+0200\n"
+"POT-Creation-Date: 2023-11-02 19:05+0100\n"
 "PO-Revision-Date: 2019-09-25 02:44+0000\n"
 "Last-Translator: Steffen Hoffmann <hoff.st@web.de>\n"
 "Language: cs\n"
@@ -142,33 +142,33 @@ msgstr ""
 msgid "No new fields have been added."
 msgstr ""
 
-#: iniadminpanel/web_ui.py:412
+#: iniadminpanel/web_ui.py:411
 msgid ""
 "You have unsaved changes in this section. Do you still want to change the"
 " section?"
 msgstr ""
 
-#: iniadminpanel/web_ui.py:415
+#: iniadminpanel/web_ui.py:414
 #, python-format
 msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
 msgstr ""
 
-#: iniadminpanel/web_ui.py:556 iniadminpanel/web_ui.py:559
+#: iniadminpanel/web_ui.py:554 iniadminpanel/web_ui.py:557
 msgid "text"
 msgstr "text"
 
-#: iniadminpanel/web_ui.py:563
+#: iniadminpanel/web_ui.py:561
 msgid "password"
 msgstr "heslo"
 
-#: iniadminpanel/web_ui.py:619
+#: iniadminpanel/web_ui.py:617
 #, python-format
 msgid ""
 "The default value for option \"%s\" in section \"%s\" is invalid. Reason:"
 " %s"
 msgstr ""
 
-#: iniadminpanel/web_ui.py:648
+#: iniadminpanel/web_ui.py:646
 #, python-format
 msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
 msgstr ""

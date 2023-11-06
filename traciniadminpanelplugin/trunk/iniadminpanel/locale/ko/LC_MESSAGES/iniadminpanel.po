@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Trac Plugin L10N\n"
 "Report-Msgid-Bugs-To: trac@dstoecker.de\n"
-"POT-Creation-Date: 2023-10-24 16:21+0200\n"
+"POT-Creation-Date: 2023-11-02 19:05+0100\n"
 "PO-Revision-Date: 2014-11-06 08:06+0000\n"
 "Last-Translator: theYT <dev@theYT.net>\n"
 "Language: ko\n"
@@ -150,33 +150,33 @@ msgstr "새 필드를 %s 구역에 추가하였습니다."
 msgid "No new fields have been added."
 msgstr "새로 추가한 필드가 없습니다."
 
-#: iniadminpanel/web_ui.py:412
+#: iniadminpanel/web_ui.py:411
 msgid ""
 "You have unsaved changes in this section. Do you still want to change the"
 " section?"
 msgstr "이 구역에 아직 저장하지 않은 변경 사항이 있습니다. 구역을 변경하시겠습니까?"
 
-#: iniadminpanel/web_ui.py:415
+#: iniadminpanel/web_ui.py:414
 #, python-format
 msgid "Modified: %(mod)d | Defaults: %(def)d | Options count: %(opt)d"
 msgstr "변경됨: %(mod)d | 기본값: %(def)d | 옵션 수: %(opt)d"
 
-#: iniadminpanel/web_ui.py:556 iniadminpanel/web_ui.py:559
+#: iniadminpanel/web_ui.py:554 iniadminpanel/web_ui.py:557
 msgid "text"
 msgstr "문자열"
 
-#: iniadminpanel/web_ui.py:563
+#: iniadminpanel/web_ui.py:561
 msgid "password"
 msgstr "비밀번호"
 
-#: iniadminpanel/web_ui.py:619
+#: iniadminpanel/web_ui.py:617
 #, python-format
 msgid ""
 "The default value for option \"%s\" in section \"%s\" is invalid. Reason:"
 " %s"
 msgstr "\"%s\" 옵션(\"%s\" 구역)에 대한 기본값이 유효하지 않습니다. 사유: %s"
 
-#: iniadminpanel/web_ui.py:648
+#: iniadminpanel/web_ui.py:646
 #, python-format
 msgid "The value for option \"%s\" in section \"%s\" is invalid. Reason: %s"
 msgstr "\"%s\" 옵션(\"%s\" 구역)에 대한 값이 유효하지 않습니다. 사유: %s"
