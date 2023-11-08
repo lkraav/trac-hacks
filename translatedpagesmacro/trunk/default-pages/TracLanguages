@@ -14,9 +14,10 @@ Documentation: [[wiki:WikiMacros#TranslatedPages-macro|TranslatedPages macro]]
 ||Da||dansk||Danish||Andre sprog||{t} ({c})||
 ||De||Deutsch||German||Andere Sprachen||{t} ({c})||
 ||El||Ελληνικά||Greek||Άλλες γλώσσες||{t} ({c})||
-||En||English||(American) English||Languages||{t} ({c})||
-||En_AU||Australian||Australian English||Languages||{t} ({c})||
-||En_GB||British||British||Languages||{t} ({c})||
+||En||English||(American) English||Languages||{t}||
+||En_AU||Australian||Australian English||Languages||{t}||
+||En_CA||Canadian||Canadian English||Languages||{t}||
+||En_GB||British||British||Languages||{t}||
 ||Es||español||Spanish||Altres idiomas||{t} ({c})||
 ||Et||eesti||Estonian||Teistes keeltes||{t} ({c})||
 ||Eu||euskara||Basque||Beste hizkuntzak||{t} ({c})||
@@ -39,6 +40,8 @@ Documentation: [[wiki:WikiMacros#TranslatedPages-macro|TranslatedPages macro]]
 ||Lt||lietuvių||Lithuanian||Kitomis kalbomis||{t} ({c})||
 ||Lv||latviešu||Latvian||Pārējās valodas||{t} ({c})||
 ||Mk||македонски||Macedonian||Други јазици||{t} ({c})||
+||Mr||मराठी||Marathi||इतर भाषांमध्ये||{t} ({c})||
+||Ms||Bahasa Melayu||Malay||Bahasa selain||{t} ({c})||
 ||Nb||norsk bokmål||Norwegian (Bokmal)||Andre språk||{t} ({c})||
 ||Nl||Nederlands||Dutch||Andere talen||{t} ({c})||
 ||Pl||polski||Polish||Inne języki||{t} ({c})||
@@ -50,6 +53,7 @@ Documentation: [[wiki:WikiMacros#TranslatedPages-macro|TranslatedPages macro]]
 ||Sk||slovenčina||Slovak||Ďalšie jazyky||{t} ({c})||
 ||Sl||slovenščina||Slovenian||Drugi jeziki||{t} ({c})||
 ||Sr||српски||Serbian||Остали језици||{t} ({c})||
+||Sr-Latin||srpski||Serbian (Latin)||Ostali jezici||{t} ({c})||
 ||Sv||svenska||Swedish||Andra språk||{t} ({c})||
 ||Th||ไทย||Thai||ภาษาอื่น ๆ||{t} ({c})||
 ||Tr||Türkçe||Turkish||Diğer diller||{t} ({c})||

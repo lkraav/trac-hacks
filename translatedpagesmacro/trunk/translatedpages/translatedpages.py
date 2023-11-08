@@ -254,24 +254,25 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr:{t} ({n}):Link|Label
         found = 0;
         for page in sorted(WikiSystem(self.env).get_pages()):
             pagetext = WikiPage(self.env, page).text
-            regres = self.revision_re.search(pagetext)
-            out = self.outdated_re.search(pagetext)
-            outcode = ""
-            outver = ""
-            prefix, base_page_name, lang_code = self._get_page_info(page)
-            if out != None and out.group(1) != None and (lang == None \
-            or lang == lang_code or lang_code == self.base_lang):
-                outcode = "{{{%s}}}" % out.group(1).replace("\,",",")
-            if regres != None and regres.group(1) != None:
-                if lang_code != self.base_lang and (lang == None or lang == lang_code):
-                    newver = WikiPage(self.env, base_page_name).version
-                    oldver = abs(int(regres.group(1)))
-                    if(newver != oldver):
-                        outver = "[[wiki:/%s?action=diff&old_version=%s|@%s-@%s]]" \
-                        % (base_page_name, oldver, oldver, newver)
-            if outcode != "" or outver != "":
-                res += "|| [[wiki:/%s]] || %s || %s ||\n" % (page, outver, outcode)
-                found += 1
+            if pagetext:
+                regres = self.revision_re.search(pagetext)
+                out = self.outdated_re.search(pagetext)
+                outcode = ""
+                outver = ""
+                prefix, base_page_name, lang_code = self._get_page_info(page)
+                if out != None and out.group(1) != None and (lang == None \
+                or lang == lang_code or lang_code == self.base_lang):
+                    outcode = "{{{%s}}}" % out.group(1).replace("\,",",")
+                if regres != None and regres.group(1) != None:
+                    if lang_code != self.base_lang and (lang == None or lang == lang_code):
+                        newver = WikiPage(self.env, base_page_name).version
+                        oldver = abs(int(regres.group(1)))
+                        if(newver != oldver):
+                            outver = "[[wiki:/%s?action=diff&old_version=%s|@%s-@%s]]" \
+                            % (base_page_name, oldver, oldver, newver)
+                if outcode != "" or outver != "":
+                    res += "|| [[wiki:/%s]] || %s || %s ||\n" % (page, outver, outcode)
+                    found += 1
 
         if found == 0:
             res += 'none\n'
@@ -281,14 +282,16 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr:{t} ({n}):Link|Label
         res = ""
         base_pages = []
         for page in sorted(WikiSystem(self.env).get_pages()):
-            for line in WikiPage(self.env, page).text.replace('\r','').split('\n'):
-                regres = self.macro_re.search(line)
-                if regres != None:
-                    (prefix, base_page_name, lang_code) = self._get_page_info(page)
-                    basename = self._get_translated_page(prefix, \
-                        base_page_name, self.base_lang)
-                    if not basename in base_pages:
-                        base_pages.append(basename)
+            text = WikiPage(self.env, page).text
+            if text:
+                for line in text.replace('\r','').split('\n'):
+                    regres = self.macro_re.search(line)
+                    if regres != None:
+                        (prefix, base_page_name, lang_code) = self._get_page_info(page)
+                        basename = self._get_translated_page(prefix, \
+                            base_page_name, self.base_lang)
+                        if not basename in base_pages:
+                            base_pages.append(basename)
         langs = []
         if lang != None:
             langs = [lang]
@@ -315,7 +318,8 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr:{t} ({n}):Link|Label
     def _get_untranslated(self, silent):
         res = ""
         for page in sorted(WikiSystem(self.env).get_pages()):
-            if self.macro_re.search(WikiPage(self.env, page).text) == None:
+            text = WikiPage(self.env, page).text
+            if text and self.macro_re.search(text) == None:
                 res += " * [[wiki:/%s]]\n" % page
 
         if len(res) == 0:
@@ -378,17 +382,19 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr:{t} ({n}):Link|Label
         respages = ""
         base_pages = []
         for page in sorted(WikiSystem(self.env).get_pages()):
-            for line in WikiPage(self.env, page).text.replace('\r','').split('\n'):
-                regres = self.macro_re.search(line)
-                if regres != None:
-                    (prefix, base_page_name, lang_code) = self._get_page_info(page)
-                    basename = self._get_translated_page(prefix, \
-                        base_page_name, self.base_lang)
-                    if not basename in base_pages:
-                        base_pages.append(basename)
-                    resargs += self._check_args(page, regres.group(1), lang_code)
-                    if self.languages.get(lang_code, None) == None:
-                      respages += "||[[wiki:/%s]]||Translated page language code unknown||\n" % page
+            text = WikiPage(self.env, page).text
+            if text:
+                for line in text.replace('\r','').split('\n'):
+                    regres = self.macro_re.search(line)
+                    if regres != None:
+                        (prefix, base_page_name, lang_code) = self._get_page_info(page)
+                        basename = self._get_translated_page(prefix, \
+                            base_page_name, self.base_lang)
+                        if not basename in base_pages:
+                            base_pages.append(basename)
+                        resargs += self._check_args(page, regres.group(1), lang_code)
+                        if self.languages.get(lang_code, None) == None:
+                            respages += "||[[wiki:/%s]]||Translated page language code unknown||\n" % page
 
         base_pages.sort()
         for base_page in base_pages:
@@ -434,18 +440,20 @@ Links can look like {{{[[wikitr:Link|Label]]}}}, {{{[wikitr:{t} ({n}):Link|Label
         langs = []
         errors = []
         for page in sorted(WikiSystem(self.env).get_pages()):
-            for line in WikiPage(self.env, page).text.replace('\r','').split('\n'):
-                regres = self.macro_re.search(line)
-                if regres != None:
-                    (prefix, base_page_name, lang_code) = self._get_page_info(page)
-                    basename = self._get_translated_page(prefix, \
-                        base_page_name, self.base_lang)
-                    if not basename in base_pages:
-                        base_pages.append(basename)
-                    if len(self._check_args(page, regres.group(1), lang_code)) > 0:
-                        errors.append(page)
-                    if not lang_code in langs:
-                        langs.append(lang_code)
+            text = WikiPage(self.env, page).text
+            if text:
+                for line in text.replace('\r','').split('\n'):
+                    regres = self.macro_re.search(line)
+                    if regres != None:
+                        (prefix, base_page_name, lang_code) = self._get_page_info(page)
+                        basename = self._get_translated_page(prefix, \
+                            base_page_name, self.base_lang)
+                        if not basename in base_pages:
+                            base_pages.append(basename)
+                        if len(self._check_args(page, regres.group(1), lang_code)) > 0:
+                            errors.append(page)
+                        if not lang_code in langs:
+                            langs.append(lang_code)
 
         if lang != None:
             langs = [lang]
