@@ -1,0 +1,7 @@
+include COPYING
+include setup.cfg
+include messages.cfg
+include tracticketfieldslayout/htdocs/*
+include tracticketfieldslayout/locale/messages.pot
+include tracticketfieldslayout/locale/*/LC_MESSAGES/*.po
+include tracticketfieldslayout/templates/*/*.html
