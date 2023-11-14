@@ -5,35 +5,30 @@ import trac
 
 from pkg_resources import resource_exists, resource_filename
 
-from trac.config import BoolOption, Option
+from trac.config import BoolOption, ListOption, ConfigSection
 from trac.core import *
 from trac.perm import PermissionSystem
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import Chrome, ITemplateProvider, add_script
+from trac.web.chrome import Chrome, ITemplateProvider, add_script, add_script_data
+from trac.util.translation import domain_functions
 
-# Import i18n methods.  Fallback modules maintain compatibility to Trac 0.11
-# by keeping Babel optional here.
-try:
-    from trac.util.translation import domain_functions
-    add_domain, _ = \
+add_domain, _ = \
         domain_functions('cc_selector', ('add_domain', '_'))
-except ImportError:
-    from trac.util.translation import gettext
-    _ = gettext
-    def add_domain(a, b, c=None):
-        pass
-
 
 class TicketWebUiAddon(Component):
     implements(IRequestFilter, ITemplateProvider, IRequestHandler)
 
+    spam_section = ConfigSection('cc_selector',
+        """This section is used to handle all configurations used by
+        CcSelector plugin.""", doc_domain='cc_selector')
+
     show_fullname = BoolOption(
         'cc_selector', 'show_fullname', False,
-        doc="Display full names instead of usernames if available.")
+        doc="Display full names instead of usernames if available.", doc_domain="cc_selector")
 
-    username_blacklist = Option(
+    username_blacklist = ListOption(
         'cc_selector', 'username_blacklist', '',
-        doc="Usernames separated by comma, that should never get listed.")
+        doc="Usernames separated by comma, that should never get listed.", doc_domain="cc_selector")
 
     def __init__(self):
         # bind the 'cc_selector' catalog to the specified locale directory
@@ -48,10 +43,7 @@ class TicketWebUiAddon(Component):
     def post_process_request(self, req, template, data, content_type):
         if re.search('ticket', req.path_info):
             add_script(req, 'cc_selector/cc_selector.js')
-            if req.locale is not None and \
-                    resource_exists('cc_selector',
-                                    'htdocs/lang_js/%s.js' % req.locale):
-                add_script(req, 'cc_selector/lang_js/%s.js' % req.locale)
+            add_script_data(req, {'ccb_label': _('Extended Cc selection')})
         return template, data, content_type
 
     # ITemplateProvider methods
@@ -70,23 +62,17 @@ class TicketWebUiAddon(Component):
 
     def process_request(self, req):
         add_script(req, 'cc_selector/cc_selector.js')
+        add_script_data(req, {'ccb_label': _('Extended Cc selection')})
 
-        blacklist = self.username_blacklist.split(', ')
+        blacklist = self.username_blacklist
         privileged_users = PermissionSystem(
             self.env).get_users_with_permission('TICKET_VIEW')
         all_users = self.env.get_known_users()
 
         developers = filter(lambda u: u[0] in privileged_users, all_users)
         cc_developers = list(filter(lambda u: not u[0] in blacklist, developers))
-        # TRANSLATOR: text added per list item in popup window like
-        #   [_] CC to username
-        cc_to = _("Cc to")
         data = {
             'cc_developers': cc_developers,
-            'cc_to': cc_to,
             'show_fullname': self.show_fullname
         }
-        if hasattr(Chrome, 'jenv'):
-            return 'cc_selector_jinja.html', data
-        else:
-            return 'cc_selector.html', data, None
+        return 'cc_selector_jinja.html', data, {'domain': 'cc_selector'}

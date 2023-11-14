@@ -261,7 +261,6 @@ jQuery(function($) {
 
       // create button
       var ccb = document.createElement('input');
-      var ccb_label = _("Extended Cc selection");
       ccb.setAttribute("type", "button");
       ccb.setAttribute("id", "ccbutton");
       ccb.setAttribute("name", "ccbutton");

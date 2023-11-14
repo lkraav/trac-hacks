@@ -25,16 +25,21 @@
   </head>
 
   <body>
-    <p>Select Cc, then
-      <a href="javascript:window.close();">close</a> this window.
+    # set closelink
+    <a href="javascript:window.close();">
+    # endset
+    <p>
+    # trans closelink
+    Select Cc, then ${closelink}close</a> this window.
+    # endtrans
     </p>
 
     <div id="ccdiv">
-      <!-- checkboxes will be inserted here -->
+      ## checkboxes will be inserted here
     </div>
 
     <div id="cc_developers" >
-      <!-- developer names will be taken from here  -->
+      ## developer names will be taken from here
       # for d in cc_developers:
       <var class="cc_dev" title="${d[0]}" data-name="${d[1]}" data-email="${d[2]}">
       </var>
@@ -42,19 +47,19 @@
     </div>
 
     <div id="cc_popup_hints">
-      <!-- variables for popup generator code stored here  -->
-      <var id="cc_to" title="${cc_to}"></var>
+      ## variables for popup generator code stored here
+      <var id="cc_to" title="${_('Cc to')}"></var>
       # if show_fullname:
       <var id="show_fullname"></var>
       # endif
     </div>
 
-    <!-- additional close button, removed from short lists -->
+    ## additional close button, removed from short lists
     # if len(cc_developers) > 9:
     <p>
       <input type="button" name="btt_close"
-             value="${dgettext('cc_selector', 'Close')}"
-             title="Back to ticket editor" onclick="window.close()" />
+             value="${_('Close')}"
+             title="_${_('Back to ticket editor')}" onclick="window.close()" />
     </p>
     # endif
   </body>

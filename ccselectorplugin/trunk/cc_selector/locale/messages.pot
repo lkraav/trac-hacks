@@ -1,44 +1,59 @@
-# Translations template for cc_selector.
-# Copyright (C) 2010 ORGANIZATION
-# This file is distributed under the same license as the cc_selector
+# Translations template for TracCcSelector.
+# Copyright (C) 2023 ORGANIZATION
+# This file is distributed under the same license as the TracCcSelector
 # project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: cc_selector 0.0.3\n"
+"Project-Id-Version: TracCcSelector 0.3\n"
 "Report-Msgid-Bugs-To: hoff.st@shaas.net\n"
-"POT-Creation-Date: 2010-11-18 13:20+0100\n"
+"POT-Creation-Date: 2023-11-13 17:08+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 1.0dev-r482\n"
+"Generated-By: Babel 2.8.0\n"
 
-#. TRANSLATOR: text added per list item in popup window like
-#. [_] CC to username
-#: cc_selector/cc_selector.py:85
-msgid "Cc to"
+#: cc_selector/cc_selector.py:21
+msgid ""
+"This section is used to handle all configurations used by\n"
+"CcSelector plugin."
 msgstr ""
 
-#: cc_selector/templates/cc_selector.html:9
+#: cc_selector/cc_selector.py:25
+msgid "Display full names instead of usernames if available."
+msgstr ""
+
+#: cc_selector/cc_selector.py:29
+msgid "Usernames separated by comma, that should never get listed."
+msgstr ""
+
+#: cc_selector/cc_selector.py:46 cc_selector/cc_selector.py:65
+msgid "Extended Cc selection"
+msgstr ""
+
+#: cc_selector/templates/cc_selector_jinja.html:5
 msgid "Cc selector window"
 msgstr ""
 
-#: cc_selector/templates/cc_selector.html:20
-msgid ""
-"Select Cc, then\n"
-"      [1:close] this window."
+#: cc_selector/templates/cc_selector_jinja.html:32
+#, python-format
+msgid "Select Cc, then %(closelink)sclose</a> this window."
 msgstr ""
 
-#: cc_selector/templates/cc_selector.html:39
+#: cc_selector/templates/cc_selector_jinja.html:51
+msgid "Cc to"
+msgstr ""
+
+#: cc_selector/templates/cc_selector_jinja.html:61
 msgid "Close"
 msgstr ""
 
-#: cc_selector/templates/cc_selector.html:39
+#: cc_selector/templates/cc_selector_jinja.html:62
 msgid "Back to ticket editor"
 msgstr ""
 

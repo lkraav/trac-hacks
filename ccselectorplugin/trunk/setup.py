@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
@@ -6,41 +6,30 @@ from setuptools import setup
 extra = {}
 
 PACKAGE = 'cc_selector'
+VERSION = '0.3'
 
+extra = {}
 try:
-    from trac.util.dist import get_l10n_js_cmdclass
-    cmdclass = get_l10n_js_cmdclass()
+    from trac.util.dist import get_l10n_cmdclass
+    cmdclass = get_l10n_cmdclass()
     if cmdclass:
-        # includes some 'install_lib' overrides,
-        # i.e. 'compile_catalog' before 'bdist_egg'
         extra['cmdclass'] = cmdclass
-        extractors = [
-            ('**.py', 'python', None),
-            ('**/templates/**.html', 'genshi', None),
-        ]
-        extra['message_extractors'] = {
-            PACKAGE: extractors,
-        }
-# i18n is implemented to be optional here
 except ImportError:
     pass
 
-
 setup(
     name='TracCcSelector',
-    version='0.2.1',
+    version=VERSION,
     description='Visual Cc ticket field editor for Trac',
     keywords='trac cc ticket editor',
     url='https://trac-hacks.org/wiki/CcSelectorPlugin',
     author='Vladislav Naumov',
-    author_email='vnaum@vnaum.com',
     license='GPL',
-    maintainer='Steffen Hoffmann',
-    maintainer_email='hoff.st@web.de',
+    maintainer='Dirk Stöcker',
+    maintainer_email='trachacks@dstoecker.de',
     packages=[PACKAGE],
     package_data={PACKAGE: [
-        'htdocs/*.js', 'htdocs/lang_js/*.js', 'locale/*/LC_MESSAGES/*.mo',
-        'locale/.placeholder', 'templates/*.html'
+        'htdocs/*.js', 'locale/*/LC_MESSAGES/*.mo', 'templates/*.html'
         ]},
     zip_safe=True,
     entry_points={
