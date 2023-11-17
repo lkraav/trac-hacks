@@ -46,7 +46,7 @@ msgstr "Kopie-Auswahl-Dialog"
 #: cc_selector/templates/cc_selector_jinja.html:32
 #, python-format
 msgid "Select Cc, then %(closelink)sclose</a> this window."
-msgstr "Kopien wählen und dann dieses Fenster %(closelink)sschließen</a>."
+msgstr "Wählen und danach Fenster %(closelink)sschließen</a>."
 
 #: cc_selector/templates/cc_selector_jinja.html:51
 msgid "Cc to"
