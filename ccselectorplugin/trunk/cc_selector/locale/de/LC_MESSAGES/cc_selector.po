@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cc_selector 0.0.3\n"
 "Report-Msgid-Bugs-To: hoff.st@shaas.net\n"
-"POT-Creation-Date: 2023-11-13 17:08+0100\n"
+"POT-Creation-Date: 2023-11-17 11:45+0100\n"
 "PO-Revision-Date: 2010-11-17 23:06+0100\n"
 "Last-Translator: Steffen Hoffmann <hoff.st@web.de>\n"
 "Language: de\n"
@@ -35,7 +35,7 @@ msgstr "Wenn möglich volle Namen statt der Nutzernamen anzeigen."
 msgid "Usernames separated by comma, that should never get listed."
 msgstr "Nutzername, welche niemals gezeigt werden sollen, durch Komma getrennt."
 
-#: cc_selector/cc_selector.py:46 cc_selector/cc_selector.py:65
+#: cc_selector/cc_selector.py:46 cc_selector/cc_selector.py:66
 msgid "Extended Cc selection"
 msgstr "Erweiterte Kopie-Auswahl"
 

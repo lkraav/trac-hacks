@@ -29,7 +29,7 @@ setup(
     maintainer_email='trachacks@dstoecker.de',
     packages=[PACKAGE],
     package_data={PACKAGE: [
-        'htdocs/*.js', 'locale/*/LC_MESSAGES/*.mo', 'templates/*.html'
+        'htdocs/*.js', 'htdocs/*.css', 'locale/*/LC_MESSAGES/*.mo', 'templates/*.html'
         ]},
     zip_safe=True,
     entry_points={

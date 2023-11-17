@@ -9,7 +9,7 @@ from trac.config import BoolOption, ListOption, ConfigSection
 from trac.core import *
 from trac.perm import PermissionSystem
 from trac.web.api import IRequestFilter, IRequestHandler
-from trac.web.chrome import Chrome, ITemplateProvider, add_script, add_script_data
+from trac.web.chrome import Chrome, ITemplateProvider, add_script, add_script_data, add_stylesheet
 from trac.util.translation import domain_functions
 
 add_domain, _ = \
@@ -44,6 +44,7 @@ class TicketWebUiAddon(Component):
         if re.search('ticket', req.path_info):
             add_script(req, 'cc_selector/cc_selector.js')
             add_script_data(req, {'ccb_label': _('Extended Cc selection')})
+            add_stylesheet(req, 'cc_selector/cc_selector.css')
         return template, data, content_type
 
     # ITemplateProvider methods
@@ -63,6 +64,7 @@ class TicketWebUiAddon(Component):
     def process_request(self, req):
         add_script(req, 'cc_selector/cc_selector.js')
         add_script_data(req, {'ccb_label': _('Extended Cc selection')})
+        add_stylesheet(req, 'cc_selector/cc_selector.css')
 
         blacklist = self.username_blacklist
         privileged_users = PermissionSystem(

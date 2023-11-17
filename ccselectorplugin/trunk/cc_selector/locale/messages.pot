@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TracCcSelector 0.3\n"
 "Report-Msgid-Bugs-To: hoff.st@shaas.net\n"
-"POT-Creation-Date: 2023-11-13 17:08+0100\n"
+"POT-Creation-Date: 2023-11-17 11:45+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -32,7 +32,7 @@ msgstr ""
 msgid "Usernames separated by comma, that should never get listed."
 msgstr ""
 
-#: cc_selector/cc_selector.py:46 cc_selector/cc_selector.py:65
+#: cc_selector/cc_selector.py:46 cc_selector/cc_selector.py:66
 msgid "Extended Cc selection"
 msgstr ""
 

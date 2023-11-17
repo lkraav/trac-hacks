@@ -1,0 +1,4 @@
+/* cc tickets, both input next to each other */
+.trac-properties span{
+  display: flex;
+}
