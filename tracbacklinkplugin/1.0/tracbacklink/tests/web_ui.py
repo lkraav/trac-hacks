@@ -24,10 +24,11 @@ from trac.versioncontrol.api import DbRepositoryProvider, RepositoryManager
 
 del MilestoneModule, TicketModule
 
-from tracbacklink.api import MockRequest, TracBackLinkSystem
-from tracbacklink.web_ui import TracBackLinkModule
-
-from .api import RepositoryStubConnector, _add_cset
+from ..api import MockRequest, TracBackLinkSystem
+from ..web_ui import TracBackLinkModule
+from .api import (
+    RepositoryStubConnector, _add_cset, _import_default_pages, _mkdtemp,
+)
 
 
 class TracBackLinkModuleTestCase(unittest.TestCase):
@@ -42,7 +43,7 @@ class TracBackLinkModuleTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.env.db_transaction("DROP TABLE IF EXISTS backlink")
-        self.env.reset_db()
+        self.env.reset_db_and_disk()
 
     def test_wiki_backlinks(self):
         with self.env.db_transaction:
@@ -146,20 +147,6 @@ class TracBackLinkModuleTestCase(unittest.TestCase):
         return mod._get_backlinks_content(req, target)
 
 
-def _mkdtemp():
-    return os.path.realpath(tempfile.mkdtemp(prefix='trac-testdir-'))
-
-
-def _import_default_pages(env):
-    dir_ = pkg_resources.resource_filename('trac.wiki', 'default-pages')
-    pages = pkg_resources.resource_listdir('trac.wiki', 'default-pages')
-    wikiadm = WikiAdmin(env)
-    with env.db_transaction:
-        for name in pages:
-            filename = os.path.join(dir_, name)
-            wikiadm.import_page(filename, name)
-
-
 def _insert_attachment(env, realm, id_, description, filename='file.txt',
                        content=b'blah'):
     att = Attachment(env, realm, id_)
@@ -195,5 +182,7 @@ def _save_wiki(env, name, text, author='anonymous', comment=None):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TracBackLinkModuleTestCase))
+    load = unittest.defaultTestLoader.loadTestsFromTestCase
+    for testcase in [TracBackLinkModuleTestCase]:
+        suite.addTest(load(testcase))
     return suite

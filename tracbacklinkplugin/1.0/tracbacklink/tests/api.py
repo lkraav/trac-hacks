@@ -29,12 +29,19 @@ from trac.versioncontrol.cache import CachedRepository
 from trac.wiki.admin import WikiAdmin
 from trac.wiki.model import WikiPage
 
-from tracbacklink import db_default
-from tracbacklink.api import (MockRequest, TracBackLinkChangeset as Changeset,
-                              TracBackLinkSystem, gather_links)
+from .. import db_default
+from ..api import (
+    MockRequest, TracBackLinkChangeset as Changeset, TracBackLinkSystem,
+    gather_links,
+)
 
 
-if 'remote_addr' in inspect.getargspec(WikiPage.save)[0]:
+getargspec = inspect.getfullargspec \
+             if hasattr(inspect, 'getfullargspec') else \
+             inspect.getargspec
+
+
+if 'remote_addr' in getargspec(WikiPage.save)[0]:
     def _save_page(page, author, comment):
         page.save(author, comment, remote_addr='::1')
 else:
@@ -126,7 +133,7 @@ class GatherLinksTestCase(unittest.TestCase):
         _import_default_pages(self.env)
 
     def tearDown(self):
-        self.env.reset_db()
+        self.env.reset_db_and_disk()
 
     def _gather(self, resource, text):
         return gather_links(self.env, resource, text)
@@ -421,7 +428,7 @@ class ChangeListenersTestCase(unittest.TestCase):
 
     def tearDown(self):
         DatabaseManager(self.env).drop_tables(db_default.schema)
-        self.env.reset_db()
+        self.env.reset_db_and_disk()
 
     def _invoke(self, name, f, *args, **kwargs):
         return f(*args, **kwargs)
@@ -810,6 +817,7 @@ def _import_default_pages(env):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(GatherLinksTestCase))
-    suite.addTest(unittest.makeSuite(ChangeListenersTestCase))
+    load = unittest.defaultTestLoader.loadTestsFromTestCase
+    for testcase in [GatherLinksTestCase, ChangeListenersTestCase]:
+        suite.addTest(load(testcase))
     return suite

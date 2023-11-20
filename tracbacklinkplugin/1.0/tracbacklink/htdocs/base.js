@@ -12,15 +12,26 @@ jQuery(function($) {
         return;
 
     var content = $('<div>').html(data.content).contents();
+    var target;
+    var method;
     switch (data.type) {
     case 'ticket':
-        $('div#ticket').after(content);
+        target = 'div#ticket';
+        method = 'after';
         break;
     case 'wiki':
-        $('div#content div.wikipage.searchable').after(content);
+        target = 'div#content div.wikipage.searchable';
+        method = 'after';
         break;
     case 'milestone':
-        $('div#attachments').before(content);
+        target = 'div#attachments';
+        method = 'before';
         break;
+    default:
+        return;
     }
+    target = $(target);
+    if (target.siblings('div#backlinks').length !== 0)
+        return;
+    target[method](content);
 });

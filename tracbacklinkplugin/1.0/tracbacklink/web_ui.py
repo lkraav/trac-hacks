@@ -6,9 +6,8 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
-from pkg_resources import parse_version, resource_filename
+import pkg_resources
 
-from trac import __version__
 from trac.core import Component, TracError, implements
 from trac.resource import (
     Resource, ResourceNotFound, get_resource_description, get_resource_url)
@@ -29,25 +28,20 @@ except ImportError:
 from .api import _, _iteritems, _itervalues, _str_types, _u
 
 
-_parsed_version = parse_version(__version__)
+_use_jinja2 = hasattr(Chrome, 'jenv')
 
-if _parsed_version >= parse_version('1.4'):
-    _use_jinja2 = True
-elif _parsed_version >= parse_version('1.3'):
-    _use_jinja2 = hasattr(Chrome, 'jenv')
-else:
-    _use_jinja2 = False
-
-
-IRequestFilter = ITemplateProvider = ITemplateStreamFilter = None
 
 if _use_jinja2:
     from trac.web.api import IRequestFilter
     from trac.web.chrome import ITemplateProvider
+    _interfaces = [IRequestFilter, ITemplateProvider]
+    del IRequestFilter, ITemplateProvider
 else:
     from genshi.filters.transform import Transformer
     from genshi.path import Path
     from trac.web.chrome import ITemplateStreamFilter
+    _interfaces = [ITemplateStreamFilter]
+    del ITemplateStreamFilter
 
     class PathOnce(Path):
 
@@ -76,8 +70,7 @@ def dgettext_messages(msgid, **kwargs):
 
 class TracBackLinkModule(Component):
 
-    implements(*filter(None, (IRequestFilter, ITemplateProvider,
-                              ITemplateStreamFilter)))
+    implements(*_interfaces)
 
     # IRequestFilter methods
 
@@ -117,7 +110,7 @@ class TracBackLinkModule(Component):
 
     # ITemplateProvider methods
 
-    _htdocs_dir = resource_filename(__name__, 'htdocs')
+    _htdocs_dir = pkg_resources.resource_filename(__name__, 'htdocs')
 
     def get_htdocs_dirs(self):
         yield 'tracbacklink', self._htdocs_dir

@@ -12,9 +12,14 @@ def main():
 
     kwargs = {
         'name': 'TracBackLinkPlugin',
-        'version': '1.0.13',
+        'version': '1.0.14',
         'description': 'Provide back links feature to Trac',
         'license': 'BSD',  # the same as Trac
+        'classifiers': [
+            'Framework :: Trac',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+        ],
         'url': 'https://trac-hacks.org/wiki/TracBackLinkPlugin',
         'author': 'OpenGroove,Inc.',
         'author_email': 'info@opengroove.com',

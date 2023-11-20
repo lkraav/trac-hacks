@@ -19,8 +19,9 @@ from trac.versioncontrol.api import RepositoryManager
 from trac.versioncontrol.cache import CachedRepository
 from trac.wiki.model import WikiPage
 
-from tracbacklink.api import (TracBackLinkChangeset as Changeset,
-                              TracBackLinkSystem)
+from .api import (
+    TracBackLinkChangeset as Changeset, TracBackLinkSystem, _iteritems,
+)
 
 
 class TracBackLinkCommandProvider(Component):
@@ -68,12 +69,12 @@ class TracBackLinkCommandProvider(Component):
             else:
                 db("DELETE FROM backlink")
                 db.update_sequence(None, 'backlink', 'id')
-            for (source, ref), (date, author) in links.iteritems():
+            for (source, ref), (date, author) in _iteritems(links):
                 mod.add_backlink(date, author, source, ref)
 
     def _gather_links(self, realm, args):
         out = sys.stderr
-        isatty = hasattr(out, 'fileno') and os.isatty(out.fileno())
+        isatty = out.isatty()
 
         def print_stat(n_links, n_models, realm, newline=True):
             if isatty:

@@ -10,8 +10,8 @@ import unittest
 
 
 def test_suite():
-    from . import api, web_ui
+    from . import admin, api, web_ui
     suite = unittest.TestSuite()
-    for module in (api, web_ui):
+    for module in (admin, api, web_ui):
         suite.addTest(module.test_suite())
     return suite

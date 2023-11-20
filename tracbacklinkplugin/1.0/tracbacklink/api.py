@@ -45,13 +45,19 @@ from trac.wiki.macros import ImageMacro
 from trac.wiki.model import WikiPage
 from trac.wiki.parser import WikiParser
 
-from tracbacklink import db_default
+from . import db_default
 
 
 __all__ = ('IBackLinkGatherer',)
 
 
 _, add_domain = domain_functions('tracbacklink', '_', 'add_domain')
+
+
+try:
+    _locale_dir = pkg_resources.resource_filename(__name__, 'locale')
+except KeyError:
+    _locale_dir = None
 
 
 class IBackLinkGatherer(Interface):
@@ -69,12 +75,8 @@ class TracBackLinkSystem(Component):
     _gatherers = ExtensionPoint(IBackLinkGatherer)
 
     def __init__(self):
-        try:
-            locale_dir = pkg_resources.resource_filename(__name__, 'locale')
-        except KeyError:
-            pass
-        else:
-            add_domain(self.env.path, locale_dir)
+        if _locale_dir:
+            add_domain(self.env.path, _locale_dir)
 
     # Public methods
 
