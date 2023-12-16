@@ -20,6 +20,11 @@ setup(
     long_description="",
     license='GPL',
     url="https://www.trac-hacks.org/wiki/SearchAllPlugin",
+    classifiers=[
+        'Framework :: Trac',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+    ],
     entry_points={
         'trac.plugins': [
             'tracsearchall = tracsearchall.searchall'

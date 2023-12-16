@@ -117,13 +117,13 @@ class SearchAllPlugin(Component):
                     try:
                         results += list(source.get_search_results(req, query,
                                                                   [filter]))
-                    except Exception, ex:
+                    except Exception as e:
                         results += [
                             (req.href('search', **req.args),
                              "<strong>ERROR</strong> in search filter "
                              "<em>%s</em>" % filter,
                              to_datetime(None), "none",
-                             "Exception: %s" % to_unicode(ex))]
+                             "Exception: %s" % to_unicode(e))]
 
             req.href = orig_href
 
