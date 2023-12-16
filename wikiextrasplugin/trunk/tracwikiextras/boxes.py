@@ -141,6 +141,8 @@ class Boxes(Component):
         else:
             csstext += '.wiki-toc { width: auto !important; }\n'
 
+        if not isinstance(csstext, bytes):
+            csstext = csstext.encode('utf-8')
         req.send(csstext, 'text/css', status=200)
 
         return None
