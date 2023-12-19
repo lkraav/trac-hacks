@@ -54,21 +54,22 @@ class TracBackLinkCommandProvider(Component):
 
         mod = TracBackLinkSystem(self.env)
         with self.env.db_transaction as db:
+            cursor = db.cursor()
             if args:
-                db("""\
+                cursor.execute("""\
                     DELETE FROM backlink
                     WHERE src_realm=%%s AND src_id IN (%(ids)s) OR
                           src_parent_realm=%%s AND src_parent_id IN (%(ids)s)
                     """ % {'ids': ','.join(('%s',) * len(args))},
                     ((realm,) + args) * 2)
             elif realm:
-                db("""\
+                cursor.execute("""\
                     DELETE FROM backlink
                     WHERE src_realm=%s OR src_parent_realm=%s
                     """, (realm, realm))
             else:
-                db("DELETE FROM backlink")
-                db.update_sequence(None, 'backlink', 'id')
+                cursor.execute("DELETE FROM backlink")
+                db.update_sequence(cursor, 'backlink', 'id')
             for (source, ref), (date, author) in _iteritems(links):
                 mod.add_backlink(date, author, source, ref)
 
