@@ -1,46 +1,55 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013 Jun Omae
+# Copyright (C) 2013-2023 Jun Omae
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 
+import pkg_resources
 import re
-from genshi.builder import tag
 
-from trac.core import implements
-from trac.web.api import IRequestFilter
-from trac.web.chrome import ITemplateProvider, add_script
-from trac.wiki.macros import WikiMacroBase
+from trac.core import Component, implements
+from trac.config import Option
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
+from trac.wiki.api import IWikiMacroProvider
+
+try:
+    from trac.util.html import tag
+except ImportError:
+    from genshi.builder import tag
 
 
-class WaveDromMacro(WikiMacroBase):
+class WaveDromMacro(Component):
 
-    implements(IRequestFilter, ITemplateProvider)
+    implements(ITemplateProvider, IWikiMacroProvider)
 
-    # IRequestFilter methods
+    wavedrom_location = Option(
+        'wavedrom', 'location',
+        'https://cdnjs.cloudflare.com/ajax/libs/wavedrom/3.1.0/',
+        doc='Location of the !WaveDrom !JavaScript library.')
 
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        if template:
-            add_script(req, 'wavedrom/skins/default.js')
-            add_script(req, 'wavedrom/WaveDrom.js')
-            add_script(req, 'wavedrom/load.js')
-        return template, data, content_type
+    wavedrom_skin = Option(
+        'wavedrom', 'skin', 'default',
+        doc='Skin of the !WaveDrom diagram.')
 
     # ITemplateProvider methods
 
+    _htdocs_dirs = (
+        ('wavedrom', pkg_resources.resource_filename(__name__, 'htdocs')),
+    )
+
     def get_htdocs_dirs(self):
-        from pkg_resources import resource_filename
-        return [('wavedrom', resource_filename(__name__, 'htdocs'))]
+        return self._htdocs_dirs
 
     def get_templates_dirs(self):
         return ()
 
-    # IWikiMacroProvider
+    # IWikiMacroProvider methods
+
+    def get_macros(self):
+        yield 'WaveDrom'
+        yield 'wavedrom'
 
     def get_macro_description(self, name):
         return """\
@@ -61,7 +70,15 @@ Example:
 
     def expand_macro(self, formatter, name, content):
         if content and content.strip():
-            def repl(match):
-                return self._quote[match.group(0)]
+            req = formatter.req
+            if add_script(req, 'wavedrom/load.js') is not False:
+                self._add_script_data(req)
+            repl = lambda m: self._quote[m.group(0)]
             return tag.script(self._quote_re.sub(repl, content),
                               type='WaveDrom')
+
+    # Internal methods
+
+    def _add_script_data(self, req):
+        data = {'location': self.wavedrom_location, 'skin': self.wavedrom_skin}
+        add_script_data(req, {'tracwavedrom': data})
