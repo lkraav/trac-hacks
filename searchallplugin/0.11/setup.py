@@ -12,7 +12,7 @@ from setuptools import setup
 
 setup(
     name='TracSearchAll',
-    version='0.9',
+    version='0.10',
     packages=['tracsearchall'],
     author='Alvaro J. Iradier',
     author_email="alvaro.iradier@polartech.es",
