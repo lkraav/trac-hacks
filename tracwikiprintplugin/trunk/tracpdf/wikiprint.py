@@ -23,6 +23,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import base64
 import re
 from pdfkit import from_url
 from trac.env import Component, implements
@@ -241,7 +242,7 @@ class WikiToPdf(Component):
             page_lst.append(req.abs_href('wikiprint', pagename, version=version,
                                      stylepage=stylepage, filterwiki=filterwiki))
         # Now call pdfkit without a file name so it returns the PDF.
-        pdf_page = from_url(page_lst, False, options=pdfoptions, cover=cover_url)
+        pdf_page = from_url(page_lst, False, options=pdfoptions, cover=cover_url, verbose=True)
 
         return pdf_page, 'application/pdf'
 
@@ -257,10 +258,25 @@ class WikiToPdf(Component):
             'encoding': "UTF-8",
             'outline': None,
             'title': req.args.get('pdftitle') or self.pdftitle or pagename,
-            'cookie': [
-                ('trac_auth', req.incookie['trac_auth'].value),
-            ]
         }
+
+        for name in ('trac_auth', 'trac_session'):
+            if name in req.incookie:
+                options['cookie'] = [(name, req.incookie[name].value)]
+                break
+
+        authorization = (req.get_header('Authorization') or '').split()
+        if len(authorization) == 2 and authorization[0].lower() == 'basic':
+            try:
+                creds = base64.b64decode(authorization[1])
+            except:
+                pass
+            else:
+                creds = creds.split(b':', 1)
+                if len(creds) == 2:
+                    options['username'] = to_unicode(creds[0])
+                    options['password'] = to_unicode(creds[1])
+
         self._add_footer(options, pagename, req.args.get('footertext'))
         return options
 
