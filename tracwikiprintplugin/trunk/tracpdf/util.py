@@ -23,9 +23,9 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import io
 import os
 from imp import find_module
-from trac.util.text import to_unicode
 
 try:
     FileNotFoundError
@@ -48,11 +48,12 @@ def get_trac_css(env, css_file):
 
     # TODO: check for environment CSS files first to account for local
     #       styles.
+    path = os.path.join(mod[1], 'htdocs', 'css', css_file)
     try:
-        with open(os.path.join(mod[1], 'htdocs', 'css', css_file), 'r') as f:
-            return to_unicode(f.read(-1))
+        with io.open(path, encoding='utf-8', errors='replace') as f:
+            return f.read()
     except FileNotFoundError:
-        return to_unicode(u'')
+        return u''
 
 
 def writeResponse(req, data, httperror=200, content_type='text/plain; charset=utf-8'):
