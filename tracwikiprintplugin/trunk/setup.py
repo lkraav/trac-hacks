@@ -43,6 +43,7 @@ setup(
     url="http://trac-hacks.org/wiki/TracWikiPrintPlugin",
     description='Create PDF files from Tracs wiki pages',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     keywords='PDF wiki trac plugin',
     classifiers=['Development Status :: 4 - Beta',
                  'Environment :: Plugins',
