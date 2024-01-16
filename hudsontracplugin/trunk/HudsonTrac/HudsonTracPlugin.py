@@ -430,7 +430,7 @@ class HudsonTracPlugin(Component):
 
         def __init__(self, username, password):
             raw = "%s:%s" % (username, password)
-            self.auth = 'Basic %s' % base64.b64encode(raw).strip()
+            self.auth = 'Basic %s' % base64.b64encode(raw.encode()).decode().strip()
 
         def default_open(self, req):
             req.add_header(self.auth_header, self.auth)
