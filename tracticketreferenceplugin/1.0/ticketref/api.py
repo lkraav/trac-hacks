@@ -8,8 +8,8 @@ from trac.ticket.model import Ticket
 from trac.util.translation import domain_functions
 from tracopt.ticket.commit_updater import CommitTicketUpdater
 
-from model import CUSTOM_FIELDS, TICKETREF, TicketLinks
-from utils import cnv_sorted_refs
+from .model import CUSTOM_FIELDS, TICKETREF, TicketLinks
+from .utils import cnv_sorted_refs
 
 _, add_domain = domain_functions("ticketref", ("_", "add_domain"))
 
@@ -63,8 +63,9 @@ class TicketRefsPlugin(Component):
                 links = TicketLinks(self.env, ticket)
             try:
                 links.create()
-            except Exception, err:
-                self.log.error("TicketRefsPlugin: ticket_created %s" % err)
+            except Exception:
+                self.log.error("TicketRefsPlugin: ticket_created",
+                               exc_info=True)
 
     def ticket_changed(self, ticket, comment, author, old_values):
         links = None
@@ -81,16 +82,18 @@ class TicketRefsPlugin(Component):
                 links = TicketLinks(self.env, ticket)
             try:
                 links.change(author, old_values.get(TICKETREF))
-            except Exception, err:
-                self.log.error("TicketRefsPlugin: ticket_changed %s" % err)
+            except Exception:
+                self.log.error("TicketRefsPlugin: ticket_changed",
+                               exc_info=True)
 
     def ticket_deleted(self, ticket):
         if self.has_ticket_refs(ticket):
             links = TicketLinks(self.env, ticket)
             try:
                 links.delete()
-            except Exception, err:
-                self.log.error("TicketRefsPlugin: ticket_deleted %s" % err)
+            except Exception:
+                self.log.error("TicketRefsPlugin: ticket_deleted",
+                               exc_info=True)
 
     def _get_refs(self, message, except_ids=None):
         ref_ids = set([])
@@ -129,5 +132,5 @@ class TicketRefsPlugin(Component):
                 except AssertionError:
                     msg = _("Ticket %s is this ticket ID, remove it.") % ref_id
                     yield self.env.config.get(*_prop), msg
-                except Exception, err:
+                except Exception as err:
                     yield self.env.config.get(*_prop), err

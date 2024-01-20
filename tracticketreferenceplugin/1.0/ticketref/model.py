@@ -5,7 +5,7 @@ from datetime import datetime
 from trac.ticket.model import Ticket
 from trac.util.datefmt import utc, to_utimestamp
 
-from utils import cnv_list2text, cnv_sorted_refs, cnv_text2list
+from .utils import cnv_list2text, cnv_sorted_refs, cnv_text2list
 
 CUSTOM_FIELDS = [
     {

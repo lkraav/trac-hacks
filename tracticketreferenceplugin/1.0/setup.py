@@ -1,18 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from os.path import join as pathjoin
-from setuptools import setup, find_packages
+from setuptools import setup
 
-VERSION = "0.5.1"
+def _long_description(*filenames):
 
-try:
-    LONG_DESCRIPTION = "".join([
-        open("README.txt").read(),
-        open("CHANGELOG.txt").read(),
-    ])
-except:
-    LONG_DESCRIPTION = ""
+    def iter_content(filenames):
+        for filename in filenames:
+            try:
+                with open(filename) as f:
+                    yield f.read()
+            except EnvironmentError:
+                pass
+
+    return "\n\n".join(iter_content(filenames)).rstrip()
+
+
+VERSION = "0.5.2"
+
+LONG_DESCRIPTION = _long_description("README.txt", "CHANGELOG.txt")
 
 REQUIRES = [
     "Trac >= 0.12",
@@ -54,7 +60,7 @@ setup(
     keywords=["trac", "plugin", "ticket", "cross-reference"],
     author="Tetsuya Morimoto",
     author_email="tetsuya.morimoto@gmail.com",
-    url="http://trac-hacks.org/wiki/TracTicketReferencePlugin",
+    url="https://trac-hacks.org/wiki/TracTicketReferencePlugin",
     license="Apache License 2.0",
     packages=["ticketref"],
     package_data={

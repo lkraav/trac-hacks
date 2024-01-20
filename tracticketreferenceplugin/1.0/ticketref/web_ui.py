@@ -2,7 +2,7 @@
 from pkg_resources import resource_filename
 
 from trac.core import Component, implements
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
+from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet
 from trac.resource import ResourceNotFound
 from trac.ticket.model import Ticket
@@ -10,8 +10,8 @@ from trac.util.html import tag
 from trac.util.text import shorten_line
 from trac.util.translation import domain_functions
 
-from model import TICKETREF as TREF
-from utils import cnv_text2list, get_diff_refs
+from .model import TICKETREF as TREF
+from .utils import cnv_text2list, get_diff_refs
 
 _, add_domain = domain_functions("ticketref", ("_", "add_domain"))
 
@@ -41,43 +41,61 @@ _dummy_catalog = _("added"), _("removed")
 class TicketRefsTemplate(Component):
     """ Extend template for ticket cross-reference """
 
-    implements(IRequestFilter, ITemplateProvider, ITemplateStreamFilter)
-    _empty_list = []
+    implements(IRequestFilter, ITemplateProvider)
 
     def __init__(self):
-        add_domain(self.env.path, resource_filename(__name__, "locale"))
+        try:
+            locale_dir = resource_filename(__name__, "locale")
+        except KeyError:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
 
-    # ITemplateStreamFilter methods
-    def filter_stream(self, req, method, filename, stream, data):
-        if not (data and filename in TEMPLATE_FILES):
-            return stream
+    # IRequestFilter methods
 
-        if filename.startswith("ticket"):
-            self._filter_fields(req, data)
+    def pre_process_request(self, req, handler):
+        return handler
 
-        if filename.startswith("query"):
-            self._filter_groups(req, data)
+    def post_process_request(self, req, template, data, content_type):
+        if req and template in TEMPLATE_FILES and data:
+            if template.startswith("ticket"):
+                add_stylesheet(req, "ticketref/ticket.css")
+                add_script(req, "ticketref/ticket.js")
+                self._filter_fields(req, data)
 
-        if filename == "report_view.html":
-            self._filter_row_groups(req, data)
+            if template.startswith("query"):
+                self._filter_groups(req, data)
 
-        for changes in data.get("changes", []):
-            tref = changes.get("fields", {}).get(TREF)
-            if tref:
-                old, new = tref.get("old"), tref.get("new")
-                msg_key, diff_ids = get_diff_refs(old, new)
-                elements = [self._get_hyperlink_from_ticket(req, tkt_id)[0]
-                            for tkt_id in diff_ids]
-                if elements:
-                    comma, f = tag.span(u', '), lambda x, y: x + comma + y
-                    tref["rendered"] = reduce(f, elements)
-                    tref["rendered"] += tag.span(u' ' + _(msg_key))
-                tref["label"] = _("Relationships")
+            if template == "report_view.html":
+                self._filter_row_groups(req, data)
 
-        return stream
+            for changes in data.get("changes") or ():
+                tref = changes.get("fields", {}).get(TREF)
+                if tref:
+                    old, new = tref.get("old"), tref.get("new")
+                    msg_key, diff_ids = get_diff_refs(old, new)
+                    elements = [self._get_hyperlink_from_ticket(req, tkt_id)[0]
+                                for tkt_id in diff_ids]
+                    if elements:
+                        comma, f = tag.span(u', '), lambda x, y: x + comma + y
+                        tref["rendered"] = reduce(f, elements)
+                        tref["rendered"] += tag.span(u' ' + _(msg_key))
+                    tref["label"] = _("Relationships")
+
+        return template, data, content_type
+
+    # ITemplateProvider methods
+
+    def get_htdocs_dirs(self):
+        yield ("ticketref", resource_filename(__name__, "htdocs"))
+
+    def get_templates_dirs(self):
+        return ()
+
+    # Internal methods
 
     def _filter_fields(self, req, data):
-        for field in data.get("fields", self._empty_list):
+        for field in data.get("fields") or ():
             if field["name"] == TREF:
                 field["label"] = _("Relationships")
                 ticket = data["ticket"]
@@ -98,11 +116,11 @@ class TicketRefsTemplate(Component):
                     data["all_columns"].append(TREF)
 
         # list view header
-        for header in data.get("headers", self._empty_list):
+        for header in data.get("headers") or ():
             if header["name"] == TREF:
                 header["label"] = _("Relationships")
 
-        for group, tickets in data.get("groups", self._empty_list):
+        for group, tickets in data.get("groups") or ():
             for ticket in tickets:
                 if TREF in ticket:
                     if TREF in data.get("row"):
@@ -111,12 +129,12 @@ class TicketRefsTemplate(Component):
                         ticket[TREF] = self._link_refs(req, ticket[TREF])
 
     def _filter_row_groups(self, req, data):
-        for headers in data.get("header_groups", self._empty_list):
+        for headers in data.get("header_groups") or ():
             for header in headers:
                 if header["col"] == TREF:
                     header["title"] = _("Relationships")
 
-        for group, rows in data.get("row_groups", self._empty_list):
+        for group, rows in data.get("row_groups") or ():
             for row in rows:
                 _is_list = isinstance(row["cell_groups"], list)
                 if "cell_groups" in row and _is_list:
@@ -140,7 +158,7 @@ class TicketRefsTemplate(Component):
                 elem = tag.a("#%s" % ref_id, **attr)
                 verbose_elem = tag.a("#%s %s" % (ref_id, title), **attr)
         except ResourceNotFound:
-            self.log.warn("ticket not found: %s" % ref_id)
+            self.log.warning("ticket not found: %s", ref_id)
         return elem, verbose_elem
 
     def _link_refs(self, req, refs_text, verbose_link=False):
@@ -167,7 +185,7 @@ class TicketRefsTemplate(Component):
                     title = shorten_line(ticket["summary"])
                     elem = u"#%s %s" % (ref_id, title)
             except ResourceNotFound:
-                self.log.warn("ticket not found: %s" % ref_id)
+                self.log.warning("ticket not found: %s", ref_id)
             items.extend([elem, u", "])
         return u"".join(item for item in items[:-1])
 
@@ -182,21 +200,3 @@ class TicketRefsTemplate(Component):
             "title": _("Open new ticket with relationships"),
         }
         return tag.a(_("New"), **attr)
-
-    # IRequestFilter methods
-    def pre_process_request(self, req, handler):
-        return handler
-
-    def post_process_request(self, req, template, data, content_type):
-        if req.path_info.startswith("/ticket/") or \
-           req.path_info.startswith("/newticket"):
-            add_stylesheet(req, "ticketref/ticket.css")
-            add_script(req, "ticketref/ticket.js")
-        return template, data, content_type
-
-    # ITemplateProvider methods
-    def get_htdocs_dirs(self):
-        yield ("ticketref", resource_filename(__name__, "htdocs"))
-
-    def get_templates_dirs(self):
-        return []
