@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from functools import reduce
 from pkg_resources import resource_filename
 
 from trac.core import Component, implements
