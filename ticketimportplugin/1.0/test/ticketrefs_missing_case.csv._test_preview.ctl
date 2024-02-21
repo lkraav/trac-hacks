@@ -29,7 +29,8 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 <p>
 (You can change some of these default values in the Trac Admin module, if you are administrator; or you can add the corresponding column to your spreadsheet and re-upload it).
 </p>
-<ul><li>Some fields will not be imported because they don\'t exist in Trac: #<a class="missing wiki" href="/wiki/BlockedBy" rel="nofollow">BlockedBy?</a>, #WBS.
+<ul><li>Some fields will not be imported because they don\'t exist in Trac:
+#BlockedBy, #WBS.
 </li></ul>"""),
     u'rows': [   {   u'cells': [   {   u'col': u'ticket',
                                        u'style': u'',

@@ -32,7 +32,8 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 <p>
 (You can change some of these default values in the Trac Admin module, if you are administrator; or you can add the corresponding column to your spreadsheet and re-upload it).
 </p>
-<ul><li>Some fields will not be imported because they don\'t exist in Trac: anyotherfield.
+<ul><li>Some fields will not be imported because they don\'t exist in Trac:
+anyotherfield.
 </li><li>Some lookup values are not found and will be added to the possible list of values:
 </li></ul><blockquote>
 <blockquote>

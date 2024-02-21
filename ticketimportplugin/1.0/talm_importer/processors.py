@@ -336,8 +336,18 @@ class PreviewProcessor(ProcessorBase):
         self.message += '(You can change some of these default values in the Trac Admin module, if you are administrator; or you can add the corresponding column to your spreadsheet and re-upload it).\n'
 
     def process_notimported_fields(self, notimportedfields):
-        self.message += u' * Some fields will not be imported because they don\'t exist in Trac: %s.\n' \
-                        % u', '.join([x and to_unicode(x) or u"''(empty name)''" for x in notimportedfields])
+        fields = tag()
+        for idx, x in enumerate(notimportedfields):
+            if idx:
+                fields.append(', ')
+            fields.append(to_unicode(x) if x else tag.em('(empty name)'))
+        fields.append('.')
+        self.message += (
+            u" * Some fields will not be imported because they don't exist in Trac:\n"
+            u'   {{{#!html\n'
+            + unicode(fields) + u'\n' +
+            u'}}}\n'
+        )
 
     # Rows is an array of arrays.
     # Each row is indexed by the field names in relativeticketfields.

@@ -32,7 +32,8 @@ Scroll to see a preview of the tickets as they will be imported. If the data is 
 <p>
 (You can change some of these default values in the Trac Admin module, if you are administrator; or you can add the corresponding column to your spreadsheet and re-upload it).
 </p>
-<ul><li>Some fields will not be imported because they don\'t exist in Trac: Dev, Initial, 5/4, 5/7, 5/8, 5/9, 5/10, 5/11, 5/14, 5/15, 5/16, 5/17, 5/18, 5/21, 5/22, 5/23, 5/24, 5/25, 5/28, 5/29, 5/30, 5/31, 6/1, 6/4, 6/5, 6/6, 6/7, 6/8, 6/11, 6/12, 6/13, 6/14, 6/15, 6/18, 6/19, 6/20, 6/21, 6/22, 6/25, 6/26, 6/27, 6/28, 6/29, 7/2, 7/3, 7/4, 7/5, 7/6, 7/9, 7/10, 7/11, 7/12, 7/13, 7/16, 7/17, 7/18, 7/19, 7/20, 7/23, 7/24.
+<ul><li>Some fields will not be imported because they don\'t exist in Trac:
+Dev, Initial, 5/4, 5/7, 5/8, 5/9, 5/10, 5/11, 5/14, 5/15, 5/16, 5/17, 5/18, 5/21, 5/22, 5/23, 5/24, 5/25, 5/28, 5/29, 5/30, 5/31, 6/1, 6/4, 6/5, 6/6, 6/7, 6/8, 6/11, 6/12, 6/13, 6/14, 6/15, 6/18, 6/19, 6/20, 6/21, 6/22, 6/25, 6/26, 6/27, 6/28, 6/29, 7/2, 7/3, 7/4, 7/5, 7/6, 7/9, 7/10, 7/11, 7/12, 7/13, 7/16, 7/17, 7/18, 7/19, 7/20, 7/23, 7/24.
 </li><li>Some lookup values are not found and will be added to the possible list of values:
 </li></ul><blockquote>
 <blockquote>

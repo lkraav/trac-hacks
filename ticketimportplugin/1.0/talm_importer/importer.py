@@ -7,7 +7,6 @@
 
 from pkg_resources import parse_version, resource_filename
 import encodings
-import inspect
 import os
 import re
 import shutil
@@ -19,7 +18,6 @@ from trac import __version__
 from trac.attachment import AttachmentModule
 from trac.core import Component, TracError, implements
 from trac.config import BoolOption, Option
-from trac.env import Environment
 from trac.perm import IPermissionRequestor
 from trac.ticket import TicketSystem
 from trac.ticket import model
@@ -29,6 +27,29 @@ from trac.util.text import to_unicode
 from trac.web import IRequestHandler
 from trac.web.chrome import Chrome, INavigationContributor, ITemplateProvider
 
+try:
+    from trac.util import normalize_filename
+except ImportError:
+    try:
+        from trac.attachment import _normalized_filename as normalize_filename
+    except ImportError:
+        # From Trac 1.2.x
+        import posixpath
+        _control_codes_re = re.compile(
+            '[' +
+            ''.join(filter(lambda c: unicodedata.category(c) == 'Cc',
+                           map(unichr, xrange(0x10000)))) +
+            ']')
+        def normalize_filename(filepath):
+            if not isinstance(filepath, unicode):
+                filepath = unicode(filepath, 'utf-8')
+            filepath = unicodedata.normalize('NFC', filepath)
+            filepath = _control_codes_re.sub(' ', filepath)
+            if filepath.startswith('\\') or re.match(r'[A-Za-z]:\\', filepath):
+                filepath = filepath.replace('\\', '/')
+            filename = posixpath.basename(filepath)
+            return filename
+
 from .compat import basestring, reduce, unicode
 from .processors import ImportProcessor, PreviewProcessor
 from .readers import get_reader
@@ -36,12 +57,7 @@ from .readers import get_reader
 
 _parsed_version = parse_version(__version__)
 
-if _parsed_version >= parse_version('1.4'):
-    _use_jinja2 = True
-elif _parsed_version >= parse_version('1.3'):
-    _use_jinja2 = hasattr(Chrome, 'jenv')
-else:
-    _use_jinja2 = False
+_use_jinja2 = hasattr(Chrome, 'jenv')
 
 if _use_jinja2:
     _template_dir = resource_filename(__name__, 'templates/jinja2')
@@ -90,7 +106,7 @@ class ImportModule(Component):
         req.perm.assert_permission('IMPORT_EXECUTE')
         action = req.args.get('action', 'other')
 
-        if req.args.has_key('cancel'):
+        if 'cancel' in req.args:
             req.redirect(req.href('importer'))
 
         if action == 'upload' and req.method == 'POST':
@@ -178,11 +194,19 @@ class ImportModule(Component):
         req.perm.assert_permission('IMPORT_EXECUTE')
 
         upload = req.args['import-file']
-        if not hasattr(upload, 'filename') or not upload.filename:
+        filename = getattr(upload, 'filename', None)
+        if filename:
+            filename = normalize_filename(filename)
+        if not filename:
             raise TracError('No file uploaded')
+
+        size = None
         if hasattr(upload.file, 'fileno'):
-            size = os.fstat(upload.file.fileno())[6]
-        else:
+            try:
+                size = os.fstat(upload.file.fileno())[6]
+            except OSError:
+                pass
+        if size is None:
             upload.file.seek(0, 2) # seek to end of file
             size = upload.file.tell()
             upload.file.seek(0)
@@ -190,37 +214,18 @@ class ImportModule(Component):
             raise TracError("Can't upload empty file")
 
         # Maximum file size (in bytes)
-        max_size = AttachmentModule.max_size
+        max_size = AttachmentModule(self.env).max_size
         if max_size >= 0 and size > max_size:
             raise TracError('Maximum file size (same as attachment size, set '
                             'in trac.ini configuration file): %d bytes' %
                             max_size, 'Upload failed')
 
-        # We try to normalize the filename to unicode NFC if we can.
-        # Files uploaded from OS X might be in NFD.
-        filename = unicodedata.normalize('NFC', unicode(upload.filename,
-                                                        'utf-8'))
-        filename = filename.replace('\\', '/').replace(':', '/')
-        filename = os.path.basename(filename)
-        if not filename:
-            raise TracError('No file uploaded')
-
         return filename, self._savedata(upload.file)
 
     def _savedata(self, fileobj):
-        # temp folder
-        tempuploadedfile = tempfile.mktemp()
-
-        flags = os.O_CREAT + os.O_WRONLY + os.O_EXCL
-        if hasattr(os, 'O_BINARY'):
-            flags += os.O_BINARY
-        targetfile = os.fdopen(os.open(tempuploadedfile, flags), 'w')
-
-        try:
-            shutil.copyfileobj(fileobj, targetfile)
-        finally:
-            targetfile.close()
-        return tempuploadedfile
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            shutil.copyfileobj(fileobj, tmp)
+        return tmp.name
 
     def _process(self, filereader, processor):
         reporter = get_reporter_id(processor.req)
@@ -372,7 +377,7 @@ class ImportModule(Component):
               " WHERE owner IS NOT NULL AND owner != ''"),
              ("SELECT DISTINCT owner FROM component"
               " WHERE owner IS NOT NULL AND owner != ''")])
-        for username, name, email in self._get_known_users(db):
+        for username, name, email in self._get_known_users():
             existingusers.add(username)
         newusers = []
 
@@ -470,12 +475,8 @@ class ImportModule(Component):
 
         return processor.end_process(row_idx)
 
-    if 'db' not in inspect.getargspec(Environment.get_known_users)[0]:
-        def _get_known_users(self, db):
-            return self.env.get_known_users()
-    else:
-        def _get_known_users(self, db):
-            return self.env.get_known_users(db)
+    def _get_known_users(self):
+        return self.env.get_known_users()
 
     def _find_case_insensitive(self, value, list):
         '''
