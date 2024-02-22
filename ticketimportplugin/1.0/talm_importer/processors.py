@@ -356,7 +356,7 @@ class PreviewProcessor(ProcessorBase):
         wbsfields=[]
         for row in rows:
             for f in relativeticketfields:
-                self.env.log.debug("f %s, row '%s'" % (f, row[f]))
+                self.env.log.debug("f %s, row '%s'", f, row[f])
                 if row[f].find('.') != -1:
                     self.env.log.debug("found")
                     if f not in wbsfields:

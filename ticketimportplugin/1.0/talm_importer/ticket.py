@@ -35,8 +35,8 @@ def PatchedTicket(*args, **argv):
                             default = options[int(default)]
                         except (ValueError, IndexError):
                             self.env.log.warning('Invalid default value "%s" '
-                                                 'for custom field "%s"'
-                                                 % (default, field['name']))
+                                                 'for custom field "%s"',
+                                                 default, field['name'])
                 if default or default == '':
                     self.values.setdefault(field['name'], default)
 
