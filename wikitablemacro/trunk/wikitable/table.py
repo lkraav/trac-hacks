@@ -17,6 +17,11 @@ from trac.util.text import exception_to_unicode, to_unicode
 from trac.util.translation import _
 from trac.util.html import html as tag
 
+try:
+    unicode = unicode
+except NameError:
+    unicode = str
+
 
 class SQLTable(WikiMacroBase):
     """Draw a table from a SQL query in a wiki page.
@@ -47,10 +52,12 @@ class SQLTable(WikiMacroBase):
     def expand_macro(self, formatter, name, content):
         def format(item):
             if item is None:
-                item = "//(NULL)//"
-            elif item in (True, False):
-                item = str(item).upper()
-            elif not isinstance(item, basestring):
+                return tag.em('(NULL)')
+            if item is True:
+                return 'TRUE'
+            if item is False:
+                return 'FALSE'
+            if not isinstance(item, unicode):
                 item = to_unicode(item)
             return format_to_html(self.env, formatter.context, item)
 
