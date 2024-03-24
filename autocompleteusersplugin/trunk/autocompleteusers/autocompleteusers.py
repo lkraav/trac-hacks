@@ -61,7 +61,7 @@ class AutocompleteUsers(Component):
                 subjects.extend((group, '', 'group') for group in groups)
 
         content = to_json(subjects)
-        if isinstance(content, unicode):
+        if not isinstance(content, bytes):
             content = content.encode('utf-8')
         req.send(content, 'application/json')
 
