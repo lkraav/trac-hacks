@@ -16,7 +16,7 @@ except ImportError:
 from trac.core import Component, TracError
 from trac.util.text import to_unicode
 from .compat import (BytesIO, bytes, getargspec, iteritems, itervalues,
-                     number_types, string_types, unichr)
+                     number_types, string_types, unichr, xrange)
 from .translation import ChoiceOption, N_, ngettext
 
 
@@ -67,10 +67,14 @@ def _max_rows_error(num):
     return WorksheetWriterError(message)
 
 
+_use_ucs4 = sys.maxunicode >= 0x10000
+
+
 def _make_invalid_chars_re():
     ranges = [(0x00, 0x08), (0x0b, 0x0c), (0x0e, 0x1f), (0x7f, 0x84),
-              (0x86, 0x9f), (0xfdd0, 0xfddf), (0xfffe, 0xffff)]
-    if sys.maxunicode >= 0x10000:
+              (0x86, 0x9f), (0xfdd0, 0xfddf), (0xfffe, 0xffff),
+              (0xd800, 0xdfff)]
+    if _use_ucs4:
         ranges.extend(((0x1fffe, 0x1ffff), (0x2fffe, 0x2ffff),
                        (0x3fffe, 0x3ffff), (0x4fffe, 0x4ffff),
                        (0x5fffe, 0x5ffff), (0x6fffe, 0x6ffff),
@@ -80,9 +84,38 @@ def _make_invalid_chars_re():
                        (0xdfffe, 0xdffff), (0xefffe, 0xeffff),
                        (0xffffe, 0xfffff), (0x10fffe, 0x10ffff)))
     pattern = u'[' + \
-              u''.join(u'%s-%s' % (unichr(low), unichr(high))
-                       for low, high in ranges) + u']'
+              u''.join((u'%s-%s' if low != high else u'%s%s') %
+                       (unichr(low), unichr(high))
+                       for low, high in ranges) + u']+'
     return re.compile(pattern)
+
+
+_invalid_chars_re = _make_invalid_chars_re()
+
+
+if _use_ucs4:
+    def _invalid_chars_repl(m):
+        return u'\ufffd' * len(m.group(0))
+else:
+    _surrogates_re = re.compile(u'[\ud800-\udbff][\udc00-\udfff]|(.)',
+                                re.DOTALL)
+
+    def _surrogates_repl(m):
+        if m.group(1) is not None:
+            return u'\ufffd'
+        text = m.group(0)
+        c = 0x10000 + ((ord(text[0]) - 0xd800) << 10) + \
+            (ord(text[0 + 1]) - 0xdc00)
+        if 0xfffe <= (c & 0xffff) <= 0xffff:
+            return u'\ufffd'
+        return text
+
+    def _invalid_chars_repl(m):
+        return _surrogates_re.sub(_surrogates_repl, m.group(0))
+
+
+def _replace_invalid_chars(text):
+    return _invalid_chars_re.sub(_invalid_chars_repl, text)
 
 
 class ExcelDownloadConfig(Component):
@@ -183,7 +216,7 @@ class AbstractWorksheetWriter(object):
     def _normalize_text(self, value):
         if isinstance(value, bytes):
             value = to_unicode(value)
-        value = self._invalid_chars_re.sub(u'\ufffd', value)
+        value = _replace_invalid_chars(value)
         value = '\n'.join(line.rstrip() for line in value.splitlines())
         if len(value) > self.MAX_CHARS:
             value = value[:self.MAX_CHARS - 1] + u'\u2026'
@@ -386,6 +419,9 @@ class OpenpyxlWorksheetWriter(AbstractWorksheetWriter):
                         # 2.6. Instead, set directly properties of Cell
                         # instance.
                         cell.data_type = 's'
+                        from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+                        for m in ILLEGAL_CHARACTERS_RE.finditer(value):
+                            raise RuntimeError(repr([m.start(0), m.end(0), m.group(0)]))
                         cell._value = cell.check_string(value)
                     else:
                         cell.value = value

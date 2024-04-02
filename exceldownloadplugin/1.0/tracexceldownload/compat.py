@@ -6,7 +6,7 @@ import sys
 
 
 __all__ = ('PY2', 'unicode', 'bytes', 'number_types', 'string_types', 'long',
-           'unichr', 'iteritems', 'BytesIO', 'getargspec')
+           'unichr', 'xrange', 'iteritems', 'BytesIO', 'getargspec')
 
 
 PY2 = sys.version_info[0] == 2
@@ -21,6 +21,7 @@ if PY2:
     string_types = basestring
     long = long
     unichr = unichr
+    xrange = xrange
     itervalues = lambda d: d.itervalues()
     iteritems = lambda d: d.iteritems()
 else:
@@ -30,6 +31,7 @@ else:
     string_types = str
     long = int
     unichr = chr
+    xrange = range
     itervalues = lambda d: d.values()
     iteritems = lambda d: d.items()
 

@@ -14,23 +14,40 @@ from trac.ticket.report import ReportModule
 from trac.util.datefmt import utc
 from trac.web.api import RequestDone
 
-from tracexceldownload.api import openpyxl, xlwt
-from tracexceldownload.ticket import ExcelTicketModule, ExcelReportModule
+from ..api import openpyxl, xlwt
+from ..ticket import ExcelTicketModule, ExcelReportModule
+
 
 if sys.version_info[0] != 2:
     unichr = chr
     xrange = range
+elif sys.maxunicode < 0x10000:
+    _unichr = unichr
+    def unichr(i):
+        if i <= sys.maxunicode:
+            return _unichr(i)
+        else:
+            return (br'U+%08x' % i).decode('unicode-escape')
 
 
 _has_time_fields = parse_version(VERSION) >= parse_version('1.2')
+
+
+def _text_from(iterable):
+    return u''.join(map(unichr, iterable))
 
 
 class AbstractExcelTicketTestCase(unittest.TestCase):
 
     _data_options = ['', 'foo', 'bar', 'baz', 'qux']
     _data_texts = [
-        ''.join(map(unichr, xrange(256))),
-        ''.join(map(unichr, xrange(0xff00, 0x10100))),
+        _text_from(xrange(256)),
+        _text_from(xrange(0xff00, 0x10100)) +
+        _text_from(xrange(0x5ff00, 0x60100)) +
+        (u' \udfff\U0010fffd\U0010fffe\U0010ffff\ud800'
+         u' \ud800\U0010fffd\U0010fffe\U0010ffff\udfff'
+         if sys.maxunicode < 0x10000 else
+         u'\U0010fffd\U0010fffe\U0010ffff'),
     ]
 
     def setUp(self):

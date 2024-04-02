@@ -48,7 +48,8 @@ del _find_openpyxl_shutdown, _openpyxl_shutdown
 
 
 def suite():
-    from . import ticket
+    from . import api, ticket
     suite = unittest.TestSuite()
-    suite.addTest(ticket.suite())
+    for mod in (api, ticket):
+        suite.addTest(mod.suite())
     return suite
