@@ -39,8 +39,8 @@ class HTTPAuthFilter(Component):
             return self
         return handler
 
-    def post_process_request(self, req, template, content_type):
-        return template, content_type
+    def post_process_request(self, req, template, data, content_type):
+        return template, data, content_type
 
     # IRequestHandler methods (sort of)
     def process_request(self, req):
