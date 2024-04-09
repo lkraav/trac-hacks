@@ -87,6 +87,6 @@ class HTTPAuthFilter(Component):
         creds = creds.decode('latin1')
         if ':' not in creds:
             return None
-        user, passwd = creds.split(':')
+        user, passwd = creds.split(':', 1)
         if AccountManager(self.env).check_password(user, passwd):
             return user
