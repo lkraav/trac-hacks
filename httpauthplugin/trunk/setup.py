@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='TracHTTPAuth',
-    version='1.2',
+    version='1.3',
     packages=['httpauth'],
     #package_data = { 'httpauth': ['templates/*.cs', 'htdocs/*.js', 'htdocs/*.css' ] },
 
@@ -19,6 +19,8 @@ setup(
     url="http://trac-hacks.org/wiki/HttpAuthPlugin",
     classifiers=[
         'Framework :: Trac',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
 
     install_requires=['TracAccountManager'],

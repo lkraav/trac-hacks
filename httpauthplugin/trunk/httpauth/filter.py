@@ -1,14 +1,13 @@
-from trac.core import *
+# -*- coding: utf-8 -*-
+
+import binascii
+
+from trac.core import Component, implements
 from trac.config import ListOption
 from trac.web.api import IRequestFilter, RequestDone, IAuthenticator
-from trac.web.chrome import INavigationContributor
-
-try:
-    from base64 import b64decode
-except ImportError:
-    from base64 import decodestring as b64decode
 
 from acct_mgr.api import AccountManager
+
 
 __all__ = ['HTTPAuthFilter']
 
@@ -26,14 +25,10 @@ class HTTPAuthFilter(Component):
     implements(IRequestFilter, IAuthenticator)
 
     # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
-        check = False
-        for path in self.paths:
-            if req.path_info.startswith(path):
-                check = True
-                break
-        if req.args.get('format') in self.formats:
-            check = True
+        check = req.path_info.startswith(tuple(self.paths)) or \
+                req.args.get('format') in self.formats
         if check and not self._check_password(req):
             self.log.info(
                 'HTTPAuthFilter: No/bad authentication data given, returing 403')
@@ -44,11 +39,12 @@ class HTTPAuthFilter(Component):
         return template, data, content_type
 
     # IRequestHandler methods (sort of)
+
     def process_request(self, req):
         if req.session:
             req.session.save()  # Just in case
 
-        auth_req_msg = 'Authentication required'
+        auth_req_msg = b'Authentication required'
         req.send_response(401)
         req.send_header('WWW-Authenticate', 'Basic realm="Control Panel"')
         req.send_header('Content-Type', 'text/plain')
@@ -65,6 +61,7 @@ class HTTPAuthFilter(Component):
         raise RequestDone
 
     # IAuthenticator methods
+
     def authenticate(self, req):
         user = self._check_password(req)
         if user:
@@ -73,10 +70,23 @@ class HTTPAuthFilter(Component):
             return user
 
     # Internal methods
+
     def _check_password(self, req):
         header = req.get_header('Authorization')
-        if header:
-            token = header.split()[1]
-            user, passwd = b64decode(token).split(':', 1)
-            if AccountManager(self.env).check_password(user, passwd):
-                return user
+        if not header:
+            return None
+        values = header.split()
+        if values[0].lower() != 'basic':
+            return None
+        if len(values) != 2:
+            return None
+        try:
+            creds = binascii.a2b_base64(values[1])
+        except binascii.Error:
+            return None
+        creds = creds.decode('latin1')
+        if ':' not in creds:
+            return None
+        user, passwd = creds.split(':')
+        if AccountManager(self.env).check_password(user, passwd):
+            return user
