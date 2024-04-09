@@ -15,21 +15,40 @@ import re
 from operator import attrgetter
 from pkg_resources import resource_filename  # @UnresolvedImport
 
-from genshi.filters import Transformer
 from trac.core import Component, implements
 from trac.ticket.roadmap import RoadmapModule
-from trac.util.html import HTML, html as tag
+from trac.util.html import Markup, tag
 from trac.util.translation import domain_functions
-from trac.web.api import IRequestFilter, ITemplateStreamFilter
+from trac.web.api import IRequestFilter
+from trac.web.chrome import Chrome
+
+
+__all__ = ('SetupRoadmap', 'FilterRoadmap', 'SortRoadMap')
 
 
 _, tag_, N_, add_domain = domain_functions(
     'roadmapplugin', '_', 'tag_', 'N_', 'add_domain')
 
+
+_use_jinja2 = hasattr(Chrome, 'jenv')
+
+if _use_jinja2:
+    from trac.web.chrome import ITemplateProvider, add_script, add_script_data
+    ITemplateStreamFilter = Transformer = None
+else:
+    from genshi.filters import Transformer
+    from trac.web.api import ITemplateStreamFilter
+    ITemplateProvider = add_script = add_script_data = None
+
+
 keys = [u'noduedate', u'completed']
 showkeys = {'noduedate': 'hidenoduedate', 'completed': 'showcompleted'}
 
 # returns the name of the attribute plus the prefix roadmap.filter
+
+
+def _get_session(req, name, default):
+    return req.session.get(_get_session_key_name(name), default)
 
 
 def _get_session_key_name(name):
@@ -81,6 +100,105 @@ def _get_settings(req, name, default):
         return default
 
 
+_directions = (N_('Descending'), N_('Ascending'))
+_criterias = (N_('Name'), N_('Due'))
+
+
+class SetupRoadmap(Component):
+
+    if _use_jinja2:
+        implements(IRequestFilter, ITemplateProvider)
+    else:
+        implements(ITemplateStreamFilter)
+
+    def __init__(self):
+        try:
+            locale_dir = resource_filename(__name__, 'locale')
+        except:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
+
+    # IRequestFilter methods
+
+    def pre_process_request(self, req, handler):
+        return handler
+
+    def post_process_request(self, req, template, data, content_type):
+        if req.path_info == '/roadmap':
+            add_script(req, 'roadmapplugin/prefs.js')
+            add_script_data(req, roadmapplugin=Markup(self._get_inputs(req)))
+        return template, data, content_type
+
+    # ITemplateProvider methods
+
+    def get_htdocs_dirs(self):
+        yield 'roadmapplugin', resource_filename(__name__, 'htdocs')
+
+    def get_templates_dirs(self):
+        return ()
+
+    # ITemplateStreamFilter methods
+
+    def filter_stream(self, req, method, filename, stream, data):
+        if filename == 'roadmap.html':
+            # Insert the new field for entering user names
+            filter_ = Transformer('//form[@id="prefs"]/div[@class="buttons"]')
+            stream |= filter_.before(self._get_inputs(req))
+        return stream
+
+    # Internal methods
+
+    def _get_inputs(self, req):
+        return tag(self._get_filter_inputs(req), self._get_sort_inputs(req))
+
+    def _get_sort_inputs(self, req):
+        sortcrit = _get_settings(req, 'sortcrit', _criterias[0])
+        sortdirect = _get_settings(req, 'sortdirect', _directions[0])
+
+        div = tag.div(_('Sort by: '))
+        select = tag.select(name='sortcrit')
+        for crit in _criterias:
+            selected = 'selected' if sortcrit == crit else None
+            select.append(tag.option(_(crit), value=crit, selected=selected))
+        div.append(select)
+        select = tag.select(name='sortdirect')
+        for dir_ in _directions:
+            selected = 'selected' if sortdirect == dir_ else None
+            select.append(tag.option(_(dir_), value=dir_, selected=selected))
+        div.append(select)
+        return div
+
+    def _filterBox(self, req, label, name):
+        title = _("available prefixes: contains: ~, starts with: ^, ends with: $")
+        value = _get_session(req, name, '')
+        input_ = tag.input(type="text", name=name, value=value,
+                           style_="width:60%", title=title)
+        return tag.label(label, input_)
+
+    def _toggleBox(self, req, label, name, default):
+        checked = _get_session(req, name, default) == '1'
+        checkbox = tag.input(type='checkbox', id=name, name=name, value='true',
+                             checked='checked' if checked else None)
+        return tag(checkbox, ' ', tag.label(label, for_=name))
+
+    def _hackedHiddenField(self):
+        # Hack: shove a hidden field in so we can tell if the update
+        # button has been hit.
+        return tag.input(type='hidden',
+                         name='user_modification',
+                         value='true')
+
+    def _get_filter_inputs(self, req):
+        return tag.div(
+            self._hackedHiddenField(),
+            self._toggleBox(req, _('Show milestone descriptions'),
+                            'show_descriptions', 'true'),
+            tag.br(),
+            self._filterBox(req, _('Filter: '), "inc_milestones"),
+        )
+
+
 class FilterRoadmap(Component):
     """Filters roadmap milestones.
 
@@ -99,19 +217,19 @@ Mainly copied from [https://trac-hacks.org/wiki/RoadmapFilterPlugin RoadmapFilte
 and modified a bit.
 
 Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
-    implements(IRequestFilter, ITemplateStreamFilter)
 
-    def _session(self, req, name, default):
-        return req.session.get(_get_session_key_name(name), default)
+    implements(IRequestFilter)
+
+    # Internal methods
 
     def _getCheckbox(self, req, name, default):
         session_key = _get_session_key_name(name)
         result = '0'
 
-        if req.args.has_key('user_modification'):
+        if 'user_modification' in req.args:
             # User has hit the update button on the form,
             # so update the session data.
-            if req.args.has_key(name):
+            if name in req.args:
                 result = '1'
             if result == '1':
                 req.session[session_key] = '1'
@@ -128,17 +246,17 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
         #   ~  - contains
         #   ^  - starts with
         #   $  = ends with
-        for filter in filters:
-            if filter.startswith('^'):
-                if name.startswith(filter[1:]):
+        for filter_ in filters:
+            if filter_.startswith('^'):
+                if name.startswith(filter_[1:]):
                     return True
-            elif filter.startswith('$'):
-                if name.endswith(filter[1:]):
+            elif filter_.startswith('$'):
+                if name.endswith(filter_[1:]):
                     return True
-            elif filter.startswith('~'):
-                if name.find(filter[1:]) >= 0:
+            elif filter_.startswith('~'):
+                if name.find(filter_[1:]) >= 0:
                     return True
-            elif name == filter:
+            elif name == filter_:
                 return True
         return False
 
@@ -154,7 +272,6 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
 
     def post_process_request(self, req, template, data, content_type):
         if template == 'roadmap.html':
-
             inc_milestones = _get_settings(req, 'inc_milestones', '')
             exc_milestones = _get_settings(req, 'exc_milestones', '')
             show_descriptions = self._getCheckbox(
@@ -188,72 +305,19 @@ Thanks to [http://trac-hacks.org/wiki/daveappendix daveappendix]."""
                 for m in data['milestones']:
                     m.description = ''
 
-        return (template, data, content_type)
-
-    # ITemplateStreamFilter methods
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'roadmap.html':
-            # Insert the new field for entering user names
-            filter = Transformer('//form[@id="prefs"]/div[@class="buttons"]')
-            return stream | filter.before(self._user_field_input(req))
-        return stream
-
-    def _filterBox(self, req, label, name):
-        return tag.label(label,
-                         tag.input(type="text",
-                                   name=name,
-                                   value=self._session(req, name, ''),
-                                   style_="width:60%",
-                                   title=_('available prefixes: contains: ~, starts with: ^, ends with: $')))
-
-    def _toggleBox(self, req, label, name, default):
-        if self._session(req, name, default) == '1':
-            checkbox = tag.input(type='checkbox',
-                                 id=name,
-                                 name=name,
-                                 value='true',
-                                 checked='checked')
-        else:
-            checkbox = tag.input(type='checkbox',
-                                 id=name,
-                                 name=name,
-                                 value='true')
-        return checkbox + ' ' + tag.label(label, for_=name)
-
-    def _hackedHiddenField(self):
-        # Hack: shove a hidden field in so we can tell if the update
-        # button has been hit.
-        return tag.input(type='hidden',
-                         name='user_modification',
-                         value='true')
-
-    def _user_field_input(self, req):
-        add_fields = tag.div(self._hackedHiddenField()
-                             + self._toggleBox(req,
-                                               _('Show milestone descriptions'),
-                                               'show_descriptions',
-                                               'true')
-                             )
-        add_fields += tag.br()
-        add_fields += self._filterBox(req, _('Filter:  '), "inc_milestones")
-        return add_fields
+        return template, data, content_type
 
 
 class SortRoadMap(Component):
     """Shows another checkbox in roadmap view,
 which allows you to sort milestones in descending order of due date."""
-    implements(IRequestFilter, ITemplateStreamFilter)
 
-    directions = ['Descending', 'Ascending']
-    criterias = ['Name', 'Due']
+    implements(IRequestFilter)
 
-    def __init__(self):
-        locale_dir = resource_filename(__name__, 'locale')
-        add_domain(self.env.path, locale_dir)
+    # Internal methods
 
     def _comparems(self, m1, m2, sort_crit):
-        if sort_crit == self.criterias[0]:
+        if sort_crit == _criterias[0]:
             # the milestone names are divided at the dots to compare (sub)versions
             v1 = m1.name.upper().split('.')
             v2 = m2.name.upper().split('.')
@@ -289,6 +353,8 @@ which allows you to sort milestones in descending order of due date."""
         else:
             return 0
 
+    # IRequestFilter methods
+
     def pre_process_request(self, req, handler):
         if handler is RoadmapModule:
             if 'user_modification' in req.args:
@@ -299,14 +365,13 @@ which allows you to sort milestones in descending order of due date."""
 
     def post_process_request(self, req, template, data, content_type):
         if template == 'roadmap.html':
-
-            sort_direct = _get_settings(req, 'sortdirect', self.directions[0])
-            sort_crit = _get_settings(req, 'sortcrit', self.criterias[0])
+            sort_direct = _get_settings(req, 'sortdirect', _directions[0])
+            sort_crit = _get_settings(req, 'sortcrit', _criterias[0])
 
             milestones = data['milestones']
             sortedmilestones = []
 
-            if sort_crit == self.criterias[0]:
+            if sort_crit == _criterias[0]:
                 for m in milestones:
                     if len(sortedmilestones) == 0:
                         sortedmilestones.append(m)
@@ -338,7 +403,7 @@ which allows you to sort milestones in descending order of due date."""
                 sortedmilestones = sorted(ms_with_due, key=attrgetter('due'))
                 sortedmilestones.extend(ms_wo_due)
 
-            if sort_direct == self.directions[1]:
+            if sort_direct == _directions[1]:
                 sortedmilestones.reverse()
 
             stats = data['milestone_stats']
@@ -352,25 +417,3 @@ which allows you to sort milestones in descending order of due date."""
             data['milestones'] = sortedmilestones
             data['milestone_stats'] = new_stats
         return template, data, content_type
-
-    def filter_stream(self, req, method, filename, stream, data):
-        if filename == 'roadmap.html':
-            sortcrit = _get_settings(req, 'sortcrit', self.criterias[0])
-            sortdirect = _get_settings(req, 'sortdirect', self.directions[0])
-
-            sel = u' selected = "selected"'
-            html_str = u'<div>' + _('Sort by: ')
-            html_str += u'<select name="sortcrit">'
-            for crit in self.criterias:
-                html_str += u'<option value ="%s" %s>%s</option>' % (
-                    crit, sel if sortcrit == crit else '', _(crit))
-            html_str += u'</select>'
-            html_str += u'<select name="sortdirect">'
-            for dir in self.directions:
-                html_str += u'<option value ="%s" %s>%s</option>' % (
-                    dir, sel if sortdirect == dir else '', _(dir))
-            html_str += u'</select></div>'
-            html = HTML(html_str)
-            filter = Transformer('//form[@id="prefs"]/div[@class="buttons"]')
-            return stream | filter.before(html)
-        return stream
