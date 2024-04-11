@@ -3,7 +3,7 @@
 import binascii
 
 from trac.core import Component, implements
-from trac.config import ListOption
+from trac.config import ListOption, Option
 from trac.web.api import IRequestFilter, RequestDone, IAuthenticator
 
 from acct_mgr.api import AccountManager
@@ -12,8 +12,15 @@ from acct_mgr.api import AccountManager
 __all__ = ['HTTPAuthFilter']
 
 
+def _escape_quotes(text):
+    return text.replace('\\', r'\\').replace('"', r'\"')
+
+
 class HTTPAuthFilter(Component):
     """Request filter and handler to provide HTTP authentication."""
+
+    realm = Option('httpauth', 'realm', default='Control Panel',
+                   doc='HTTP authentication realm')
 
     paths = ListOption('httpauth', 'paths',
                        default='/login/xmlrpc,/login/jsonrpc',
@@ -46,7 +53,8 @@ class HTTPAuthFilter(Component):
 
         auth_req_msg = b'Authentication required'
         req.send_response(401)
-        req.send_header('WWW-Authenticate', 'Basic realm="Control Panel"')
+        req.send_header('WWW-Authenticate',
+                        'Basic realm="%s"' % _escape_quotes(self.realm))
         req.send_header('Content-Type', 'text/plain')
         req.send_header('Pragma', 'no-cache')
         req.send_header('Cache-control', 'no-cache')
