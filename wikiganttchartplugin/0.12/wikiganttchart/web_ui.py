@@ -40,7 +40,7 @@ except ImportError:
     web_context = Context.from_request
     del Context
 
-from wikiganttchart.api import (
+from .api import (
     _, N_, ChoiceOption, IntOption, Option, TEXTDOMAIN, add_domain, babel,
     db_exc, getargspec, gettext, iso8601_parse_date, iso8601_format_date,
     locale_en, l10n_format_datetime, tag_,
