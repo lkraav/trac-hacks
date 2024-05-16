@@ -6,8 +6,11 @@ License: BSD
 (c) 2009-2013 ::: www.CodeResort.com - BV Network AS (simon-code@bvnetwork.no)
 """
 
+import functools
 import inspect
 import sys
+
+from trac.util.translation import dgettext, domain_functions
 
 
 # Supported Python versions:
@@ -34,6 +37,22 @@ else:
     from xmlrpc import client as xmlrpclib
 
 
+i18n_domain = 'tracrpc'
+add_domain, ngettext, tag_ = domain_functions(
+    i18n_domain, ('add_domain', 'ngettext', 'tag_'))
+
+# XXX Use directly `dgettext` instead of `gettext` returned from
+# `domain_functions` because translation doesn't work caused by multiple
+# white-spaces in msgid are replaced by single space.
+_ = gettext = functools.partial(dgettext, i18n_domain)
+
+
+try:
+    from trac.util.translation import cleandoc_
+except ImportError:
+    cleandoc_ = lambda message: inspect.cleandoc(message).strip()
+
+
 getargspec = inspect.getfullargspec \
              if hasattr(inspect, 'getfullargspec') else \
              inspect.getargspec
@@ -57,11 +76,6 @@ def accepts_mimetype(req, mimetype):
     else:
         accept = accept.split(',')
         return any(x.strip().startswith(y) for x in accept for y in mimetype)
-
-
-def prepare_docs(text, indent=4):
-    r"""Remove leading whitespace"""
-    return text and ''.join(l[indent:] for l in text.splitlines(True)) or ''
 
 
 def to_b(value):

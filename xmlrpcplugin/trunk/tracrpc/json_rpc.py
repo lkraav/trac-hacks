@@ -25,7 +25,7 @@ from trac.util.text import empty, exception_to_unicode, to_unicode
 from trac.web.api import HTTPBadRequest, RequestDone
 
 from .api import IRPCProtocol, Binary, MethodNotFound, ProtocolException
-from .util import iteritems, prepare_docs, unicode, izip
+from .util import cleandoc_, gettext, iteritems, unicode, izip
 
 
 __all__ = ['JsonRpcProtocol']
@@ -158,7 +158,8 @@ class JsonProtocolException(ProtocolException):
 
 
 class JsonRpcProtocol(Component):
-    r"""
+
+    _descritpion = cleandoc_(r"""
     Example `POST` request using `curl` with `Content-Type` header
     and body:
 
@@ -177,17 +178,17 @@ class JsonRpcProtocol(Component):
         * `{"__jsonclass__": ["binary", "<base64-encoded>"]} => Binary`
       * `"id"` is optional, and any marker value received with a
         request is returned with the response.
-    """
+    """)
 
     implements(IRPCProtocol)
 
     # IRPCProtocol methods
 
     def rpc_info(self):
-        return ('JSON-RPC', prepare_docs(self.__doc__))
+        return 'JSON-RPC', gettext(self._descritpion)
 
     def rpc_match(self):
-        yield('rpc', 'application/json')
+        yield 'rpc', 'application/json'
         # Legacy path - provided for backwards compatibility:
         yield 'jsonrpc', 'application/json'
 

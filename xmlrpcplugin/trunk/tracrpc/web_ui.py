@@ -10,10 +10,12 @@ import pkg_resources
 import types
 
 from trac.core import Component, ExtensionPoint, TracError, implements
+from trac.env import IEnvironmentSetupParticipant
 from trac.perm import PermissionError
 from trac.resource import ResourceNotFound
 from trac.util.html import tag
 from trac.util.text import exception_to_unicode, to_unicode
+from trac.util.translation import dtgettext
 from trac.web.api import RequestDone, HTTPUnsupportedMediaType
 from trac.web.main import IRequestHandler
 from trac.web.chrome import ITemplateProvider, INavigationContributor, \
@@ -23,7 +25,8 @@ from trac.wiki.formatter import format_to_oneliner
 from . import __version__
 from .api import (XMLRPCSystem, IRPCProtocol, ProtocolException,
                   ServiceException, api_version)
-from .util import accepts_mimetype, to_b, web_context
+from .util import (accepts_mimetype, to_b, i18n_domain, add_domain, _,
+                   web_context)
 
 try:
     from trac.web.api import HTTPInternalError as HTTPInternalServerError
@@ -41,9 +44,29 @@ class RPCWeb(Component):
         methods available to the currently logged in user. Browsing to
         <trac>/rpc or <trac>/login/rpc will display this list. """
 
-    implements(IRequestHandler, ITemplateProvider, INavigationContributor)
+    implements(IEnvironmentSetupParticipant, IRequestHandler,
+               ITemplateProvider, INavigationContributor)
 
     protocols = ExtensionPoint(IRPCProtocol)
+
+    def __init__(self):
+        try:
+            locale_dir = pkg_resources.resource_filename(__name__, 'locale')
+        except KeyError:
+            pass
+        else:
+            add_domain(self.env.path, locale_dir)
+
+    # IEnvironmentSetupParticipant methods
+
+    def environment_created(self, *args, **kwargs):
+        pass
+
+    def environment_needs_upgrade(self, *args, **kwargs):
+        return False
+
+    def upgrade_environment(self, *args, **kwargs):
+        pass
 
     # IRequestHandler methods
 
@@ -120,10 +143,13 @@ class RPCWeb(Component):
                               for protocol in self.protocols],
                 'version': __version__,
             },
+            'domain': i18n_domain,
         }
         if _use_jinja2:
+            data['dtgettext'] = dtgettext
             return 'rpc_jinja.html', data
         else:
+            data['tag'] = tag
             return 'rpc.html', data, None
 
     def _rpc_protocol(self, req, protocol):
@@ -213,5 +239,4 @@ class RPCWeb(Component):
     def get_navigation_items(self, req):
         if req.perm.has_permission('XML_RPC'):
             yield ('metanav', 'rpc',
-                   tag.a('API', href=req.href.rpc(), accesskey=1))
-
+                   tag.a(_("API"), href=req.href.rpc(), accesskey=1))

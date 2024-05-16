@@ -26,7 +26,7 @@ from trac.web.api import RequestDone
 
 from .api import (IRPCProtocol, Binary, MethodNotFound, ProtocolException,
                   ServiceException)
-from .util import basestring, prepare_docs, unichr, xmlrpclib
+from .util import basestring, cleandoc_, gettext, unichr, xmlrpclib
 
 __all__ = ['XmlRpcProtocol']
 
@@ -62,7 +62,8 @@ def from_xmlrpc_datetime(data):
 
 
 class XmlRpcProtocol(Component):
-    r"""
+
+    _description = cleandoc_(r"""
     There should be XML-RPC client implementations available for all
     popular programming languages.
     Example call using `curl`:
@@ -97,14 +98,14 @@ class XmlRpcProtocol(Component):
     >>> p.system.getAPIVersion()
     %(version)r
     }}}
-    """
+    """)
 
     implements(IRPCProtocol)
 
     # IRPCProtocol methods
 
     def rpc_info(self):
-        return ('XML-RPC', prepare_docs(self.__doc__))
+        return 'XML-RPC', gettext(self._description)
 
     def rpc_match(self):
         # Legacy path xmlrpc provided for backwards compatibility:
