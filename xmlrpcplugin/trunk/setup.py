@@ -8,6 +8,14 @@ License: BSD
 
 from setuptools import setup, find_packages
 
+extra = {}
+try:
+    from trac.dist import get_l10n_cmdclass
+except ImportError:
+    pass
+else:
+    extra['cmdclass'] = get_l10n_cmdclass() or {}
+
 setup(
     name='TracXMLRPC',
     version='1.2.0',
@@ -27,8 +35,10 @@ setup(
     },
     classifiers=[
         'Framework :: Trac',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
     entry_points={
         'trac.plugins': 'TracXMLRPC = tracrpc',
     },
-)
+    **extra)

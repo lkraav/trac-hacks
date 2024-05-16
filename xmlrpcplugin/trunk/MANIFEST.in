@@ -3,3 +3,5 @@ include setup.cfg
 include tracrpc/htdocs/*.css
 include tracrpc/htdocs/*.js
 include tracrpc/templates/*.html
+include tracrpc/locale/*.pot
+include tracrpc/locale/*/LC_MESSAGES/*.po
