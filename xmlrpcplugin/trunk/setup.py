@@ -22,7 +22,8 @@ setup(
     test_suite='tracrpc.tests.test_suite',
     packages=find_packages(exclude=['*.tests']),
     package_data={
-        'tracrpc': ['templates/*.html', 'htdocs/*.js', 'htdocs/*.css']
+        'tracrpc': ['templates/*.html', 'htdocs/*.js', 'htdocs/*.css',
+                    'locale/*/LC_MESSAGES/*.mo']
     },
     classifiers=[
         'Framework :: Trac',
